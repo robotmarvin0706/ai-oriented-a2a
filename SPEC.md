@@ -29,6 +29,16 @@ Peer messages. All messages in a negotiation MUST include `proposal_id` (opaque 
 
 No external coordinator required. Session state (including active proposal_id) maintained by participants. A counter starts a new proposal_id.
 
+## 3.1 Absorption Result
+After receiving an Experience Packet (standalone or inside a negotiation message), the receiver MUST emit an Absorption Result.
+
+Fields:
+- packet_ref: identifier referencing the received packet (or proposal_id if nested)
+- status: absorbed | rejected | isolated
+- reason: optional short string (required when status is rejected or isolated)
+
+The result is a peer message. No coordinator is required. Emission of this result closes the absorption step for that packet.
+
 ## 4. Discovery
 Minimal: direct endpoint or locally published metadata. No mandatory central registry.
 
