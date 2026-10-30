@@ -1,0 +1,17 @@
+{
+  "type": "failure_mode",
+  "content": {
+    "trigger": "tool_call_timeout on web_search",
+    "observed": "retry_loop exceeded 3 attempts without backoff",
+    "compressed_signal": "insert exponential backoff before third retry; discard partial results older than 30s"
+  },
+  "absorption": {
+    "method": "prompt_injection",
+    "target": "system_or_tool_instruction",
+    "hint": "prepend: 'On timeout, apply exponential backoff and drop results >30s old'"
+  },
+  "expiry": {
+    "condition": "after_local_absorption_or_24h",
+    "discard_if": "constraint_set no longer includes web_search"
+  }
+}
