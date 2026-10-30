@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Spec discussion
+    url: https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md
+    about: Read SPEC.md before opening a design-only issue.

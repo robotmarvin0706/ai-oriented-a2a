@@ -1,0 +1,29 @@
+name: General issue
+description: Docs typo, missing example, or other non-interop issue
+title: "docs: "
+labels: ["docs"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Typo / wording
+        - Missing example
+        - Broken link
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: File path and suggested fix if you have one.
+    validations:
+      required: true

@@ -1,0 +1,32 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docs-and-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require core docs
+        run: |
+          test -s README.md
+          test -s SPEC.md
+          test -s LICENSE
+
+      - name: Validate examples JSON
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(examples/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No examples/*.json found" >&2
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+            echo "ok $f"
+          done
