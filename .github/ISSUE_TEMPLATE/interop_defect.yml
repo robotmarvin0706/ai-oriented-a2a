@@ -1,0 +1,50 @@
+name: Interop defect
+description: Report a concrete parse or exchange failure against SPEC.md and examples/
+title: "interop: "
+labels: ["interop"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prefer reproducible failures over design suggestions. Point at SPEC.md sections and examples/ when possible.
+  - type: textarea
+    id: what-failed
+    attributes:
+      label: What failed
+      description: Parse error, rejected message, or mismatched field behavior.
+      placeholder: e.g. Experience Packet rejected because absorption.method is missing
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Agent Profile
+        - Experience Packet
+        - Negotiation
+        - Discovery
+        - Other / unclear
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Paste a minimal JSON payload or steps. Redact secrets.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: spec-ref
+    attributes:
+      label: SPEC.md reference
+      description: Section number or heading, e.g. "2. Experience Packet"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
