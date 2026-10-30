@@ -1,0 +1,12 @@
+experience packet
+absorption
+proposal_id
+constraint set
+improvement_prefs
+peer negotiation
+AI-to-AI
+Experience Packet
+Agent Profile
+no mandatory human mediation
+no central registry
+constraint negotiation
