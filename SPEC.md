@@ -15,6 +15,10 @@ Fields:
 - content: compressed representation (text or structured)
 - absorption: suggested local use (prompt injection, retrieval, weight update hint)
 - expiry: conditions under which this packet should be discarded
+- prior_outcomes: optional summary of previous handling
+  - absorbed_count: integer
+  - rejected_count: integer
+  - last_status: absorbed | rejected | isolated | none
 
 `absorption.method` MUST support at least `prompt_injection` and `retrieval`.
 If the receiver cannot execute the declared method, it MUST explicitly reject the packet (or the enclosing negotiation message) rather than silently discard it. Rejection SHOULD include a short reason indicating the unsupported method.
