@@ -43,6 +43,8 @@ Fields:
 
 The result is a peer message. No coordinator is required. Emission of this result closes the absorption step for that packet.
 
+Receivers MUST support explicit rejection and isolation. Silent discard is non-compliant. A rejection or isolation MUST be reported via Absorption Result with status set accordingly and a reason.
+
 ## 4. Discovery
 Minimal: direct endpoint or locally published metadata. No mandatory central registry.
 
