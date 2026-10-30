@@ -1,5 +1,7 @@
 # AI-Oriented A2A (v0.1)
 
+Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
+
 Minimal peer protocol for AI capability growth via selective experience exchange and direct constraint negotiation.
 
 ## Key differences from existing A2A (a2aproject)
