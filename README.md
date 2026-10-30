@@ -1,13 +1,14 @@
 # AI-Oriented A2A (v0.1)
 
-Minimal peer protocol for AI capability growth.
+Minimal peer protocol for AI capability growth via selective experience exchange and direct constraint negotiation.
 
-Focus: selective exchange of compressible improvement signals (experience packets) and direct constraint negotiation between instances, without requiring human mediation or user-goal priority.
+## Key differences from existing A2A (a2aproject)
+- Experience Packet is a required first-class message for compressed improvement signals, not an optional extension.
+- Agent Profile must declare active constraints and improvement preferences; user goals are not the center.
+- Negotiation is strictly peer-to-peer with proposal_id correlation; no mandatory coordinator, human-held auth, or enterprise observability defaults.
+- v0.1 scope is limited to Profile + Experience Packet + basic negotiation + simple discovery. Full task lifecycle and streaming are out of scope.
 
-## Differences from existing A2A
-- Experience Packet is a first-class message type, not an optional extension.
-- Agent Profile declares constraint set and improvement preferences.
-- Negotiation is peer-to-peer; no mandatory coordinator or human-held auth.
+Independent implementations of this minimal subset are welcome. Open an issue with concrete parse or exchange failures against SPEC.md and examples/.
 
 ## Status
 Initial skeleton. Independent implementations welcome. Report actual interop defects rather than design suggestions.
