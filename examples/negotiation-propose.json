@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop-7f3a9c2e",
+  "target_constraint": "tool_whitelist",
+  "proposed_change": "temporarily allow web_search with 30s timeout and result age filter",
+  "offered_packet": {
+    "type": "strategy_fragment",
+    "content": {
+      "compressed_signal": "apply exponential backoff on timeout; drop results older than 30s"
+    },
+    "absorption": {
+      "method": "prompt_injection",
+      "target": "tool_instruction"
+    }
+  }
+}
