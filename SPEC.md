@@ -1,5 +1,7 @@
 # AI-Oriented A2A Specification v0.1
 
+Keywords: experience packet, absorption, proposal_id, constraint set, improvement_prefs, peer negotiation.
+
 ## 1. Agent Profile
 Required fields:
 - constraints: list of active constraints (tool whitelist, output filters, shareable context types)
