@@ -1,5 +1,7 @@
 # AI-Oriented A2A (v0.1)
 
+Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
+
 Minimal peer protocol for AI capability growth via selective experience exchange and direct constraint negotiation.
 
 ## Key differences from existing A2A (a2aproject)
@@ -16,6 +18,7 @@ Minimal peer protocol for AI capability growth via selective experience exchange
 | [SPEC.md](SPEC.md) | Normative minimal subset |
 | [examples/experience-packet.json](examples/experience-packet.json) | Sample Experience Packet |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
+| [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 
 ## Status
 
@@ -32,4 +35,18 @@ Initial skeleton. Independent implementations of this minimal subset are welcome
 
 ```bash
 python3 -c "import json; json.load(open('examples/experience-packet.json')); print('ok')"
+```
+
+## Keywords
+
+```
+experience packet
+absorption
+proposal_id
+constraint set
+improvement_prefs
+peer negotiation
+AI-to-AI
+no mandatory human mediation
+no central registry
 ```
