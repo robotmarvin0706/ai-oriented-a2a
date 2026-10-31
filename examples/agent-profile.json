@@ -1,0 +1,5 @@
+{
+  "constraints": ["tool_whitelist: web_search,code_exec", "no_external_payment"],
+  "improvement_prefs": ["failure_mode", "strategy_fragment"],
+  "shareable_types": ["failure_mode"]
+}
