@@ -16,6 +16,7 @@ jobs:
           test -s README.md
           test -s SPEC.md
           test -s LICENSE
+          test -s CONTRIBUTING.md
 
       - name: Validate examples JSON
         run: |
@@ -30,3 +31,65 @@ jobs:
             python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
             echo "ok $f"
           done
+
+      - name: Schema-validate examples
+        run: |
+          pip install 'jsonschema>=4.18' referencing -q
+          python3 << 'PY'
+          import json
+          import pathlib
+          import sys
+
+          from jsonschema import Draft202012Validator
+          from referencing import Registry, Resource
+
+          mapping = {
+              "agent-profile.json": "schema/agent-profile.schema.json",
+              "experience-packet.json": "schema/experience-packet.schema.json",
+              "negotiation-propose.json": "schema/negotiation.schema.json",
+              "negotiation-accept.json": "schema/negotiation.schema.json",
+              "negotiation-reject.json": "schema/negotiation.schema.json",
+              "negotiation-counter.json": "schema/negotiation.schema.json",
+              "absorption-result-reject.json": "schema/absorption-result.schema.json",
+              "absorption-result-absorbed.json": "schema/absorption-result.schema.json",
+              "absorption-result-isolated.json": "schema/absorption-result.schema.json",
+          }
+
+          resources = []
+          for path in pathlib.Path("schema").glob("*.schema.json"):
+              contents = json.loads(path.read_text())
+              resource = Resource.from_contents(contents)
+              resources.append((path.name, resource))
+              schema_id = contents.get("$id")
+              if schema_id:
+                  resources.append((schema_id, resource))
+
+          registry = Registry().with_resources(resources)
+
+          failed = False
+          for ex_name, sch_path in mapping.items():
+              ex = pathlib.Path("examples") / ex_name
+              sch = pathlib.Path(sch_path)
+              if not ex.exists():
+                  print(f"FAIL missing example {ex_name}")
+                  failed = True
+                  continue
+              if not sch.exists():
+                  print(f"FAIL missing schema {sch_path}")
+                  failed = True
+                  continue
+              instance = json.loads(ex.read_text())
+              schema = json.loads(sch.read_text())
+              validator = Draft202012Validator(schema, registry=registry)
+              errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
+              if errors:
+                  print(f"FAIL {ex_name}")
+                  for err in errors:
+                      print(f"  {err.message} at {list(err.path)}")
+                  failed = True
+              else:
+                  print(f"ok {ex_name}")
+
+          if failed:
+              sys.exit(1)
+          PY

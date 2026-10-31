@@ -1,4 +1,5 @@
 {
+  "id": "pkt-experience-7f3a",
   "type": "failure_mode",
   "content": {
     "trigger": "tool_call_timeout on web_search",
