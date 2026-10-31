@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-oriented-a2a.local/schema/absorption-result.schema.json",
+  "title": "AbsorptionResult",
+  "type": "object",
+  "required": ["packet_ref", "status"],
+  "properties": {
+    "packet_ref": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["absorbed", "rejected", "isolated"] },
+    "reason": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "enum": ["rejected", "isolated"] } } },
+      "then": { "required": ["reason"] }
+    }
+  ],
+  "additionalProperties": false
+}

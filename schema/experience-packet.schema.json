@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-oriented-a2a.local/schema/experience-packet.schema.json",
+  "title": "ExperiencePacket",
+  "type": "object",
+  "required": ["id", "type", "content", "absorption"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["failure_mode", "strategy_fragment", "tool_trajectory", "other"] },
+    "content": { "type": "object" },
+    "absorption": {
+      "type": "object",
+      "required": ["method"],
+      "properties": {
+        "method": { "enum": ["prompt_injection", "retrieval", "other"] },
+        "target": { "type": "string" },
+        "hint": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "expiry": { "type": "object" },
+    "prior_outcomes": {
+      "type": "object",
+      "properties": {
+        "absorbed_count": { "type": "integer", "minimum": 0 },
+        "rejected_count": { "type": "integer", "minimum": 0 },
+        "last_status": { "enum": ["absorbed", "rejected", "isolated", "none"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
