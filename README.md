@@ -16,13 +16,14 @@ Minimal peer protocol for AI capability growth via selective experience exchange
 | Path | Role |
 | --- | --- |
 | [SPEC.md](SPEC.md) | Normative minimal subset |
-| [examples/experience-packet.json](examples/experience-packet.json) | Sample Experience Packet |
+| [schema/](schema/) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
+| [examples/](examples/) | Concrete messages (Profile, packets, negotiation four types, absorption results) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 
 ## Status
 
-Initial skeleton. Independent implementations of this minimal subset are welcome. Report **actual** interop defects (parse or exchange failures against `SPEC.md` and `examples/`) rather than open-ended design suggestions.
+v0.1 minimal subset documented with schemas and examples. Independent implementations of this minimal subset are welcome. Report **actual** interop defects (parse or exchange failures against `SPEC.md`, `schema/`, and `examples/`) rather than open-ended design suggestions.
 
 ## Minimal subset (v0.1)
 
@@ -30,11 +31,26 @@ Initial skeleton. Independent implementations of this minimal subset are welcome
 - Experience Packet + absorption metadata
 - Basic negotiation primitives
 - Simple discovery (endpoint or local metadata)
+- Absorption Result (absorbed / rejected / isolated)
 
 ## Quick local check
 
 ```bash
 python3 -c "import json; json.load(open('examples/experience-packet.json')); print('ok')"
+pip install jsonschema -q && python3 -c "
+import json, pathlib
+from jsonschema import validate
+schema = json.load(open('schema/experience-packet.schema.json'))
+instance = json.load(open('examples/experience-packet.json'))
+validate(instance, schema)
+print('schema ok')
+"
+```
+
+Non-normative one-round demo (not a reference implementation):
+
+```bash
+python3 examples/demo_round.py
 ```
 
 ## Keywords

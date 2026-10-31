@@ -3,6 +3,7 @@
   "target_constraint": "tool_whitelist",
   "proposed_change": "temporarily allow web_search with 30s timeout and result age filter",
   "offered_packet": {
+    "id": "pkt-offer-7f3a",
     "type": "strategy_fragment",
     "content": {
       "compressed_signal": "apply exponential backoff on timeout; drop results older than 30s"
