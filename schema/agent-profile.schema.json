@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-oriented-a2a.local/schema/agent-profile.schema.json",
+  "title": "AgentProfile",
+  "type": "object",
+  "required": ["constraints", "improvement_prefs", "shareable_types"],
+  "properties": {
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "improvement_prefs": { "type": "array", "items": { "type": "string" } },
+    "shareable_types": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
