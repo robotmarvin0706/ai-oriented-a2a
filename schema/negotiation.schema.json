@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-oriented-a2a.local/schema/negotiation.schema.json",
+  "title": "NegotiationMessage",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["proposal_id", "target_constraint", "proposed_change"],
+      "properties": {
+        "proposal_id": { "type": "string", "minLength": 1 },
+        "target_constraint": { "type": "string" },
+        "proposed_change": { "type": "string" },
+        "offered_packet": { "$ref": "experience-packet.schema.json" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["proposal_id"],
+      "properties": {
+        "proposal_id": { "type": "string" },
+        "status": { "const": "accept" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["proposal_id"],
+      "properties": {
+        "proposal_id": { "type": "string" },
+        "status": { "const": "reject" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["proposal_id", "revised_change"],
+      "properties": {
+        "proposal_id": { "type": "string" },
+        "status": { "const": "counter" },
+        "revised_change": { "type": "string" },
+        "offered_packet": { "$ref": "experience-packet.schema.json" }
+      },
+      "additionalProperties": false
+    }
+  ]
+}
