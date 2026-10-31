@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop-new-88b1",
+  "status": "counter",
+  "revised_change": "allow web_search with 15s timeout only",
+  "offered_packet": {
+    "id": "pkt-counter-001",
+    "type": "strategy_fragment",
+    "content": { "compressed_signal": "use shorter timeout + immediate drop" },
+    "absorption": { "method": "retrieval", "target": "local_strategy_store" }
+  }
+}
