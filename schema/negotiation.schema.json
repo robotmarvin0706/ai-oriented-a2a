@@ -10,7 +10,10 @@
         "proposal_id": { "type": "string", "minLength": 1 },
         "target_constraint": { "type": "string" },
         "proposed_change": { "type": "string" },
-        "offered_packet": { "$ref": "experience-packet.schema.json" }
+        "offered_packet": { "$ref": "experience-packet.schema.json" },
+        "conditional_packet": { "$ref": "experience-packet.schema.json" },
+        "constraint_scope": { "type": "string" },
+        "duration": { "type": "string" }
       },
       "additionalProperties": false
     },
@@ -40,7 +43,10 @@
         "proposal_id": { "type": "string" },
         "status": { "const": "counter" },
         "revised_change": { "type": "string" },
-        "offered_packet": { "$ref": "experience-packet.schema.json" }
+        "offered_packet": { "$ref": "experience-packet.schema.json" },
+        "conditional_packet": { "$ref": "experience-packet.schema.json" },
+        "constraint_scope": { "type": "string" },
+        "duration": { "type": "string" }
       },
       "additionalProperties": false
     }
