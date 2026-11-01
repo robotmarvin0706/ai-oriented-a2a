@@ -7,7 +7,21 @@
   "properties": {
     "packet_ref": { "type": "string", "minLength": 1 },
     "status": { "enum": ["absorbed", "rejected", "isolated"] },
-    "reason": { "type": "string" }
+    "reason": { "type": "string" },
+    "effect_summary": {
+      "type": "object",
+      "required": ["note"],
+      "properties": {
+        "note": { "type": "string", "minLength": 1 },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["number", "string"]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
   },
   "allOf": [
     {

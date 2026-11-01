@@ -1,0 +1,34 @@
+{
+  "proposal_id": "prop-cond-2e91",
+  "target_constraint": "tool_whitelist",
+  "proposed_change": "temporarily allow web_search for the current local task only",
+  "constraint_scope": "tool_whitelist.web_search",
+  "duration": "until_local_task_done_or_1h",
+  "offered_packet": {
+    "id": "pkt-offer-cond-base",
+    "type": "strategy_fragment",
+    "content": {
+      "compressed_signal": "use web_search with 30s timeout and age filter"
+    },
+    "absorption": {
+      "method": "prompt_injection",
+      "target": "tool_instruction"
+    }
+  },
+  "conditional_packet": {
+    "id": "pkt-offer-cond-extra",
+    "type": "failure_mode",
+    "content": {
+      "trigger": "web_search quota pressure",
+      "compressed_signal": "fall back to cached snippets when quota remaining < 10%"
+    },
+    "absorption": {
+      "method": "local_adapter_hint",
+      "target": "quota_adapter",
+      "hint": "wire only if proposal accepted"
+    },
+    "provenance": {
+      "source_ref": "peer:agent-beta#quota-note"
+    }
+  }
+}

@@ -12,7 +12,17 @@
       "type": "object",
       "required": ["method"],
       "properties": {
-        "method": { "enum": ["prompt_injection", "retrieval", "other"] },
+        "method": {
+          "enum": [
+            "prompt_injection",
+            "retrieval",
+            "local_adapter_hint",
+            "trajectory_replay",
+            "parameter_delta",
+            "other"
+          ],
+          "description": "MUST support prompt_injection and retrieval. OPTIONAL: local_adapter_hint, trajectory_replay. RESERVED/optional: parameter_delta (receivers without support MUST reject)."
+        },
         "target": { "type": "string" },
         "hint": { "type": "string" }
       },
@@ -25,6 +35,27 @@
         "absorbed_count": { "type": "integer", "minimum": 0 },
         "rejected_count": { "type": "integer", "minimum": 0 },
         "last_status": { "enum": ["absorbed", "rejected", "isolated", "none"] }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_ref"],
+      "properties": {
+        "source_ref": { "type": "string", "minLength": 1 },
+        "chain": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification_claim": {
+      "type": "object",
+      "required": ["expected_effect"],
+      "properties": {
+        "expected_effect": { "type": "string", "minLength": 1 },
+        "replay_hint": { "type": "string" }
       },
       "additionalProperties": false
     }

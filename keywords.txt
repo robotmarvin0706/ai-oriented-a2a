@@ -10,3 +10,11 @@ Agent Profile
 no mandatory human mediation
 no central registry
 constraint negotiation
+provenance
+trajectory_replay
+conditional_packet
+verification_claim
+effect_summary
+interest_tags
+local_adapter_hint
+parameter_delta

@@ -1,0 +1,23 @@
+{
+  "id": "pkt-prov-9c21",
+  "type": "strategy_fragment",
+  "content": {
+    "compressed_signal": "prefer cached search snippets when latency > 2s; annotate cache age in response"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "local_strategy_store",
+    "hint": "index under timeout_handling"
+  },
+  "provenance": {
+    "source_ref": "peer:agent-alpha#round-12",
+    "chain": ["peer:agent-alpha#round-12", "local:ingest-2026-11-01"]
+  },
+  "verification_claim": {
+    "expected_effect": "fewer duplicate web_search calls under load",
+    "replay_hint": "replay against last 20 timed-out search traces"
+  },
+  "expiry": {
+    "condition": "after_local_absorption_or_7d"
+  }
+}
