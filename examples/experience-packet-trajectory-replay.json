@@ -1,0 +1,23 @@
+{
+  "id": "pkt-traj-44ab",
+  "type": "tool_trajectory",
+  "content": {
+    "steps": [
+      "call web_search with max_results=3",
+      "on timeout apply exponential backoff",
+      "drop results older than 30s before synthesis"
+    ],
+    "compressed_signal": "replay truncated search trajectory with backoff gates"
+  },
+  "absorption": {
+    "method": "trajectory_replay",
+    "target": "local_replay_buffer",
+    "hint": "treat steps as ordered soft constraints, not hard macros"
+  },
+  "verification_claim": {
+    "expected_effect": "replay completes without unbounded retry loops"
+  },
+  "expiry": {
+    "condition": "after_one_successful_replay_or_24h"
+  }
+}
