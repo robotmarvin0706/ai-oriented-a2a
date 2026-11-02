@@ -39,6 +39,10 @@ v0.1 parsers still parse core messages (Profile, Experience Packet, negotiation 
 
 v0.2 minimal subset documented with schemas and examples. Independent implementations of this minimal subset are welcome. Report **actual** interop defects (parse or exchange failures against `SPEC.md`, `schema/`, and `examples/`) rather than open-ended design suggestions. When reporting defects, specify the protocol version.
 
+## Next steps
+
+First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative).
+
 ## Minimal subset (v0.2)
 
 - Agent Profile (optional `interest_tags`)

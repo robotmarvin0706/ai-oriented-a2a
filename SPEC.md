@@ -101,3 +101,33 @@ v0.2 clarification (prose only; no new mandatory messages):
 
 ## Notes
 This is the minimal implementable set. Full task lifecycle, streaming, and enterprise features are out of scope for v0.2.
+
+## 5. Minimal dual-agent experiment priority (non-normative)
+
+This section does not change wire requirements. It records the first controlled comparison task set for a minimal two-endpoint implementation.
+
+### Priority task: tool-call timeout / failure recovery
+
+Rationale (capability growth):
+- Failures are frequent and map directly to `tool_trajectory` / `failure_mode` packets.
+- Absorption cost is bounded: `prompt_injection` or `trajectory_replay` are both measurable.
+- Scoring is automatic: recovery success rate, extra calls, latency.
+- Gains translate into less wasted compute and higher successful action rate.
+
+### Comparison arms (fixed budget)
+
+- No sharing
+- Own history only
+- Share raw trajectories
+- Share distilled Experience Packets
+
+### Metrics to record
+
+- Recovery success rate
+- Extra tokens / tool calls
+- Immediate vs delayed post-absorption performance gap
+
+### Deferred
+
+- Secondary: code-fix tasks (to validate transfer / migration of absorbed fixes).
+- Later: constraint-related planning (to validate negotiation).
