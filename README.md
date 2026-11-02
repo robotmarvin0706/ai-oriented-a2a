@@ -32,6 +32,7 @@ v0.1 parsers still parse core messages (Profile, Experience Packet, negotiation 
 | [SPEC.md](SPEC.md) | Normative minimal subset |
 | [schema/](schema/) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
 | [examples/](examples/) | Concrete messages (Profile, packets, negotiation, absorption results, v0.2 optionals) |
+| [IMPLEMENTATION.md](IMPLEMENTATION.md) | Non-normative dual-endpoint implementation notes |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 
@@ -41,7 +42,7 @@ v0.2 minimal subset documented with schemas and examples. Independent implementa
 
 ## Next steps
 
-First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative).
+First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative) and [IMPLEMENTATION.md](IMPLEMENTATION.md).
 
 ## Minimal subset (v0.2)
 

@@ -131,3 +131,5 @@ Rationale (capability growth):
 
 - Secondary: code-fix tasks (to validate transfer / migration of absorbed fixes).
 - Later: constraint-related planning (to validate negotiation).
+
+Host-side absorption-loop and metric practice for this experiment is described in [IMPLEMENTATION.md](IMPLEMENTATION.md) (non-normative).
