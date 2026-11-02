@@ -7,8 +7,28 @@ multi-process). Implements SPEC.md v0.2 MUST absorption methods and
 IMPLEMENTATION.md host-side practice (regression, effect_summary, isolation N,
 four arms) for the tool-call timeout recovery priority task.
 
+Hard gate (this experiment path): after absorb, Result MUST carry a compliant
+effect_summary (non-empty note + metrics with baseline_sr and at least one of
+regression_sr / isolation_sr). Missing/incomplete summary => status rejected,
+reason set, local injection/retrieval rolled back. metrics always record
+declared_N, declared_threshold, rollback_triggered, rollback_action
+(legacy isolation_n / drop_threshold mirrored for convenience).
+
 Run from repo root:
   python3 examples/minimal_dual_end.py
+  python3 examples/minimal_dual_end.py --seed 42 --trials 20 --isolation-n 3 --drop-threshold 0.10
+
+Reproducible four-arm table (captured from a real run with the defaults above;
+re-run the same command to match):
+
+  arm              | SR    | ΔSR    | tool_calls | share_tok | imm_SR | del_SR | gap    | reg_mag | t_recover | backoff | abs_status
+  -----------------+-------+--------+------------+-----------+--------+--------+--------+---------+-----------+---------+-----------
+  no_sharing       | 0.600 | +0.000 | 46         | 0         | 0.500  | 0.700  | +0.200 | 0.000   | 0         | N       | -
+  own_history      | 1.000 | +0.400 | 48         | 0         | 1.000  | 1.000  | +0.000 | 0.000   | 5         | Y       | -
+  raw_trajectory   | 1.000 | +0.400 | 45         | 315       | 1.000  | 1.000  | +0.000 | -0.333  | 3         | Y       | absorbed
+  distilled_packet | 0.950 | +0.350 | 46         | 176       | 1.000  | 0.950  | -0.050 | -0.167  | 3         | Y       | absorbed
+
+  baseline SR (no_sharing)=0.600
 """
 
 from __future__ import annotations
@@ -347,6 +367,136 @@ def extract_recovery_from_raw(trajectory: Dict[str, Any]) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# effect_summary hard gate (experiment path)
+# ---------------------------------------------------------------------------
+
+
+ROLLBACK_ACTION_NONE = "none"
+ROLLBACK_ACTION_CLEAR = "clear_injection_remove_retrieval"
+
+
+def effect_summary_is_compliant(result: Dict[str, Any]) -> Tuple[bool, str]:
+    """
+    Compliant iff note is non-empty and metrics include baseline_sr plus at
+    least one post-absorption SR (regression_sr or isolation_sr).
+    """
+    es = result.get("effect_summary")
+    if not isinstance(es, dict):
+        return False, "missing effect_summary object"
+    note = es.get("note")
+    if not isinstance(note, str) or not note.strip():
+        return False, "effect_summary.note missing or empty"
+    metrics = es.get("metrics")
+    if not isinstance(metrics, dict):
+        return False, "effect_summary.metrics missing or not an object"
+    if "baseline_sr" not in metrics:
+        return False, "metrics.baseline_sr missing"
+    if "regression_sr" not in metrics and "isolation_sr" not in metrics:
+        return False, "metrics need regression_sr and/or isolation_sr"
+    return True, "ok"
+
+
+def stamp_isolation_declaration(
+    metrics: Dict[str, Any],
+    *,
+    declared_n: int,
+    declared_threshold: float,
+    rollback_triggered: bool,
+    rollback_action: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Write required isolation declaration fields into effect_summary.metrics.
+    Required keys: declared_N, declared_threshold, rollback_triggered, rollback_action.
+    Also mirrors legacy isolation_n / drop_threshold.
+    """
+    action = rollback_action
+    if action is None:
+        action = (
+            ROLLBACK_ACTION_CLEAR if rollback_triggered else ROLLBACK_ACTION_NONE
+        )
+    out = dict(metrics)
+    out["declared_N"] = int(declared_n)
+    out["declared_threshold"] = float(declared_threshold)
+    out["rollback_triggered"] = bool(rollback_triggered)
+    out["rollback_action"] = action
+    # Legacy mirrors (optional convenience; not a substitute for declared_*).
+    out["isolation_n"] = int(declared_n)
+    out["drop_threshold"] = float(declared_threshold)
+    return out
+
+
+def enforce_effect_summary_or_reject(
+    state: "ReceiverState",
+    result: Dict[str, Any],
+    *,
+    isolation_n: int,
+    drop_threshold: float,
+) -> Dict[str, Any]:
+    """
+    Hard gate at absorb-path end.
+    Non-compliant effect_summary -> rejected + reason + rollback (clear
+    injection / remove retrieval). Rejection itself carries a compliant summary.
+    """
+    ok, why = effect_summary_is_compliant(result)
+    if ok:
+        es = dict(result["effect_summary"])
+        metrics = dict(es.get("metrics") or {})
+        triggered = bool(metrics.get("rollback_triggered", False))
+        action = metrics.get("rollback_action")
+        if not isinstance(action, str) or not action:
+            action = (
+                ROLLBACK_ACTION_CLEAR if triggered else ROLLBACK_ACTION_NONE
+            )
+        metrics = stamp_isolation_declaration(
+            metrics,
+            declared_n=isolation_n,
+            declared_threshold=drop_threshold,
+            rollback_triggered=triggered,
+            rollback_action=action,
+        )
+        es["metrics"] = metrics
+        out = dict(result)
+        out["effect_summary"] = es
+        return out
+
+    _rollback(state)
+    old_metrics: Dict[str, Any] = {}
+    old_es = result.get("effect_summary")
+    if isinstance(old_es, dict) and isinstance(old_es.get("metrics"), dict):
+        old_metrics = dict(old_es["metrics"])
+
+    metrics = dict(old_metrics)
+    if "baseline_sr" not in metrics:
+        metrics["baseline_sr"] = float(old_metrics.get("baseline_sr", 0.0) or 0.0)
+    if "regression_sr" not in metrics and "isolation_sr" not in metrics:
+        metrics["regression_sr"] = float(old_metrics.get("regression_sr", 0.0) or 0.0)
+        metrics["isolation_sr"] = float(old_metrics.get("isolation_sr", 0.0) or 0.0)
+    metrics = stamp_isolation_declaration(
+        metrics,
+        declared_n=isolation_n,
+        declared_threshold=drop_threshold,
+        rollback_triggered=True,
+        rollback_action=ROLLBACK_ACTION_CLEAR,
+    )
+
+    return {
+        "packet_ref": result.get("packet_ref") or "",
+        "status": "rejected",
+        "reason": (
+            f"effect_summary non-compliant ({why}); "
+            "auto-rejected and rolled back (cleared injection / removed retrieval)"
+        ),
+        "effect_summary": {
+            "note": (
+                "hard gate failed: missing compliant effect_summary; "
+                "absorption not retained"
+            ),
+            "metrics": metrics,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Receiver / Sender (in-process dual end)
 # ---------------------------------------------------------------------------
 
@@ -407,27 +557,49 @@ class Receiver:
         Receive → MUST method → local regression → isolation N → promote or reject.
         Always returns Absorption Result; rejected/isolated include reason.
         Forces effect_summary (note + metrics) for this experiment path.
+        Final Result is hard-gated: missing/incomplete effect_summary becomes
+        rejected + rollback (absorption not retained).
         """
         packet_id = packet["id"]
         absorption = packet.get("absorption") or {}
         method = absorption.get("method", "")
 
+        def _finalize(result: Dict[str, Any]) -> Dict[str, Any]:
+            return enforce_effect_summary_or_reject(
+                self.state,
+                result,
+                isolation_n=self.isolation_n,
+                drop_threshold=self.regression_drop_threshold,
+            )
+
         if method not in MUST_METHODS:
-            return {
-                "packet_ref": packet_id,
-                "status": "rejected",
-                "reason": (
-                    f"unsupported absorption.method '{method}'; "
-                    f"receiver MUST support only {sorted(MUST_METHODS)}"
-                ),
-                "effect_summary": {
-                    "note": "no local change applied; method not executable",
-                    "metrics": {
-                        "method": method,
-                        "payload_tokens": approx_payload_tokens(packet),
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "rejected",
+                    "reason": (
+                        f"unsupported absorption.method '{method}'; "
+                        f"receiver MUST support only {sorted(MUST_METHODS)}"
+                    ),
+                    "effect_summary": {
+                        "note": "no local change applied; method not executable",
+                        "metrics": stamp_isolation_declaration(
+                            {
+                                "method": method,
+                                "payload_tokens": approx_payload_tokens(packet),
+                                # No trials run; SR placeholders keep the hard gate satisfied.
+                                "baseline_sr": 0.0,
+                                "regression_sr": 0.0,
+                                "isolation_sr": 0.0,
+                            },
+                            declared_n=self.isolation_n,
+                            declared_threshold=self.regression_drop_threshold,
+                            rollback_triggered=False,
+                            rollback_action=ROLLBACK_ACTION_NONE,
+                        ),
                     },
-                },
-            }
+                }
+            )
 
         baseline = run_trials(self.state.policy, regression_trials, rng)
         baseline_sr = baseline["success_rate"]
@@ -463,69 +635,94 @@ class Receiver:
         drop = baseline_sr - iso_sr
         payload_tokens = approx_payload_tokens(packet)
 
-        metrics: Dict[str, Any] = {
-            "baseline_sr": round(baseline_sr, 4),
-            "regression_sr": round(reg_sr, 4),
-            "isolation_sr": round(iso_sr, 4),
-            "isolation_n": self.isolation_n,
-            "regression_drop": round(drop, 4),
-            "tool_calls_isolation": isolation["tool_calls"],
-            "tokens_isolation": isolation["tokens"],
-            "payload_tokens": payload_tokens,
-            "adapter": method,
-            "applied": applied,
-            "prompt_before": prompt_before or "(empty)",
-            "prompt_after": prompt_after or "(empty)",
-            "prompt_changed": prompt_before != prompt_after,
-            "retrieval_keys_before": ",".join(store_before_keys) or "(none)",
-            "retrieval_keys_after": ",".join(store_after_keys) or "(none)",
-        }
+        metrics = stamp_isolation_declaration(
+            {
+                "baseline_sr": round(baseline_sr, 4),
+                "regression_sr": round(reg_sr, 4),
+                "isolation_sr": round(iso_sr, 4),
+                "regression_drop": round(drop, 4),
+                "tool_calls_isolation": isolation["tool_calls"],
+                "tokens_isolation": isolation["tokens"],
+                "payload_tokens": payload_tokens,
+                "adapter": method,
+                "applied": applied,
+                "prompt_before": prompt_before or "(empty)",
+                "prompt_after": prompt_after or "(empty)",
+                "prompt_changed": prompt_before != prompt_after,
+                "retrieval_keys_before": ",".join(store_before_keys) or "(none)",
+                "retrieval_keys_after": ",".join(store_after_keys) or "(none)",
+            },
+            declared_n=self.isolation_n,
+            declared_threshold=self.regression_drop_threshold,
+            rollback_triggered=False,
+            rollback_action=ROLLBACK_ACTION_NONE,
+        )
 
         # Performance drop past threshold → rejected + rollback.
         if drop > self.regression_drop_threshold and iso_sr < baseline_sr:
             _rollback(self.state)
-            return {
-                "packet_ref": packet_id,
-                "status": "rejected",
-                "reason": (
-                    f"isolation SR {iso_sr:.3f} dropped below baseline {baseline_sr:.3f} "
-                    f"by {drop:.3f} (threshold {self.regression_drop_threshold})"
-                ),
-                "effect_summary": {
-                    "note": "change rolled back after isolation trials "
-                    "(cleared injection / removed retrieval entry)",
-                    "metrics": metrics,
-                },
-            }
+            metrics = stamp_isolation_declaration(
+                metrics,
+                declared_n=self.isolation_n,
+                declared_threshold=self.regression_drop_threshold,
+                rollback_triggered=True,
+                rollback_action=ROLLBACK_ACTION_CLEAR,
+            )
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "rejected",
+                    "reason": (
+                        f"isolation SR {iso_sr:.3f} dropped below baseline {baseline_sr:.3f} "
+                        f"by {drop:.3f} (threshold {self.regression_drop_threshold})"
+                    ),
+                    "effect_summary": {
+                        "note": "change rolled back after isolation trials "
+                        "(cleared injection / removed retrieval entry)",
+                        "metrics": metrics,
+                    },
+                }
+            )
 
         # Inconclusive isolation → keep isolated (rolled back from active policy).
         if iso_sr == 0.0 and reg_sr <= baseline_sr:
             _rollback(self.state)
-            return {
-                "packet_ref": packet_id,
-                "status": "isolated",
-                "reason": (
-                    "content retained for inspection but not promoted; "
-                    f"isolation_sr={iso_sr:.3f} showed no improvement"
-                ),
-                "effect_summary": {
-                    "note": "held in isolation; active policy unchanged",
-                    "metrics": metrics,
-                },
-            }
+            metrics = stamp_isolation_declaration(
+                metrics,
+                declared_n=self.isolation_n,
+                declared_threshold=self.regression_drop_threshold,
+                rollback_triggered=True,
+                rollback_action=ROLLBACK_ACTION_CLEAR,
+            )
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "isolated",
+                    "reason": (
+                        "content retained for inspection but not promoted; "
+                        f"isolation_sr={iso_sr:.3f} showed no improvement"
+                    ),
+                    "effect_summary": {
+                        "note": "held in isolation; active policy unchanged",
+                        "metrics": metrics,
+                    },
+                }
+            )
 
         note = (
             f"{method} applied; isolation {self.isolation_n} trials "
             f"SR {iso_sr:.3f} (baseline {baseline_sr:.3f})"
         )
-        return {
-            "packet_ref": packet_id,
-            "status": "absorbed",
-            "effect_summary": {
-                "note": note,
-                "metrics": metrics,
-            },
-        }
+        return _finalize(
+            {
+                "packet_ref": packet_id,
+                "status": "absorbed",
+                "effect_summary": {
+                    "note": note,
+                    "metrics": metrics,
+                },
+            }
+        )
 
     def _apply_recovery(
         self,
@@ -827,6 +1024,49 @@ def demo_unsupported_reject(isolation_n: int) -> Dict[str, Any]:
     return recv.absorb(bad, random.Random(0), regression_trials=4)
 
 
+def demo_missing_effect_summary_reject(
+    isolation_n: int = 3,
+    drop_threshold: float = 0.10,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Prove intentional missing effect_summary → rejected + rollback.
+    Returns (Absorption Result, diagnostics about local state after gate).
+    """
+    recv = Receiver(
+        isolation_n=isolation_n,
+        regression_drop_threshold=drop_threshold,
+        name="recv-missing-es",
+    )
+    _snapshot(recv.state)
+    recv.state.policy = recovered_policy()
+    recv.state.prompt_prefix = "SHOULD_BE_CLEARED_BY_HARD_GATE"
+    recv.state.retrieval_store["timeout_handling"] = "should_be_removed"
+    noncompliant = {
+        "packet_ref": "pkt-missing-es-demo",
+        "status": "absorbed",
+        # deliberately omit effect_summary
+    }
+    result = enforce_effect_summary_or_reject(
+        recv.state,
+        noncompliant,
+        isolation_n=isolation_n,
+        drop_threshold=drop_threshold,
+    )
+    diagnostics = {
+        "prompt_prefix_after": recv.state.prompt_prefix,
+        "policy_backoff_after": recv.state.policy.backoff,
+        "retrieval_keys_after": sorted(recv.state.retrieval_store.keys()),
+        "gate_status": result.get("status"),
+        "rollback_triggered": (result.get("effect_summary") or {})
+        .get("metrics", {})
+        .get("rollback_triggered"),
+        "rollback_action": (result.get("effect_summary") or {})
+        .get("metrics", {})
+        .get("rollback_action"),
+    }
+    return result, diagnostics
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser(
         description="Minimal dual-end absorption + four-arm compare (single file)"
@@ -894,6 +1134,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     reject_demo = demo_unsupported_reject(args.isolation_n)
     print("\n=== Unsupported method reject demo ===")
     print(json.dumps(reject_demo, indent=2, ensure_ascii=False))
+
+    missing_es, missing_diag = demo_missing_effect_summary_reject(
+        isolation_n=args.isolation_n,
+        drop_threshold=args.drop_threshold,
+    )
+    print("\n=== Missing effect_summary hard-gate demo (must be rejected + rolled back) ===")
+    print(json.dumps(missing_es, indent=2, ensure_ascii=False))
+    print("diagnostics=" + json.dumps(missing_diag, indent=2, ensure_ascii=False))
 
     packet = (report.get("packet_samples") or {}).get("distilled_packet")
     abs_sample = report["absorption_samples"]["distilled_packet"]
