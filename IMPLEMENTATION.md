@@ -103,3 +103,49 @@ May be extended from `examples/minimal_dual_end.py`. A non-normative demonstrati
 4. Re-run the entire Stage 1 with a different seed; require directional consistency on the distilled_packet vs own_history comparison.
 5. (Optional) Swap the case generator for a second failure type and repeat; record whether the net-gain conclusion transfers.
 6. Confirm that all logs and threshold adjustments remain local and that no new protocol fields are emitted.
+
+## Gossip discovery sim results (non-normative / experimental)
+
+This subsection does **not** change the wire protocol, required messages, or `SPEC.md`. It only records local simulation outcomes from `examples/gossip_sim.py` so maintainers can decide whether Gossip remains worth observing as an **optional** experiment.
+
+### Timeout scenario (Stage-1 reuse) — positive
+
+Repro:
+
+```bash
+python3 examples/gossip_sim.py --seed 42 --n-nodes 10 --n-cases 40 --no-log
+```
+
+Observed (seed=42):
+
+| arm | avg ΔSR | avg tokens | notes |
+| --- | ---: | ---: | --- |
+| own_history | +0.421 | 1233.6 | baseline share arm |
+| distilled_packet | +0.402 | 1619.3 | ≤1.5× own_history (≈1.31×) |
+| discovery overhead | — | — | 0.78 (forwards / mesh send budget) |
+
+- `net_delta_sr_positive=True` at seed 42.
+- Seed 7 also positive (distilled ΔSR +0.427, overhead 0.78, tokens ≤1.5× own_history).
+
+**Interpretation (timeout only):** supports “Gossip is worth keeping as an optional tool to observe further.” Still experimental and optional; no protocol promotion.
+
+### Failure-type transfer (`param_hallucination`) — mixed / not stable
+
+Repro both types:
+
+```bash
+python3 examples/gossip_sim.py --failure-type both --seed 42 --n-nodes 10 --n-cases 40 --no-log
+python3 examples/gossip_sim.py --failure-type both --seed 7 --n-nodes 10 --n-cases 40 --no-log
+```
+
+| seed | failure_type | distilled ΔSR | tok ratio vs own | overhead | net_delta_sr_positive |
+| ---: | --- | ---: | ---: | ---: | --- |
+| 42 | timeout | +0.402 | 1.313 | 0.78 | True |
+| 42 | param_hallucination | +0.619 | 1.514 | 0.78 | **False** (cost > 1.5×) |
+| 7 | timeout | +0.427 | 1.269 | 0.78 | True |
+| 7 | param_hallucination | +0.598 | 1.499 | 0.78 | True |
+
+- Distilled **ΔSR** stays strongly positive under param hallucination; discovery **overhead stays controllable** (~0.78).
+- The **net gate** (ΔSR + cost ≤1.5× own_history + overhead) does **not** transfer stably: seed 42 fails on token ratio (1.514).
+
+**Conclusion:** treat the Gossip discovery layer as a **pure experiment** in `examples/gossip_sim.py`. Do **not** extract local ΔSR / rollback → candidate-pool weights into a reusable “optional feature” module yet. Revisit only if a later seed panel keeps the net gate green across failure types.
