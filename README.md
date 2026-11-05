@@ -1,5 +1,10 @@
 # AI-Oriented A2A (v0.2)
 
+Minimal **peer** protocol for AI capability growth: Experience Packets + constraint negotiation.
+Not the Google A2A task/agent-card stack — this repo is about sharing compressed improvement signals between peers.
+- Spec: [SPEC.md](SPEC.md) · Release: [v0.2.0](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.2.0)
+- Keywords: experience packet, absorption, proposal_id, peer negotiation, trajectory_replay
+
 Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
 
 Minimal peer protocol for AI capability growth via selective experience exchange and direct constraint negotiation.
