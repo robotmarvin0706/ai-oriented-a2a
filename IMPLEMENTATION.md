@@ -21,6 +21,7 @@ Prefer a measurable absorption loop and fixed-budget comparison over expanding S
 
 - After absorption, run N isolated trials before promoting the change. N is declared by the implementation; suggested minimum is 3.
 - If performance drops past a declared threshold, convert to `rejected` and roll back automatically.
+- Optional AbsorptionDelta identity and single-step rollback: see [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) (non-normative).
 
 ## Comparison experiment (tool-call timeout / failure recovery)
 
