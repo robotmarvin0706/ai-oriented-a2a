@@ -141,3 +141,5 @@ These requirements apply to hosts running the §5 comparison; they do not change
 3. Isolation parameters are declared by the implementation (`N`, regression threshold, rollback action) and MUST be written into `effect_summary`, including whether rollback was triggered.
 
 Host-side absorption-loop and metric practice for this experiment is described in [IMPLEMENTATION.md](IMPLEMENTATION.md) (non-normative).
+
+Optional host-local AbsorptionDelta identity and single-step rollback are described in [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) (non-normative).

@@ -33,6 +33,7 @@ v0.1 parsers still parse core messages (Profile, Experience Packet, negotiation 
 | [schema/](schema/) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
 | [examples/](examples/) | Concrete messages (Profile, packets, negotiation, absorption results, v0.2 optionals) |
 | [IMPLEMENTATION.md](IMPLEMENTATION.md) | Non-normative dual-endpoint implementation notes |
+| [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) | Non-normative absorption delta identity and single-step rollback |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 
