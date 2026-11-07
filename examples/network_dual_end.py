@@ -5,14 +5,17 @@ Minimal network dual-endpoint reference (non-normative).
 Two processes exchange Agent Profile, Experience Packet, Absorption Result
 over HTTP using only the Python standard library.
 
-For supported absorption methods the receiver now runs the local regression +
+For supported absorption methods the receiver runs the local regression +
 isolation N path from minimal_dual_end.Receiver.absorb (experiment-path hard
 gate). Unsupported methods are rejected explicitly. effect_summary remains
-OPTIONAL on the wire; the experiment path still requires a compliant summary
-or converts to rejected + rollback.
+OPTIONAL on the wire.
 
-Optional signature (HMAC-SHA256) via --sign-key. Does not change wire shapes
-required by SPEC.md; signature is an optional top-level field.
+Optional signature (HMAC-SHA256) via --sign-key.
+Optional replay protection: messages MAY carry nonce (opaque) + timestamp
+(unix seconds). Receivers keep a short sliding window of seen nonces and
+reject duplicates or messages outside the window with reason replay_or_stale.
+
+Does not change wire shapes required by SPEC.md.
 
 Usage:
   # Terminal 1 (receiver)
@@ -36,13 +39,14 @@ import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set, Tuple
 
-# Reuse the absorption loop from the in-process reference.
 _EXAMPLES = Path(__file__).resolve().parent
 if str(_EXAMPLES) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES))
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
+
+REPLAY_WINDOW_SECONDS = 10 * 60  # 10 minutes, per SECURITY.md suggestion
 
 
 def new_id(prefix: str = "pkt") -> str:
@@ -70,6 +74,33 @@ def verify_message(msg: Dict[str, Any], key: str) -> bool:
     return hmac.compare_digest(expected, sig_obj.get("value", ""))
 
 
+def check_replay(msg: Dict[str, Any], seen: Set[Tuple[str, str]]) -> Optional[str]:
+    """Return reason string if replay/stale, else None. Mutates seen on accept."""
+    nonce = msg.get("nonce")
+    ts = msg.get("timestamp")
+    if nonce is None and ts is None:
+        return None  # optional; absence is not a violation
+    if not isinstance(nonce, str) or not nonce:
+        return "replay_or_stale: missing or empty nonce"
+    if not isinstance(ts, (int, float)):
+        return "replay_or_stale: missing or non-numeric timestamp"
+    now = time.time()
+    if abs(now - float(ts)) > REPLAY_WINDOW_SECONDS:
+        return "replay_or_stale: timestamp outside window"
+    key = (nonce, str(int(ts)))
+    if key in seen:
+        return "replay_or_stale: duplicate nonce"
+    seen.add(key)
+    # Opportunistic cleanup of old entries (demo only).
+    if len(seen) > 1000:
+        cutoff = now - REPLAY_WINDOW_SECONDS
+        # We don't store timestamps separately in this minimal set; just trim.
+        # Real impl would keep (nonce, ts) pairs with proper expiry.
+        while len(seen) > 800:
+            seen.pop()
+    return None
+
+
 def make_profile() -> Dict[str, Any]:
     return {
         "constraints": ["web_search allowed", "no parameter_delta"],
@@ -94,6 +125,8 @@ def make_packet(method: str = "prompt_injection") -> Dict[str, Any]:
             "hint": "prepend recovery instruction",
         },
         "expiry": {"condition": "after_local_absorption_or_24h"},
+        "nonce": new_id("nonce"),
+        "timestamp": int(time.time()),
     }
 
 
@@ -102,8 +135,9 @@ class A2AHandler(BaseHTTPRequestHandler):
     peer_url: Optional[str] = None
     sign_key: Optional[str] = None
     received: list = []
-    # Process-level receiver so absorption state persists across requests in the demo.
     receiver: Receiver = Receiver(isolation_n=3, regression_drop_threshold=0.10)
+    # Process-level seen nonces for the demo (per-peer would key by identity/fingerprint).
+    seen_nonces: Set[Tuple[str, str]] = set()
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.role}] {self.address_string()} - {format % args}")
@@ -126,6 +160,16 @@ class A2AHandler(BaseHTTPRequestHandler):
                 self._reply(result)
                 return
 
+        replay_reason = check_replay(msg, self.seen_nonces)
+        if replay_reason:
+            result = {
+                "packet_ref": msg.get("id") or msg.get("packet_ref") or "",
+                "status": "rejected",
+                "reason": replay_reason,
+            }
+            self._reply(result)
+            return
+
         print(f"[{self.role}] received: {json.dumps(msg, ensure_ascii=False)[:180]}...")
         self.received.append(msg)
 
@@ -142,7 +186,6 @@ class A2AHandler(BaseHTTPRequestHandler):
                     "reason": f"unsupported method: {method}",
                 }
             else:
-                # Real absorption path: local regression + isolation N + hard gate.
                 rng = random.Random(hash(msg["id"]) & 0xFFFFFFFF)
                 result = self.receiver.absorb(msg, rng)
             response = result
