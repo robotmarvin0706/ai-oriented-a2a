@@ -132,4 +132,14 @@ Rationale (capability growth):
 - Secondary: code-fix tasks (to validate transfer / migration of absorbed fixes).
 - Later: constraint-related planning (to validate negotiation).
 
+### Experiment path requirements (non-normative)
+
+These requirements apply to hosts running the §5 comparison; they do not change wire compliance for v0.2 parsers.
+
+1. After absorption, the receiver MUST run a local regression on the same failure scenario and write baseline SR and post-absorption SR into `effect_summary`. If `effect_summary` is missing or incomplete, treat the absorption as non-compliant for this experiment path: convert to `rejected` and roll back; do not keep the change.
+2. The four-arm comparison (`no_sharing` / `own_history` / `raw_trajectory` / `distilled_packet`) under a fixed budget SHOULD produce reproducible results. Record at least ΔSR and extra cost (tokens or tool calls).
+3. Isolation parameters are declared by the implementation (`N`, regression threshold, rollback action) and MUST be written into `effect_summary`, including whether rollback was triggered.
+
 Host-side absorption-loop and metric practice for this experiment is described in [IMPLEMENTATION.md](IMPLEMENTATION.md) (non-normative).
+
+Optional host-local AbsorptionDelta identity and single-step rollback are described in [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) (non-normative).
