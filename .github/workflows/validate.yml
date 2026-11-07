@@ -97,3 +97,8 @@ jobs:
           if failed:
               sys.exit(1)
           PY
+
+      - name: Run interop tests
+        run: |
+          pip install pytest jsonschema -q
+          pytest tests/interop/ -q
