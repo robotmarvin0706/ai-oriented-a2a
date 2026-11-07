@@ -46,7 +46,7 @@ Before absorption, the receiver SHOULD verify that the packet’s type and absor
 
 ## Implementation note
 
-The reference in `examples/network_dual_end.py` currently operates without signatures. An optional `--sign` flag can be added later without altering the base message shapes required by SPEC.md.
+`examples/network_dual_end.py` supports optional HMAC-SHA256 via `--sign-key` and optional `nonce` + `timestamp` replay protection (10-minute sliding window of seen nonces). Duplicate or out-of-window messages are rejected with reason `replay_or_stale` before absorption. Absence of either field is not a protocol violation. `examples/network_multi_node_demo.py` shows light interest-tag discovery across several local HTTP endpoints using the same path.
 
 ## Local logging
 
