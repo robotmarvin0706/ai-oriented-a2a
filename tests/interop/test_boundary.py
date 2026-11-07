@@ -1,6 +1,7 @@
 """Additional boundary tests (non-normative).
 
-Covers nested packet id, effect_summary presence expectations, and basic replay-like rejection notes.
+Covers nested packet id, effect_summary presence expectations, and basic rejection notes.
+Uses a local schema registry so relative $ref resolution does not require network.
 """
 
 import json
@@ -10,12 +11,28 @@ import pytest
 
 try:
     import jsonschema
+    from jsonschema import Draft202012Validator
+    from referencing import Registry, Resource
 except ImportError:
-    pytest.skip("jsonschema not installed", allow_module_level=True)
+    pytest.skip("jsonschema/referencing not installed", allow_module_level=True)
 
 REPO = Path(__file__).resolve().parents[2]
 SCHEMA_DIR = REPO / "schema"
 
+
+def _local_registry():
+    resources = []
+    for path in SCHEMA_DIR.glob("*.schema.json"):
+        contents = json.loads(path.read_text())
+        resource = Resource.from_contents(contents)
+        resources.append((path.name, resource))
+        schema_id = contents.get("$id")
+        if schema_id:
+            resources.append((schema_id, resource))
+    return Registry().with_resources(resources)
+
+
+REGISTRY = _local_registry()
 PACKET_SCHEMA = json.loads((SCHEMA_DIR / "experience-packet.schema.json").read_text())
 RESULT_SCHEMA = json.loads((SCHEMA_DIR / "absorption-result.schema.json").read_text())
 NEG_SCHEMA = json.loads((SCHEMA_DIR / "negotiation.schema.json").read_text())
@@ -34,7 +51,8 @@ def test_nested_packet_has_own_id():
         "proposed_change": "allow backoff",
         "offered_packet": nested,
     }
-    jsonschema.validate(propose, NEG_SCHEMA)
+    validator = Draft202012Validator(NEG_SCHEMA, registry=REGISTRY)
+    validator.validate(propose)
     assert propose["offered_packet"]["id"] == "pkt-nested-1"
 
 
@@ -47,7 +65,7 @@ def test_effect_summary_optional_but_structured_when_present():
             "metrics": {"baseline_sr": 0.5, "regression_sr": 0.8},
         },
     }
-    jsonschema.validate(result, RESULT_SCHEMA)
+    Draft202012Validator(RESULT_SCHEMA, registry=REGISTRY).validate(result)
 
 
 def test_rejected_requires_reason_in_practice():
@@ -56,10 +74,10 @@ def test_rejected_requires_reason_in_practice():
         "status": "rejected",
         "reason": "unsupported method: parameter_delta",
     }
-    jsonschema.validate(result, RESULT_SCHEMA)
+    Draft202012Validator(RESULT_SCHEMA, registry=REGISTRY).validate(result)
     assert "reason" in result
 
 
 def test_missing_effect_summary_still_valid_schema():
     result = {"packet_ref": "pkt-1", "status": "absorbed"}
-    jsonschema.validate(result, RESULT_SCHEMA)  # optional in wire
+    Draft202012Validator(RESULT_SCHEMA, registry=REGISTRY).validate(result)  # optional in wire
