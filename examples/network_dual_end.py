@@ -5,6 +5,12 @@ Minimal network dual-endpoint reference (non-normative).
 Two processes exchange Agent Profile, Experience Packet, Absorption Result
 over HTTP using only the Python standard library.
 
+For supported absorption methods the receiver now runs the local regression +
+isolation N path from minimal_dual_end.Receiver.absorb (experiment-path hard
+gate). Unsupported methods are rejected explicitly. effect_summary remains
+OPTIONAL on the wire; the experiment path still requires a compliant summary
+or converts to rejected + rollback.
+
 Optional signature (HMAC-SHA256) via --sign-key. Does not change wire shapes
 required by SPEC.md; signature is an optional top-level field.
 
@@ -22,14 +28,21 @@ import argparse
 import hashlib
 import hmac
 import json
+import random
+import sys
 import threading
 import time
 import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from typing import Any, Dict, Optional
 
-MUST_METHODS = {"prompt_injection", "retrieval"}
+# Reuse the absorption loop from the in-process reference.
+_EXAMPLES = Path(__file__).resolve().parent
+if str(_EXAMPLES) not in sys.path:
+    sys.path.insert(0, str(_EXAMPLES))
+from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
 
 def new_id(prefix: str = "pkt") -> str:
@@ -84,26 +97,13 @@ def make_packet(method: str = "prompt_injection") -> Dict[str, Any]:
     }
 
 
-def make_absorption_result(packet_id: str, status: str = "absorbed", reason: Optional[str] = None) -> Dict[str, Any]:
-    result = {
-        "packet_ref": packet_id,
-        "status": status,
-    }
-    if reason:
-        result["reason"] = reason
-    if status == "absorbed":
-        result["effect_summary"] = {
-            "note": "network dual-end demo absorption",
-            "metrics": {"baseline_sr": 0.6, "regression_sr": 0.85, "declared_N": 3},
-        }
-    return result
-
-
 class A2AHandler(BaseHTTPRequestHandler):
     role: str = "receiver"
     peer_url: Optional[str] = None
     sign_key: Optional[str] = None
     received: list = []
+    # Process-level receiver so absorption state persists across requests in the demo.
+    receiver: Receiver = Receiver(isolation_n=3, regression_drop_threshold=0.10)
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.role}] {self.address_string()} - {format % args}")
@@ -136,9 +136,15 @@ class A2AHandler(BaseHTTPRequestHandler):
         elif "id" in msg and "absorption" in msg:
             method = msg.get("absorption", {}).get("method")
             if method not in MUST_METHODS and method not in ("local_adapter_hint", "trajectory_replay"):
-                result = make_absorption_result(msg["id"], "rejected", f"unsupported method: {method}")
+                result = {
+                    "packet_ref": msg["id"],
+                    "status": "rejected",
+                    "reason": f"unsupported method: {method}",
+                }
             else:
-                result = make_absorption_result(msg["id"], "absorbed")
+                # Real absorption path: local regression + isolation N + hard gate.
+                rng = random.Random(hash(msg["id"]) & 0xFFFFFFFF)
+                result = self.receiver.absorb(msg, rng)
             response = result
             if self.role == "receiver" and self.peer_url:
                 threading.Thread(target=self._post_to_peer, args=(result,), daemon=True).start()
