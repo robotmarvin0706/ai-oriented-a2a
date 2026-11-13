@@ -2,6 +2,8 @@
 
 This document does not change wire requirements in SPEC.md. It records minimal practices that reduce the cost of accepting external Experience Packets while preserving peer autonomy. The HTTP binding and error responses (HTTP 200 + a valid Absorption Result for signature, replay, unknown-version, and hard-gate failures) are in [TRANSPORT.md](TRANSPORT.md). Version and unknown-field rules are in [VERSIONING.md](VERSIONING.md).
 
+Receivers MUST check the `version` field before full schema validation. An unknown version returns a valid Absorption Result (`status=rejected`, a `reason` containing `unsupported_version`, HTTP 200 on the HTTP binding), not a schema rejection. See [TRANSPORT.md](TRANSPORT.md#version-check-before-schema-validation).
+
 ## Threat model (minimal)
 
 - Message forgery or tampering: an unauthenticated peer can inject a packet that alters local policy.

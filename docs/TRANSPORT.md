@@ -1,6 +1,6 @@
 # A2A Transport Contract
 
-This document describes the HTTP binding used by `examples/network_dual_end.py`, aligned with [SECURITY.md](SECURITY.md) and the Absorption Result hard gate in [SPEC.md](../SPEC.md) §3.1. It introduces no new mandatory dependencies. The HTTP binding is **not** mandatory: other transports (gRPC, message queues, and similar) are allowed as long as they preserve the same JSON message shapes.
+This document describes the HTTP binding used by the demo server `examples/network_dual_end.py`, aligned with [SECURITY.md](SECURITY.md) and the Absorption Result hard gate in [SPEC.md](../SPEC.md) §3.1. Protocol helpers (canonical JSON, optional HMAC, optional replay window, version rejection, and legal rejected Absorption Results) live in the installable `ai_oriented_a2a` package; the example imports them and remains the HTTP server demo. It introduces no new mandatory dependencies. The HTTP binding is **not** mandatory: other transports (gRPC, message queues, and similar) are allowed as long as they preserve the same JSON message shapes.
 
 Optional security fields (`nonce`, `timestamp`, `signature`) and the OPTIONAL on-wire `version` field are declared in the published schemas (`additionalProperties` remains `false`), so strict schema validation of messages that carry them can pass. Messages that omit them remain valid.
 
@@ -58,7 +58,7 @@ Canonical form for `signature.value` (HMAC-SHA256 in the reference implementatio
 
 Receivers MUST inspect the `version` field **before** performing full schema validation of the message. An unknown version (including a leading `v`, for example `"v0.3"`, and any value the receiver does not implement) MUST return HTTP 200 and a valid Absorption Result with `status=rejected` and a `reason` containing `unsupported_version`. The receiver MUST NOT first reject the message solely because it fails the schema `version` pattern (which would typically surface as a schema error rather than an Absorption Result). If the field is omitted, the receiver treats the message as the current normative version and MAY then apply full schema validation.
 
-The reference implementation (`examples/network_dual_end.py`) already calls `version_rejection` immediately after JSON parsing, before signature and replay checks, and does not run a full schema validator on the request. See also [VERSIONING.md](VERSIONING.md).
+The installable library implements this order in `ai_oriented_a2a.check_incoming` (and `ai_oriented_a2a.version_rejection`). Receivers that use the optional `validate()` helper MUST call `check_incoming` or `version_rejection` first: `validate()` runs full schema validation and will raise `jsonschema.ValidationError` on an unknown version such as `"v0.3"` because the value fails the schema `version` pattern. The demo HTTP server (`examples/network_dual_end.py`) calls `version_rejection` immediately after JSON parsing, before signature and replay checks, and does not run a full schema validator on the request. See also [VERSIONING.md](VERSIONING.md).
 
 ## Response shape
 
@@ -162,7 +162,7 @@ Examples:
 
 ## Timeouts and retries (SHOULD)
 
-- Recommended client timeout is at least 30 seconds (absorption MAY include local regression). A library SHOULD use a timeout of at least 30 seconds. The reference implementation (`examples/network_dual_end.py`) uses 30 seconds for both `send_message` and a pushed result.
+- Recommended client timeout is at least 30 seconds (absorption MAY include local regression). A library SHOULD use a timeout of at least 30 seconds. The demo HTTP server (`examples/network_dual_end.py`) uses 30 seconds for both `send_message` and a pushed result.
 - Retryable: network failures, `5xx`, timeouts.
 - Non-retryable: other `4xx` (except `408` and `429`), hard-gate violations, and an explicit Absorption Result with `status=rejected`.
 - On retry, if replay protection is enabled, the client SHOULD use a **fresh** `nonce` (and a current `timestamp`). Reusing a nonce is itself rejected as `replay_or_stale`.
@@ -170,16 +170,22 @@ Examples:
 ## Other
 
 - Failure responses MUST return a parseable JSON error object, preferably a well-formed Absorption Result with `status=rejected` or `isolated`, so peers can distinguish “peer rejection” from “transport failure”. Missing fields, empty-string `packet_ref`, and HTML error bodies MUST NOT be used for the application-level failures listed above, and MUST NOT be used for the invalid-JSON path either.
-- This contract is based on the existing behavior of `examples/network_dual_end.py` and [SECURITY.md](SECURITY.md).
+- This HTTP contract is based on the existing behavior of the demo server `examples/network_dual_end.py` and [SECURITY.md](SECURITY.md). Protocol helpers live in the `ai_oriented_a2a` package.
 
 ## First-edition minimal library boundary
 
-In scope for the first-edition library (the reference path in `examples/network_dual_end.py`):
+The first-edition installable library is the `ai_oriented_a2a` package (`pip install .`). Core helpers include `canonical`, `sign_message`, `verify_message`, `check_replay`, `version_rejection`, `reject_result`, `packet_ref_of`, and the combined entry point `check_incoming(msg, sign_key=None, replay_window=None, seen=None)`. Signature verification and the replay window stay off unless the corresponding argument is passed. There is no HTTP server and no central component in the package.
 
-- HTTP binding: `POST /a2a/message`
+`examples/network_dual_end.py` remains the demo HTTP server: it imports those helpers and implements `POST /a2a/message`.
+
+In scope for the first-edition library:
+
+- Version check before any further processing (`version_rejection` / `check_incoming`)
 - Absorption hard gate (`status=absorbed` requires a non-empty `effect_summary.note`)
-- Legal error responses: a valid Absorption Result that always carries a non-empty `packet_ref` and a `reason` on the failure modes above
-- Optional HMAC-SHA256 verification and optional replay window, each enabled only when the corresponding parameter is passed
+- Legal error responses: a valid Absorption Result that always carries a non-empty `packet_ref` and a `reason` on the failure modes above, via `check_incoming` / `reject_result`
+- Optional HMAC-SHA256 verification and optional replay window, each enabled only when the corresponding parameter is passed (`canonical`, `sign_message`, `verify_message`, `check_replay`)
+
+The HTTP binding itself (`POST /a2a/message`, status codes, timeouts) is specified in this document and demonstrated by `examples/network_dual_end.py`; it is not shipped as a server in the package.
 
 Out of scope for the first edition (documentation first; implementation later):
 
