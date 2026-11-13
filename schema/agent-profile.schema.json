@@ -31,12 +31,13 @@
     },
     "identity": {
       "type": "object",
+      "required": ["fingerprint"],
       "properties": {
         "fingerprint": { "type": "string", "minLength": 1 },
         "alg": { "type": "string" }
       },
       "additionalProperties": false,
-      "description": "Optional identity binding (public-key fingerprint or opaque identifier)."
+      "description": "Optional identity binding (public-key fingerprint or opaque identifier). When present, fingerprint is required."
     }
   },
   "additionalProperties": false
