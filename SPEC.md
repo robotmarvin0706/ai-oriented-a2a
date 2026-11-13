@@ -104,7 +104,7 @@ After receiving an Experience Packet (standalone or inside a negotiation message
 Fields:
 - packet_ref: identifier referencing the received packet (equals the packet's `id`, or the reserved literal `unknown` on early failures with no usable id; see Identifiers and References). MUST.
 - status: `absorbed` | `rejected` | `isolated`. MUST.
-- reason: short string. MUST when `status` is `rejected` or `isolated`. OPTIONAL otherwise. SHOULD be non-empty when present.
+- reason: short string. MUST when `status` is `rejected` or `isolated`. OPTIONAL otherwise. When present, it MUST be non-empty and MUST NOT be whitespace-only (the schema enforces this with the same pattern as `note`).
 - effect_summary: object. MUST when `status` is `absorbed`. OPTIONAL when `status` is `rejected` or `isolated`.
   - note: string. MUST be present and non-empty whenever `effect_summary` is present. Implementations SHOULD reject whitespace-only notes.
   - metrics (OPTIONAL object): optional metric hints whose values are numbers, strings, or booleans. Recommended keys include `baseline_sr`, `regression_sr`, and `declared_N`. These keys are NOT required on the wire. When metrics are present they SHOULD be placed in this object, not as ad-hoc top-level fields of `effect_summary`. Experiment-path practice for these keys is described in §5.
