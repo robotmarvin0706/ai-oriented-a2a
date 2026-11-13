@@ -19,6 +19,7 @@ Each message type (Agent Profile, Experience Packet, negotiation, Absorption Res
 - Any other value that fails the pattern is an unknown version.
 - A value that matches the pattern but is not a version this receiver implements (for example `"0.4"` or `"0.2"`) is also an unknown version.
 - On an unknown version the receiver MUST reject the entire message and return a `reason` containing `unsupported_version` (for example `unsupported_version: received 0.4` or `unsupported_version: received v0.3`). The receiver MUST NOT isolate the message, silently downgrade, or mark it as `absorbed`.
+- This version check MUST happen before full schema validation. An unknown version, including `"v0.3"`, MUST still produce a valid Absorption Result (`status=rejected`, `reason` containing `unsupported_version`, HTTP 200 on the HTTP binding) rather than failing first as a schema-pattern error. See [TRANSPORT.md](TRANSPORT.md#version-check-before-schema-validation).
 - If the field is omitted, the receiver MUST treat the message as the current normative version (v0.3) and continue processing.
 - There is still no request-wrapper object such as `{ "version", "packet", ... }`; `version` sits on the message itself. See [TRANSPORT.md](TRANSPORT.md).
 
