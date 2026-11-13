@@ -105,5 +105,6 @@ jobs:
 
       - name: Run interop tests
         run: |
-          pip install pytest jsonschema -q
+          pip install -e ".[schema]" pytest -q
+          python3 -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"
           pytest tests/interop/ -q

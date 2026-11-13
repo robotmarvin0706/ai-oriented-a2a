@@ -4,6 +4,8 @@ This document does not add wire fields beyond `SPEC.md`. The v0.3 wire hard gate
 
 The first-edition minimal library boundary (HTTP binding, hard gate, legal error responses, optional HMAC and replay window; no redaction or provenance implementation) is recorded in [docs/TRANSPORT.md](docs/TRANSPORT.md).
 
+A minimal installable library lives in [`ai_oriented_a2a/`](ai_oriented_a2a/). It packages the stdlib helpers used by [`examples/network_dual_end.py`](examples/network_dual_end.py) (canonical JSON, optional HMAC, optional replay window, version rejection, legal rejected Absorption Results). Install with `pip install .` (add `[schema]` for optional JSON Schema validation). Signature and replay checks stay off unless the caller passes `sign_key` or `replay_window`. The HTTP server itself remains in the example, not in the package. There are no required third-party dependencies and no central components.
+
 ## Priority path
 
 Prefer a measurable absorption loop and fixed-budget comparison over expanding Schema or discovery first.
