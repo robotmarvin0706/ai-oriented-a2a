@@ -10,7 +10,7 @@ The project prioritizes practical implementation and landability. This document 
 
 ## Checklist
 
-| Priority | Item | Current Status (v0.2) | Suggested Action | Paper Value |
+| Priority | Item | Current Status (v0.3) | Suggested Action | Paper Value |
 |----------|------|-----------------------|------------------|-------------|
 | High | Quantifiable metrics | Net ΔSR skeleton exists | Keep result logs for key versions | Core claim support |
 | High | Toggleable modules | Protocol is modular | Make Experience Packet / negotiation / absorption configurable | Ablation foundation |

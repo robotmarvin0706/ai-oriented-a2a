@@ -58,6 +58,22 @@
         "replay_hint": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Optional on-wire protocol version. Canonical value is \"0.3\". Values with a leading v (e.g. \"v0.3\") are treated as unknown and MUST be rejected."
+    },
+    "nonce": { "type": "string", "minLength": 1 },
+    "timestamp": { "oneOf": [{ "type": "number" }, { "type": "string", "minLength": 1 }] },
+    "signature": {
+      "type": "object",
+      "required": ["alg", "value"],
+      "properties": {
+        "alg": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

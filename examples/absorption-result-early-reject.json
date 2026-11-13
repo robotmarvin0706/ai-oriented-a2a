@@ -1,0 +1,5 @@
+{
+  "packet_ref": "unknown",
+  "status": "rejected",
+  "reason": "unsupported_version: received 0.4"
+}

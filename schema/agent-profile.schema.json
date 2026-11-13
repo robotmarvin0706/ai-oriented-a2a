@@ -12,6 +12,31 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "Optional light broadcast interest tags for discovery; peers MAY ignore unknown tags."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Optional on-wire protocol version. Canonical value is \"0.3\". Values with a leading v (e.g. \"v0.3\") are treated as unknown and MUST be rejected."
+    },
+    "nonce": { "type": "string", "minLength": 1 },
+    "timestamp": { "oneOf": [{ "type": "number" }, { "type": "string", "minLength": 1 }] },
+    "signature": {
+      "type": "object",
+      "required": ["alg", "value"],
+      "properties": {
+        "alg": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "alg": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "description": "Optional identity binding (public-key fingerprint or opaque identifier)."
     }
   },
   "additionalProperties": false

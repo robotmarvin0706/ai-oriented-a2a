@@ -1,6 +1,6 @@
 # Security Recommendations (non-normative)
 
-This document does not change wire requirements in SPEC.md. It records minimal practices that reduce the cost of accepting external Experience Packets while preserving peer autonomy. The HTTP binding and recommended error codes are in [TRANSPORT.md](TRANSPORT.md). Version and unknown-field rules are in [VERSIONING.md](VERSIONING.md).
+This document does not change wire requirements in SPEC.md. It records minimal practices that reduce the cost of accepting external Experience Packets while preserving peer autonomy. The HTTP binding and error responses (HTTP 200 + a valid Absorption Result for signature, replay, unknown-version, and hard-gate failures) are in [TRANSPORT.md](TRANSPORT.md). Version and unknown-field rules are in [VERSIONING.md](VERSIONING.md).
 
 ## Threat model (minimal)
 
@@ -17,11 +17,13 @@ No central registry or mandatory human mediation is assumed. Receivers remain fr
 Prefer an optional signature over the canonical JSON of the message body.
 - Recommended: Ed25519 or HMAC-SHA256.
 - Signature covers the entire payload except the signature field itself.
+- The reference implementation's canonical form is the UTF-8 encoding of `json.dumps(body, separators=(",", ":"), sort_keys=True, ensure_ascii=False)`, where `body` excludes `signature`. This is a concrete, testable choice; `ensure_ascii=False` differs from Python's `json.dumps` default.
 - Receivers that do not implement verification MAY ignore the field; they SHOULD log the absence when accepting packets from unknown peers.
+- The `signature` object (`alg`, `value`) is OPTIONAL in the published schemas, as are `nonce` and `timestamp`.
 
 ### Identity binding
 Agent Profile MAY include an optional `identity` object containing a public-key fingerprint or opaque identifier.
-- Not required for v0.2 compliance.
+- Not required for v0.3 compliance. The field is OPTIONAL in `schema/agent-profile.schema.json`.
 - When present, receivers can bind subsequent packets from the same peer to the same identity for local accounting.
 
 ### Replay window
@@ -46,7 +48,7 @@ Before absorption, the receiver SHOULD verify that the packet’s type and absor
 
 ## Implementation note
 
-`examples/network_dual_end.py` supports optional HMAC-SHA256 via `--sign-key` and optional `nonce` + `timestamp` replay protection (10-minute sliding window of seen nonces). Duplicate or out-of-window messages are rejected with reason `replay_or_stale` before absorption. Absence of either field is not a protocol violation. `examples/network_multi_node_demo.py` shows light interest-tag discovery across several local HTTP endpoints using the same path.
+`examples/network_dual_end.py` supports optional HMAC-SHA256 via `--sign-key` (passing a key enables verification) and optional replay protection via `--replay-window SECONDS` (passing a window enables the check). The two flags are independent; the default (neither passed) leaves both off. When the window is enabled, `timestamp` MAY be Unix seconds or an ISO-8601 string; duplicate or out-of-window messages are rejected with reason `replay_or_stale` before absorption. Absence of either field is not a protocol violation. Failures return HTTP 200 and a valid Absorption Result (non-empty `packet_ref`, including the reserved literal `unknown` when the request has no id). `examples/network_multi_node_demo.py` shows light interest-tag discovery across several local HTTP endpoints using the same path.
 
 ## Local logging
 
