@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-oriented-a2a"
+dynamic = ["version"]
+description = "Minimal stdlib helpers for the AI-oriented A2A peer protocol (Experience Packets, optional HMAC and replay checks)."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [{ name = "robotmarvin0706" }]
+keywords = [
+    "a2a",
+    "experience-packet",
+    "absorption",
+    "peer-protocol",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+schema = ["jsonschema>=4.18"]
+
+[project.urls]
+Homepage = "https://github.com/robotmarvin0706/ai-oriented-a2a"
+Issues = "https://github.com/robotmarvin0706/ai-oriented-a2a/issues"
+Release = "https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.0"
+
+[tool.hatch.version]
+path = "ai_oriented_a2a/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ai_oriented_a2a",
+    "/schema",
+    "/README.md",
+    "/LICENSE",
+    "/SPEC.md",
+    "/pyproject.toml",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["ai_oriented_a2a"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"schema" = "ai_oriented_a2a/schema"
