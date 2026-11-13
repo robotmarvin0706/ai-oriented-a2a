@@ -5,6 +5,10 @@ Minimal network dual-endpoint reference (non-normative).
 Two processes exchange Agent Profile, Experience Packet, Absorption Result
 over HTTP using only the Python standard library.
 
+Core helpers (canonical JSON, HMAC, replay window, version rejection,
+legal rejected Absorption Results) live in the installable package
+``ai_oriented_a2a``. This file remains the HTTP dual-endpoint demo.
+
 For supported absorption methods the receiver runs the local regression +
 isolation N path from minimal_dual_end.Receiver.absorb (experiment-path gate,
 stricter than the v0.3 wire hard gate). Unsupported methods are rejected
@@ -49,170 +53,43 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import hashlib
-import hmac
 import json
 import random
-import re
 import sys
 import threading
 import time
 import urllib.request
-import uuid
-from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any, Dict, Optional, Set, Tuple
 
 _EXAMPLES = Path(__file__).resolve().parent
+_REPO = _EXAMPLES.parent
+# Allow `python3 examples/network_dual_end.py` without installing the package.
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
 if str(_EXAMPLES) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES))
+from ai_oriented_a2a import (  # noqa: E402
+    RESERVED_PACKET_REF,
+    SUPPORTED_MAJOR_MINOR,
+    VERSION_PATTERN,
+    canonical,
+    check_incoming,
+    check_replay,
+    new_id,
+    packet_ref_of,
+    parse_timestamp,
+    reject_result,
+    sign_message,
+    supported_version,
+    verify_message,
+    version_rejection,
+)
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
 DEFAULT_REPLAY_WINDOW_SECONDS = 10 * 60  # 10 minutes, per SECURITY.md suggestion
 CLIENT_TIMEOUT_SECONDS = 30  # TRANSPORT.md: library SHOULD use >= 30s
-RESERVED_PACKET_REF = "unknown"
-VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?$")
-SUPPORTED_MAJOR_MINOR = (0, 3)
-
-
-def new_id(prefix: str = "pkt") -> str:
-    return f"{prefix}-{uuid.uuid4().hex[:8]}"
-
-
-def canonical(obj: Dict[str, Any]) -> bytes:
-    """Return canonical JSON bytes used for HMAC-SHA256 signatures.
-
-    The canonical form is the UTF-8 encoding of
-    ``json.dumps(obj, separators=(",", ":"), sort_keys=True, ensure_ascii=False)``.
-    The caller MUST pass an object that already excludes the ``signature``
-    field; other fields (including ``version``, ``nonce``, and ``timestamp``)
-    are included. ``sort_keys=True`` applies recursively. Integer Unix
-    seconds are recommended for ``timestamp`` so float formatting does not
-    affect the digest.
-    """
-    return json.dumps(
-        obj, separators=(",", ":"), sort_keys=True, ensure_ascii=False
-    ).encode("utf-8")
-
-
-def sign_message(msg: Dict[str, Any], key: str) -> Dict[str, Any]:
-    body = {k: v for k, v in msg.items() if k != "signature"}
-    sig = hmac.new(key.encode(), canonical(body), hashlib.sha256).hexdigest()
-    out = dict(msg)
-    out["signature"] = {"alg": "hmac-sha256", "value": sig}
-    return out
-
-
-def verify_message(msg: Dict[str, Any], key: str) -> bool:
-    sig_obj = msg.get("signature")
-    if not isinstance(sig_obj, dict) or sig_obj.get("alg") != "hmac-sha256":
-        return False
-    body = {k: v for k, v in msg.items() if k != "signature"}
-    expected = hmac.new(key.encode(), canonical(body), hashlib.sha256).hexdigest()
-    value = sig_obj.get("value", "")
-    if not isinstance(value, str):
-        return False
-    return hmac.compare_digest(expected, value)
-
-
-def packet_ref_of(msg: Optional[Dict[str, Any]]) -> str:
-    """Usable packet_ref for an Absorption Result, or the reserved literal."""
-    if not msg:
-        return RESERVED_PACKET_REF
-    for key in ("id", "packet_ref"):
-        val = msg.get(key)
-        if isinstance(val, str) and val.strip():
-            return val
-    return RESERVED_PACKET_REF
-
-
-def reject_result(msg: Optional[Dict[str, Any]], reason: str) -> Dict[str, Any]:
-    return {
-        "packet_ref": packet_ref_of(msg),
-        "status": "rejected",
-        "reason": reason,
-    }
-
-
-def parse_timestamp(ts: Any) -> Optional[float]:
-    """Parse a unix-seconds number or an ISO-8601 string into epoch seconds.
-
-    Naive (no timezone) strings are treated as UTC. A trailing ``Z`` is
-    accepted. Returns None if the value cannot be parsed.
-    """
-    if isinstance(ts, bool):
-        return None
-    if isinstance(ts, (int, float)):
-        return float(ts)
-    if isinstance(ts, str) and ts.strip():
-        text = ts.strip()
-        if text.endswith("Z"):
-            text = text[:-1] + "+00:00"
-        try:
-            dt = datetime.fromisoformat(text)
-        except ValueError:
-            return None
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.timestamp()
-    return None
-
-
-def supported_version(value: str) -> bool:
-    """True if an on-wire version string is the current 0.3 minor line."""
-    if not VERSION_PATTERN.match(value):
-        return False
-    parts = value.split(".")
-    return (int(parts[0]), int(parts[1])) == SUPPORTED_MAJOR_MINOR
-
-
-def version_rejection(msg: Dict[str, Any]) -> Optional[str]:
-    """Return an unsupported_version reason, or None if the message is fine.
-
-    Omitted version is treated as the current normative version (0.3).
-    A leading ``v`` or any other pattern failure, and any recognized-pattern
-    value that is not the 0.3 line, MUST be rejected.
-    """
-    if "version" not in msg:
-        return None
-    raw = msg["version"]
-    display = raw if isinstance(raw, str) else repr(raw)
-    if not isinstance(raw, str) or not supported_version(raw):
-        return f"unsupported_version: received {display}"
-    return None
-
-
-def check_replay(
-    msg: Dict[str, Any],
-    seen: Set[Tuple[str, str]],
-    window_seconds: float,
-) -> Optional[str]:
-    """Return reason string if replay/stale, else None. Mutates seen on accept.
-
-    Called only when a replay window has been enabled.
-    Both nonce and timestamp are required when the window is on.
-    """
-    nonce = msg.get("nonce")
-    ts = msg.get("timestamp")
-    if nonce is None or ts is None:
-        return "replay_or_stale: nonce and timestamp required when replay window is enabled"
-    if not isinstance(nonce, str) or not nonce:
-        return "replay_or_stale: missing or empty nonce"
-    parsed = parse_timestamp(ts)
-    if parsed is None:
-        return "replay_or_stale: missing or unparsable timestamp"
-    now = time.time()
-    if abs(now - parsed) > window_seconds:
-        return "replay_or_stale: timestamp outside window"
-    key = (nonce, str(int(parsed)))
-    if key in seen:
-        return "replay_or_stale: duplicate nonce"
-    seen.add(key)
-    if len(seen) > 1000:
-        while len(seen) > 800:
-            seen.pop()
-    return None
 
 
 def make_profile() -> Dict[str, Any]:
@@ -283,21 +160,15 @@ class A2AHandler(BaseHTTPRequestHandler):
             self._reply(reject_result(None, "invalid json"), status=400)
             return
 
-        version_reason = version_rejection(msg)
-        if version_reason:
-            self._reply(reject_result(msg, version_reason))
+        rejected = check_incoming(
+            msg,
+            sign_key=self.sign_key,
+            replay_window=self.replay_window,
+            seen=self.seen_nonces,
+        )
+        if rejected:
+            self._reply(rejected)
             return
-
-        if self.sign_key:
-            if not verify_message(msg, self.sign_key):
-                self._reply(reject_result(msg, "signature verification failed"))
-                return
-
-        if self.replay_window is not None:
-            replay_reason = check_replay(msg, self.seen_nonces, self.replay_window)
-            if replay_reason:
-                self._reply(reject_result(msg, replay_reason))
-                return
 
         print(f"[{self.role}] received: {json.dumps(msg, ensure_ascii=False)[:180]}...")
         self.received.append(msg)
