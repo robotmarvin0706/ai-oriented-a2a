@@ -1,6 +1,6 @@
 """Additional boundary tests (non-normative).
 
-Covers nested packet id, effect_summary presence expectations, and basic rejection notes.
+Covers nested packet id, effect_summary structure, the absorbed hard gate, and basic rejection notes.
 Uses a local schema registry so relative $ref resolution does not require network.
 """
 
@@ -56,7 +56,7 @@ def test_nested_packet_has_own_id():
     assert propose["offered_packet"]["id"] == "pkt-nested-1"
 
 
-def test_effect_summary_optional_but_structured_when_present():
+def test_effect_summary_structured_when_present():
     result = {
         "packet_ref": "pkt-1",
         "status": "absorbed",
@@ -78,6 +78,8 @@ def test_rejected_requires_reason_in_practice():
     assert "reason" in result
 
 
-def test_missing_effect_summary_still_valid_schema():
+def test_absorbed_missing_effect_summary_is_invalid_schema():
+    """SPEC §3.1 hard gate: absorbed without effect_summary is a protocol violation."""
     result = {"packet_ref": "pkt-1", "status": "absorbed"}
-    Draft202012Validator(RESULT_SCHEMA, registry=REGISTRY).validate(result)  # optional in wire
+    with pytest.raises(jsonschema.ValidationError):
+        Draft202012Validator(RESULT_SCHEMA, registry=REGISTRY).validate(result)

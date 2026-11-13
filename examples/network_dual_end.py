@@ -6,16 +6,19 @@ Two processes exchange Agent Profile, Experience Packet, Absorption Result
 over HTTP using only the Python standard library.
 
 For supported absorption methods the receiver runs the local regression +
-isolation N path from minimal_dual_end.Receiver.absorb (experiment-path hard
-gate). Unsupported methods are rejected explicitly. effect_summary remains
-OPTIONAL on the wire.
+isolation N path from minimal_dual_end.Receiver.absorb (experiment-path gate,
+stricter than the v0.3 wire hard gate). Unsupported methods are rejected
+explicitly. On the wire, effect_summary.note is MUST when status is absorbed
+(SPEC §3.1); full metrics remain OPTIONAL. The receiver converts a missing
+or non-compliant summary to rejected rather than emitting an invalid absorbed
+result.
 
 Optional signature (HMAC-SHA256) via --sign-key.
 Optional replay protection: messages MAY carry nonce (opaque) + timestamp
 (unix seconds). Receivers keep a short sliding window of seen nonces and
 reject duplicates or messages outside the window with reason replay_or_stale.
 
-Does not change wire shapes required by SPEC.md.
+HTTP binding details and recommended status codes: docs/TRANSPORT.md.
 
 Usage:
   # Terminal 1 (receiver)

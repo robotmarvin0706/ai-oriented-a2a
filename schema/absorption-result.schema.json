@@ -7,16 +7,16 @@
   "properties": {
     "packet_ref": { "type": "string", "minLength": 1 },
     "status": { "enum": ["absorbed", "rejected", "isolated"] },
-    "reason": { "type": "string" },
+    "reason": { "type": "string", "minLength": 1 },
     "effect_summary": {
       "type": "object",
       "required": ["note"],
       "properties": {
-        "note": { "type": "string", "minLength": 1 },
+        "note": { "type": "string", "minLength": 1, "pattern": ".*\\S.*" },
         "metrics": {
           "type": "object",
           "additionalProperties": {
-            "type": ["number", "string"]
+            "type": ["number", "string", "boolean"]
           }
         }
       },
@@ -25,7 +25,17 @@
   },
   "allOf": [
     {
-      "if": { "properties": { "status": { "enum": ["rejected", "isolated"] } } },
+      "if": {
+        "properties": { "status": { "const": "absorbed" } },
+        "required": ["status"]
+      },
+      "then": { "required": ["effect_summary"] }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["rejected", "isolated"] } },
+        "required": ["status"]
+      },
       "then": { "required": ["reason"] }
     }
   ],
