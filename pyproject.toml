@@ -37,7 +37,7 @@ schema = ["jsonschema>=4.18"]
 [project.urls]
 Homepage = "https://github.com/robotmarvin0706/ai-oriented-a2a"
 Issues = "https://github.com/robotmarvin0706/ai-oriented-a2a/issues"
-Release = "https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.0"
+Release = "https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.1"
 
 [tool.hatch.version]
 path = "ai_oriented_a2a/__init__.py"
@@ -49,6 +49,7 @@ include = [
     "/README.md",
     "/LICENSE",
     "/SPEC.md",
+    "/CHANGELOG.md",
     "/pyproject.toml",
 ]
 
