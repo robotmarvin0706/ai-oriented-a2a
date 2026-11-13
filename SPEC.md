@@ -106,7 +106,7 @@ Fields:
 - status: `absorbed` | `rejected` | `isolated`. MUST.
 - reason: short string. MUST when `status` is `rejected` or `isolated`. OPTIONAL otherwise. When present, it MUST be non-empty and MUST NOT be whitespace-only (the schema enforces this with the same pattern as `note`).
 - effect_summary: object. MUST when `status` is `absorbed`. OPTIONAL when `status` is `rejected` or `isolated`.
-  - note: string. MUST be present and non-empty whenever `effect_summary` is present. Implementations SHOULD reject whitespace-only notes.
+  - note: string. MUST be present and non-empty whenever `effect_summary` is present. It MUST NOT be whitespace-only (the schema enforces this with the pattern `.*\S.*`).
   - metrics (OPTIONAL object): optional metric hints whose values are numbers, strings, or booleans. Recommended keys include `baseline_sr`, `regression_sr`, and `declared_N`. These keys are NOT required on the wire. When metrics are present they SHOULD be placed in this object, not as ad-hoc top-level fields of `effect_summary`. Experiment-path practice for these keys is described in §5.
 
 ### Absorption result states (normative)
