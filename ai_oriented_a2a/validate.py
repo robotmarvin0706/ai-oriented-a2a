@@ -44,6 +44,19 @@ def validate(msg: Mapping[str, Any], kind: str) -> None:
     ``kind`` is one of: absorption-result, agent-profile,
     experience-packet, negotiation.
 
+    This function performs full schema validation only. It does not
+    implement the protocol version check, and its behaviour is
+    unchanged: an unknown version such as ``"v0.3"`` fails the schema
+    ``version`` pattern and raises ``jsonschema.ValidationError``. It
+    does not return a rejected Absorption Result.
+
+    Receivers MUST call ``check_incoming`` (or ``version_rejection``)
+    first and, on an unknown version, return that rejected Absorption
+    Result (``status=rejected``, ``reason`` containing
+    ``unsupported_version``). Call ``validate`` only for messages that
+    have already passed the version check. See docs/TRANSPORT.md
+    ("Version check before schema validation").
+
     Requires ``pip install 'ai-oriented-a2a[schema]'``. Raises
     ``SchemaDependencyError`` if jsonschema is not installed,
     ``ValueError`` for an unknown kind, and

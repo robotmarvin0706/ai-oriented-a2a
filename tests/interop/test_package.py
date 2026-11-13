@@ -67,8 +67,8 @@ SHARED_FUNCTIONS = (
 
 
 def test_version_and_all():
-    assert __version__ == "0.3.0"
-    assert ai_oriented_a2a.__version__ == "0.3.0"
+    assert __version__ == "0.3.1"
+    assert ai_oriented_a2a.__version__ == "0.3.1"
     assert set(__all__) == EXPECTED_EXPORTS
     for name in __all__:
         assert hasattr(ai_oriented_a2a, name)
@@ -182,3 +182,23 @@ def test_schema_dir_and_optional_validate():
         raise AssertionError("expected ValueError")
     except ValueError as exc:
         assert "Unknown schema kind" in str(exc)
+
+
+def test_validate_unknown_version_raises_schema_error():
+    """validate() does full schema validation only.
+
+    An unknown version such as "v0.3" fails the schema pattern and
+    raises jsonschema.ValidationError. It does not return a rejected
+    Absorption Result. Receivers MUST call check_incoming (or
+    version_rejection) first.
+    """
+    packet = json.loads((EXAMPLES / "experience-packet.json").read_text())
+    packet["version"] = "v0.3"
+    try:
+        validate(packet, "experience-packet")
+        raise AssertionError("expected ValidationError for version 'v0.3'")
+    except Exception as exc:
+        assert type(exc).__name__ == "ValidationError"
+        assert "v0.3" in str(exc)
+        message = getattr(exc, "message", str(exc))
+        assert "does not match" in message
