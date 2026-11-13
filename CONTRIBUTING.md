@@ -22,5 +22,7 @@ This repo needs **no** GitHub Actions secrets for the current `validate` workflo
 
 ```bash
 python3 -c "import json; json.load(open('examples/experience-packet.json')); print('ok')"
-pip install pytest jsonschema referencing -q && pytest tests/interop/ -q
+pip install -e ".[schema]" pytest referencing -q && pytest tests/interop/ -q
 ```
+
+`pip install -e .` is enough if you do not need schema tests. The package has no required dependencies; `jsonschema` is only the optional `schema` extra.
