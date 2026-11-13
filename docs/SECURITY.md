@@ -1,6 +1,6 @@
 # Security Recommendations (non-normative)
 
-This document does not change wire requirements in SPEC.md. It records minimal practices that reduce the cost of accepting external Experience Packets while preserving peer autonomy.
+This document does not change wire requirements in SPEC.md. It records minimal practices that reduce the cost of accepting external Experience Packets while preserving peer autonomy. The HTTP binding and recommended error codes are in [TRANSPORT.md](TRANSPORT.md). Version and unknown-field rules are in [VERSIONING.md](VERSIONING.md).
 
 ## Threat model (minimal)
 
@@ -32,7 +32,7 @@ Messages MAY include optional `nonce` (opaque string) and `timestamp` (ISO-8601 
 ### Absorption gate
 Even with a valid signature, the receiver MUST still run its local regression and isolation path (see IMPLEMENTATION.md).
 - A signed packet that fails the ΔSR threshold is rolled back exactly as an unsigned one.
-- Signature success does not override `effect_summary` hard-gate or declared rollback rules.
+- Signature success does not override the SPEC §3.1 `effect_summary` hard gate (`note` MUST when `status=absorbed`) or declared rollback rules.
 
 ### Constraint check
 Before absorption, the receiver SHOULD verify that the packet’s type and absorption method are permitted by its current `constraints` list.

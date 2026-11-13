@@ -1,4 +1,7 @@
 {
   "packet_ref": "pkt-experience-7f3a",
-  "status": "absorbed"
+  "status": "absorbed",
+  "effect_summary": {
+    "note": "local regression passed, SR 0.72→0.81"
+  }
 }

@@ -17,6 +17,8 @@ jobs:
           test -s SPEC.md
           test -s LICENSE
           test -s CONTRIBUTING.md
+          test -s docs/VERSIONING.md
+          test -s docs/TRANSPORT.md
 
       - name: Validate examples JSON
         run: |

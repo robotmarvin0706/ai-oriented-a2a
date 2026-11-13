@@ -30,6 +30,8 @@ def test_existing_examples_validate():
         "experience-packet-with-provenance.json": PACKET_SCHEMA,
         "absorption-result-absorbed.json": RESULT_SCHEMA,
         "absorption-result-reject.json": RESULT_SCHEMA,
+        "absorption-result-isolated.json": RESULT_SCHEMA,
+        "absorption-result-with-effect.json": RESULT_SCHEMA,
     }
     for name, schema in mapping.items():
         instance = json.loads((EXAMPLES / name).read_text())
@@ -65,6 +67,7 @@ def test_packet_ref_matches_id():
     result = {
         "packet_ref": packet_id,
         "status": "absorbed",
+        "effect_summary": {"note": "local regression passed, SR 0.72→0.81"},
     }
     jsonschema.validate(result, RESULT_SCHEMA)
     assert result["packet_ref"] == packet_id

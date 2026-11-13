@@ -1,15 +1,27 @@
-# AI-Oriented A2A Specification v0.2
+# AI-Oriented A2A Specification v0.3
 
-Keywords: experience packet, absorption, proposal_id, constraint set, improvement_prefs, peer negotiation, provenance, trajectory_replay, conditional_packet.
+Keywords: experience packet, absorption, proposal_id, constraint set, improvement_prefs, peer negotiation, provenance, trajectory_replay, conditional_packet, effect_summary.
+
+## Changes from v0.2
+
+This is a breaking change for Absorption Result messages that used `status=absorbed` without a compliant `effect_summary`. During 0.x, breaking changes are introduced with a minor bump (0.2 → 0.3). See [docs/VERSIONING.md](docs/VERSIONING.md).
+
+- Absorption hard gate (normative, §3.1): when `status` is `absorbed`, `effect_summary` with a non-empty `note` is MUST. A message that claims `absorbed` without that evidence is a protocol violation. For `rejected` and `isolated`, `effect_summary` remains OPTIONAL.
+- Detailed metric keys (`baseline_sr`, `regression_sr`, `declared_N`, and similar) remain OPTIONAL and, when present, SHOULD live in `effect_summary.metrics`. They are not required on the wire. `metrics` values MAY be numbers, strings, or booleans (a non-breaking relaxation so reference-implementation keys such as `rollback_triggered` validate).
+- `reason` remains MUST when `status` is `rejected` or `isolated` (unchanged from v0.2; this revision does not relax isolation to an optional reason).
+- Field, discovery, negotiation, and Experience Packet shapes are otherwise unchanged from v0.2.
+- Transport recommendations are recorded in [docs/TRANSPORT.md](docs/TRANSPORT.md) (non-mandatory HTTP binding).
+
+v0.2 messages with `status=absorbed` and no `effect_summary` are no longer valid. Existing v0.2 `rejected` / `isolated` examples, and absorbed examples that already carried a non-empty `note`, remain valid.
 
 ## Changes from v0.1
 
-Compatibility goal: prefer zero hard breaks. All new fields are OPTIONAL. Existing v0.1 examples MUST still validate against v0.2 schemas. v0.1 parsers can still parse core messages but cannot use the new primitives below.
+Compatibility goal of v0.2 (historical): prefer zero hard breaks. All fields added in v0.2 were OPTIONAL. Existing v0.1 examples were required to validate against v0.2 schemas. v0.1 parsers can still parse core messages but cannot use the v0.2 primitives below. The v0.3 hard gate is a subsequent, deliberate break and does **not** retroactively apply that zero-break goal to absorbed results.
 
 Added or clarified in v0.2:
 - Absorption method layering (MUST / OPTIONAL / RESERVED)
 - OPTIONAL Experience Packet fields: `provenance`, `verification_claim`
-- OPTIONAL Absorption Result field: `effect_summary`
+- OPTIONAL Absorption Result field: `effect_summary` (promoted in v0.3 to MUST when `status=absorbed`)
 - OPTIONAL negotiation propose/counter fields: `conditional_packet`, `constraint_scope`, `duration`
 - Discovery prose for light interest tags and optional peer metadata forwarding (description only; no new mandatory messages)
 - OPTIONAL Agent Profile `interest_tags`
@@ -79,18 +91,33 @@ No external coordinator required. Session state (including active proposal_id) m
 After receiving an Experience Packet (standalone or inside a negotiation message), the receiver MUST emit an Absorption Result.
 
 Fields:
-- packet_ref: identifier referencing the received packet (equals the packet's id)
-- status: absorbed | rejected | isolated
-- reason: optional short string (required when status is rejected or isolated)
-- effect_summary (OPTIONAL object): short post-absorption note and optional metric hints
-  - note: string
-  - metrics: optional object whose values are numbers or strings
+- packet_ref: identifier referencing the received packet (equals the packet's `id`). MUST.
+- status: `absorbed` | `rejected` | `isolated`. MUST.
+- reason: short string. MUST when `status` is `rejected` or `isolated`. OPTIONAL otherwise. SHOULD be non-empty when present.
+- effect_summary: object. MUST when `status` is `absorbed`. OPTIONAL when `status` is `rejected` or `isolated`.
+  - note: string. MUST be present and non-empty whenever `effect_summary` is present. Implementations SHOULD reject whitespace-only notes.
+  - metrics (OPTIONAL object): optional metric hints whose values are numbers, strings, or booleans. Recommended keys include `baseline_sr`, `regression_sr`, and `declared_N`. These keys are NOT required on the wire. When metrics are present they SHOULD be placed in this object, not as ad-hoc top-level fields of `effect_summary`. Experiment-path practice for these keys is described in §5.
 
-`effect_summary` is NOT mandatory. Implementations MUST NOT treat absence of `effect_summary` as non-compliance.
+### Absorption result states (normative)
+
+- **absorbed**: The receiver has incorporated the strategies or fragments from the packet into local capability AND can provide a compliant `effect_summary` as evidence. `effect_summary` with a non-empty `note` is MUST. A one-line `note` is sufficient (for example, "local regression passed, SR 0.72→0.81").
+- **rejected**: The receiver explicitly refuses absorption (semantic incompatibility, strategy conflict, security policy, unsupported method, failed local regression, or a hard-gate failure). A `reason` is MUST.
+- **isolated**: The receiver stores the packet but does not incorporate it into the main capability path (version mismatch, partially recognizable fields, needs further verification, and similar). A `reason` is MUST. This keeps the v0.2 requirement; this revision does not relax it.
+
+Receivers MUST support explicit rejection and isolation. Silent discard is non-compliant. A rejection or isolation MUST be reported via Absorption Result with `status` set accordingly and a `reason`.
+
+### Absorption hard gate (normative)
+
+`status=absorbed` is a verifiable capability-change signal, not an unverifiable claim.
+
+- `effect_summary` is MUST when `status` is `absorbed`, and remains OPTIONAL when `status` is `rejected` or `isolated`.
+- `effect_summary` MUST contain at least a non-empty string field `note` (a short description of the capability change or verification outcome).
+- If a peer receives a message with `status=absorbed` but `effect_summary` is missing or `note` is empty, that message is a protocol violation. The peer SHOULD treat it as `rejected` or as a transport error (see [docs/TRANSPORT.md](docs/TRANSPORT.md)). It MUST NOT treat the message as a successful absorption.
+- An emitter that detects a missing or empty `note` before sending SHOULD emit `status=rejected` with an explicit `reason` rather than sending an invalid `absorbed` result (the reference receiver in `examples/minimal_dual_end.py` does this for its experiment path, and MAY continue to require additional metric keys locally).
+- Detailed metrics remain OPTIONAL. They are not required on the wire, so lightweight peers are not excluded.
+- Unknown fields are subject to [docs/VERSIONING.md](docs/VERSIONING.md).
 
 The result is a peer message. No coordinator is required. Emission of this result closes the absorption step for that packet.
-
-Receivers MUST support explicit rejection and isolation. Silent discard is non-compliant. A rejection or isolation MUST be reported via Absorption Result with status set accordingly and a reason.
 
 ## 4. Discovery
 Minimal: direct endpoint or locally published metadata. No mandatory central registry.
@@ -100,11 +127,15 @@ v0.2 clarification (prose only; no new mandatory messages):
 - Peers MAY forward optional peer metadata they have already received (for example interest tags or a short summary) when introducing two other peers. Forwarding is description-level only; this version does not define new mandatory forwarding message types. Receivers MAY ignore unknown metadata.
 
 ## Notes
-This is the minimal implementable set. Full task lifecycle, streaming, and enterprise features are out of scope for v0.2.
+This is the minimal implementable set. Full task lifecycle, streaming, and enterprise features are out of scope for v0.3.
+
+Version compatibility and breaking-change rules: [docs/VERSIONING.md](docs/VERSIONING.md).
+
+HTTP binding and error recommendations: [docs/TRANSPORT.md](docs/TRANSPORT.md). This HTTP implementation is not mandatory; other transports are allowed if they preserve the same JSON message shapes.
 
 ## 5. Minimal dual-agent experiment priority (non-normative)
 
-This section does not change wire requirements. It records the first controlled comparison task set for a minimal two-endpoint implementation.
+This section does not add wire fields beyond §3.1. The wire-level hard gate in §3.1 (`effect_summary.note` MUST when `status=absorbed`) is normative for all v0.3 peers. The additional metric contents below remain experiment-path requirements and are not required for wire compliance.
 
 ### Priority task: tool-call timeout / failure recovery
 
@@ -134,11 +165,11 @@ Rationale (capability growth):
 
 ### Experiment path requirements (non-normative)
 
-These requirements apply to hosts running the §5 comparison; they do not change wire compliance for v0.2 parsers.
+These requirements apply to hosts running the §5 comparison.
 
-1. After absorption, the receiver MUST run a local regression on the same failure scenario and write baseline SR and post-absorption SR into `effect_summary`. If `effect_summary` is missing or incomplete, treat the absorption as non-compliant for this experiment path: convert to `rejected` and roll back; do not keep the change.
+1. After absorption, the receiver MUST run a local regression on the same failure scenario and write baseline SR and post-absorption SR into `effect_summary.metrics`. If those experiment-path metrics are missing or incomplete, treat the absorption as non-compliant for this experiment path: convert to `rejected` and roll back; do not keep the change. (A missing `note` is already a wire-level protocol violation under §3.1, independent of this experiment path.)
 2. The four-arm comparison (`no_sharing` / `own_history` / `raw_trajectory` / `distilled_packet`) under a fixed budget SHOULD produce reproducible results. Record at least ΔSR and extra cost (tokens or tool calls).
-3. Isolation parameters are declared by the implementation (`N`, regression threshold, rollback action) and MUST be written into `effect_summary`, including whether rollback was triggered.
+3. Isolation parameters are declared by the implementation (`N`, regression threshold, rollback action) and MUST be written into `effect_summary.metrics`, including whether rollback was triggered.
 
 Host-side absorption-loop and metric practice for this experiment is described in [IMPLEMENTATION.md](IMPLEMENTATION.md) (non-normative).
 

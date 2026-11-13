@@ -1,6 +1,6 @@
 # Implementation guidance (non-normative)
 
-This document does not change wire requirements in `SPEC.md`. It records preferred host-side practice for a minimal two-endpoint implementation.
+This document does not add wire fields beyond `SPEC.md`. The v0.3 wire hard gate (`effect_summary.note` MUST when `status=absorbed`) is normative in SPEC §3.1. The fuller metric practice below remains host-side experiment-path guidance.
 
 ## Priority path
 
@@ -9,7 +9,7 @@ Prefer a measurable absorption loop and fixed-budget comparison over expanding S
 ## Absorption loop
 
 - After absorption, the receiver MUST run a local regression of the same failure scenario before treating the change as kept.
-- Write baseline and outcome into `effect_summary` even though SPEC marks that field OPTIONAL. Implementations SHOULD treat recording as mandatory for this experiment path.
+- Write baseline and outcome into `effect_summary.metrics`. The `note` itself is already MUST on the wire when `status=absorbed`. Implementations SHOULD treat the metric keys as mandatory for this experiment path.
 - Support only MUST methods first (`prompt_injection`, `retrieval`). Support `trajectory_replay` only when a clear replay path exists and cost is bounded; otherwise reject with an explicit reason.
 
 ## Sender distillation
@@ -48,7 +48,7 @@ Until there is positive net ΔSR evidence, do not expand use of `conditional_pac
 
 ## Local Net ΔSR Experiment Guide (Non-normative)
 
-This section does not alter v0.2 wire-protocol requirements and does not mandate that any implementation execute the experiment. It provides a reproducible single-machine procedure for a receiver to test whether MUST absorption (`prompt_injection` or `retrieval`) yields a measurable net-positive ΔSR under a fixed token budget.
+This section does not alter wire-protocol requirements beyond SPEC §3.1 and does not mandate that any implementation execute the experiment. It provides a reproducible single-machine procedure for a receiver to test whether MUST absorption (`prompt_injection` or `retrieval`) yields a measurable net-positive ΔSR under a fixed token budget.
 
 ### Goal
 On the tool-call timeout / failure-recovery scenario, use a four-arm comparison to determine whether a distilled Experience Packet produces a net gain relative to `no_sharing` and `own_history`, with near-zero rollback cost. All thresholds and logs remain under local receiver control.
