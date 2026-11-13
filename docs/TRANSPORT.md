@@ -50,9 +50,15 @@ Example Experience Packet as posted (illustrative; required packet fields omitte
 }
 ```
 
-`version`, `nonce`, `timestamp`, and `signature` MAY all be omitted. When they are omitted and the receiver has not enabled the corresponding checks, the receiver MUST NOT reject an otherwise-valid message solely because these fields are absent.
+`version`, `nonce`, `timestamp`, and `signature` MAY all be omitted. When they are omitted and the receiver has not enabled the corresponding checks, the receiver MUST NOT reject an otherwise-valid message solely because these fields are absent. When a replay window **has** been enabled, both `nonce` and `timestamp` MUST be present and valid; missing either is a replay rejection (`reason` starts with `replay_or_stale:`).
 
 Canonical form for `signature.value` (HMAC-SHA256 in the reference implementation): UTF-8 bytes of `json.dumps(body, separators=(",", ":"), sort_keys=True, ensure_ascii=False)` where `body` is the message object with the `signature` field removed. Integer Unix seconds are recommended for `timestamp` so float formatting does not affect the digest. A complete, verifiable example (HMAC key `demo`) is `examples/experience-packet-with-security.json`.
+
+## Version check before schema validation
+
+Receivers MUST inspect the `version` field **before** performing full schema validation of the message. An unknown version (including a leading `v`, for example `"v0.3"`, and any value the receiver does not implement) MUST return HTTP 200 and a valid Absorption Result with `status=rejected` and a `reason` containing `unsupported_version`. The receiver MUST NOT first reject the message solely because it fails the schema `version` pattern (which would typically surface as a schema error rather than an Absorption Result). If the field is omitted, the receiver treats the message as the current normative version and MAY then apply full schema validation.
+
+The reference implementation (`examples/network_dual_end.py`) already calls `version_rejection` immediately after JSON parsing, before signature and replay checks, and does not run a full schema validator on the request. See also [VERSIONING.md](VERSIONING.md).
 
 ## Response shape
 
@@ -150,8 +156,8 @@ Examples:
 
 - Signature, `nonce`, and `timestamp` are all optional on the wire, and are declared in the published schemas.
 - Passing a signing key enables signature verification; passing a replay-window parameter enables replay checks. The two MAY be enabled independently. The default (neither passed) leaves both off, so old peers still work.
-- When the corresponding check **is enabled**: the receiver SHOULD verify the signature and/or the time window; failure MUST return HTTP 200 and a valid rejected Absorption Result as specified above.
-- When the corresponding check **is not enabled**: the receiver MUST NOT reject an otherwise-valid packet solely because these fields are absent, and MUST NOT apply the corresponding check even if the fields are present.
+- When the corresponding check **is enabled**: the receiver SHOULD verify the signature and/or the time window; failure MUST return HTTP 200 and a valid rejected Absorption Result as specified above. When the replay window is enabled, both `nonce` and `timestamp` MUST be present and valid; missing either is a replay rejection.
+- When the corresponding check **is not enabled**: the receiver MUST NOT reject an otherwise-valid packet solely because these fields are absent, and MUST NOT apply the corresponding check even if the fields are present. `nonce` and `timestamp` remain optional on the wire while the window is off.
 - A receiver that has chosen a local policy of “require signature” (or require nonce) has enabled that check. [SECURITY.md](SECURITY.md) allows that local policy provided the receiver still emits an explicit Absorption Result.
 
 ## Timeouts and retries (SHOULD)

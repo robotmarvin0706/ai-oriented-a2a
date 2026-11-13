@@ -12,6 +12,7 @@ Covers:
   - Early failures without an id use reserved packet_ref "unknown",
     which MUST NOT appear on a successful absorption.
   - Signing and replay are independently enabled; default leaves both off.
+    When the replay window is on, both nonce and timestamp are required.
 """
 
 from __future__ import annotations
@@ -180,6 +181,44 @@ def test_identity_optional_on_profile():
         PROFILE_V.validate(profile)
 
 
+def test_identity_empty_object_is_invalid():
+    """identity remains OPTIONAL, but when present fingerprint is required."""
+    profile = json.loads((EXAMPLES / "agent-profile.json").read_text())
+    PROFILE_V.validate(profile)
+    profile["identity"] = {}
+    with pytest.raises(jsonschema.ValidationError):
+        PROFILE_V.validate(profile)
+    profile["identity"] = {"alg": "ed25519"}
+    with pytest.raises(jsonschema.ValidationError):
+        PROFILE_V.validate(profile)
+    profile["identity"] = {"fingerprint": "sha256:abc"}
+    PROFILE_V.validate(profile)
+
+
+def test_whitespace_only_reason_is_invalid():
+    valid = {
+        "packet_ref": "pkt-1",
+        "status": "rejected",
+        "reason": "unsupported method: parameter_delta",
+    }
+    RESULT_V.validate(valid)
+    for blank in (" ", "   ", "\t", "\n", " \t "):
+        bad = {
+            "packet_ref": "pkt-1",
+            "status": "rejected",
+            "reason": blank,
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            RESULT_V.validate(bad)
+    isolated = {
+        "packet_ref": "pkt-1",
+        "status": "isolated",
+        "reason": "   ",
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        RESULT_V.validate(isolated)
+
+
 def test_negotiation_every_branch_accepts_optional_fields():
     extras = {
         "version": "0.3",
@@ -295,6 +334,30 @@ def test_packet_ref_of_and_reserved_literal():
 
 def test_client_timeout_meets_recommendation():
     assert CLIENT_TIMEOUT_SECONDS >= 30
+
+
+# ---------------------------------------------------------------------------
+# Replay window: both nonce and timestamp required when the window is on
+# ---------------------------------------------------------------------------
+
+
+def test_check_replay_requires_both_fields_when_window_enabled():
+    seen = set()
+    window = 600.0
+    assert check_replay({}, seen, window) is not None
+    assert "required" in check_replay({}, seen, window)
+    only_nonce = check_replay({"nonce": "n1"}, seen, window)
+    assert only_nonce is not None and "required" in only_nonce
+    only_ts = check_replay({"timestamp": int(time.time())}, seen, window)
+    assert only_ts is not None and "required" in only_ts
+    empty_nonce = check_replay({"nonce": "", "timestamp": int(time.time())}, seen, window)
+    assert empty_nonce is not None and "nonce" in empty_nonce
+    now = int(time.time())
+    assert check_replay({"nonce": "ok-n", "timestamp": now}, seen, window) is None
+    dup = check_replay({"nonce": "ok-n", "timestamp": now}, seen, window)
+    assert dup is not None and "duplicate" in dup
+    stale = check_replay({"nonce": "stale-n", "timestamp": now - 10_000}, seen, window)
+    assert stale is not None and "outside window" in stale
 
 
 # ---------------------------------------------------------------------------
@@ -442,6 +505,44 @@ def test_http_replay_accepts_iso8601_timestamp(start_receiver):
     assert "replay_or_stale" not in body.get("reason", "")
     status, body = _post(url, pkt)
     _assert_valid_rejection(status, body, "replay_or_stale", pkt["id"])
+
+
+def test_http_replay_window_rejects_missing_nonce_or_timestamp(start_receiver):
+    url = start_receiver(replay_window=600)
+    # both missing
+    pkt = _valid_packet()
+    assert "nonce" not in pkt and "timestamp" not in pkt
+    status, body = _post(url, pkt)
+    _assert_valid_rejection(status, body, "replay_or_stale", pkt["id"])
+    # only nonce
+    pkt_n = _valid_packet(nonce="only-n")
+    assert "timestamp" not in pkt_n
+    status, body = _post(url, pkt_n)
+    _assert_valid_rejection(status, body, "replay_or_stale", pkt_n["id"])
+    # only timestamp
+    pkt_t = _valid_packet(timestamp=int(time.time()))
+    assert "nonce" not in pkt_t
+    status, body = _post(url, pkt_t)
+    _assert_valid_rejection(status, body, "replay_or_stale", pkt_t["id"])
+    # valid pair is accepted (not a replay rejection)
+    pkt_ok = _valid_packet(nonce="both-present", timestamp=int(time.time()))
+    status, body = _post(url, pkt_ok)
+    assert status == 200
+    assert "replay_or_stale" not in body.get("reason", "")
+
+
+def test_http_replay_off_accepts_messages_without_nonce_or_timestamp(start_receiver):
+    url = start_receiver()  # window off
+    pkt = _valid_packet()
+    assert "nonce" not in pkt and "timestamp" not in pkt
+    status, body = _post(url, pkt)
+    assert status == 200
+    assert "replay_or_stale" not in body.get("reason", "")
+    assert body["status"] in ("absorbed", "rejected", "isolated")
+    # a second send without those fields is still not a replay rejection
+    status2, body2 = _post(url, pkt)
+    assert status2 == 200
+    assert "replay_or_stale" not in body2.get("reason", "")
 
 
 def test_http_sign_and_replay_independent(start_receiver):
