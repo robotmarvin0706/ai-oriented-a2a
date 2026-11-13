@@ -30,6 +30,7 @@ Agent Profile MAY include an optional `identity` object containing a public-key 
 Messages MAY include optional `nonce` (opaque string) and `timestamp` (ISO-8601 or Unix seconds).
 - Receivers SHOULD maintain a short sliding window (suggested 5–15 minutes) of seen nonces per peer.
 - Packets outside the window or with duplicate nonces SHOULD be rejected with reason `replay_or_stale`.
+- When a receiver has enabled a replay window, both `nonce` and `timestamp` MUST be present and valid; missing either is rejected with reason `replay_or_stale`. When the window is not enabled, both fields remain optional and their absence is not a violation.
 
 ### Absorption gate
 Even with a valid signature, the receiver MUST still run its local regression and isolation path (see IMPLEMENTATION.md).
@@ -44,11 +45,11 @@ Before absorption, the receiver SHOULD verify that the packet’s type and absor
 
 - `provenance.source_ref` MAY point to the signing identity or key fingerprint.
 - `verification_claim.expected_effect` remains a local claim; signature does not replace it.
-- Absence of signature, nonce, or identity is not a protocol violation. Implementations that treat absence as automatic rejection are free to do so locally, but must still emit an explicit Absorption Result.
+- Absence of signature, nonce, or identity is not a protocol violation when the corresponding check is off. A receiver that has enabled a replay window MUST reject messages missing `nonce` or `timestamp`, and must still emit an explicit Absorption Result.
 
 ## Implementation note
 
-`examples/network_dual_end.py` supports optional HMAC-SHA256 via `--sign-key` (passing a key enables verification) and optional replay protection via `--replay-window SECONDS` (passing a window enables the check). The two flags are independent; the default (neither passed) leaves both off. When the window is enabled, `timestamp` MAY be Unix seconds or an ISO-8601 string; duplicate or out-of-window messages are rejected with reason `replay_or_stale` before absorption. Absence of either field is not a protocol violation. Failures return HTTP 200 and a valid Absorption Result (non-empty `packet_ref`, including the reserved literal `unknown` when the request has no id). `examples/network_multi_node_demo.py` shows light interest-tag discovery across several local HTTP endpoints using the same path.
+`examples/network_dual_end.py` supports optional HMAC-SHA256 via `--sign-key` (passing a key enables verification) and optional replay protection via `--replay-window SECONDS` (passing a window enables the check). The two flags are independent; the default (neither passed) leaves both off. When the window is enabled, both `nonce` and `timestamp` MUST be present and valid (`timestamp` MAY be Unix seconds or an ISO-8601 string); missing either, a duplicate nonce, or an out-of-window timestamp is rejected with reason `replay_or_stale` before absorption. When the window is off, absence of either field is not a violation. Failures return HTTP 200 and a valid Absorption Result (non-empty `packet_ref`, including the reserved literal `unknown` when the request has no id). `examples/network_multi_node_demo.py` shows light interest-tag discovery across several local HTTP endpoints using the same path.
 
 ## Local logging
 
