@@ -15,11 +15,13 @@ result.
 
 Optional signature (HMAC-SHA256) via --sign-key. Passing a key enables
 verification; omitting it leaves verification off. Optional replay protection
-via --replay-window SECONDS: when passed, messages MAY carry nonce (opaque)
+via --replay-window SECONDS: when passed, messages MUST carry nonce (opaque)
 and timestamp (unix seconds or ISO-8601). The receiver keeps a sliding window
-of seen nonces and rejects duplicates or messages outside the window with
-reason replay_or_stale. The two checks are independent. Default (neither
-flag) leaves both off, so old peers still work.
+of seen nonces and rejects missing fields, duplicates, or messages outside
+the window with reason replay_or_stale. When the window is not passed,
+nonce and timestamp remain optional and their absence is not a violation.
+The two checks are independent. Default (neither flag) leaves both off,
+so old peers still work.
 
 Signature covers the canonical JSON of the message excluding the signature
 field itself (see canonical()).
@@ -188,13 +190,13 @@ def check_replay(
 ) -> Optional[str]:
     """Return reason string if replay/stale, else None. Mutates seen on accept.
 
-    Called only when a replay window has been enabled. Absence of both
-    nonce and timestamp is still not a protocol violation.
+    Called only when a replay window has been enabled.
+    Both nonce and timestamp are required when the window is on.
     """
     nonce = msg.get("nonce")
     ts = msg.get("timestamp")
-    if nonce is None and ts is None:
-        return None  # optional; absence is not a violation
+    if nonce is None or ts is None:
+        return "replay_or_stale: nonce and timestamp required when replay window is enabled"
     if not isinstance(nonce, str) or not nonce:
         return "replay_or_stale: missing or empty nonce"
     parsed = parse_timestamp(ts)
@@ -219,6 +221,8 @@ def make_profile() -> Dict[str, Any]:
         "improvement_prefs": ["failure_mode", "tool_trajectory"],
         "shareable_types": ["failure_mode"],
         "interest_tags": ["timeout_recovery"],
+        "nonce": new_id("nonce"),
+        "timestamp": int(time.time()),
     }
 
 
@@ -347,6 +351,14 @@ class A2AHandler(BaseHTTPRequestHandler):
     def _post_to_peer(self, payload: Dict[str, Any]) -> None:
         if not self.peer_url:
             return
+        # Attach replay fields before signing so a peer with the window
+        # enabled can accept the pushed Absorption Result.
+        if payload.get("nonce") is None:
+            payload = dict(payload)
+            payload["nonce"] = new_id("nonce")
+        if payload.get("timestamp") is None:
+            payload = dict(payload)
+            payload["timestamp"] = int(time.time())
         if self.sign_key:
             payload = sign_message(payload, self.sign_key)
         data = json.dumps(payload).encode()
@@ -415,8 +427,8 @@ def main() -> None:
         default=None,
         metavar="SECONDS",
         help=(
-            "optional replay window in seconds; passing this enables nonce/"
-            "timestamp checks (suggested 600 for a 10-minute window)"
+            "optional replay window in seconds; passing this requires nonce "
+            "and timestamp on incoming messages (suggested 600 for a 10-minute window)"
         ),
     )
     args = parser.parse_args()
