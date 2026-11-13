@@ -50,6 +50,8 @@ jobs:
               "experience-packet.json": "schema/experience-packet.schema.json",
               "experience-packet-with-provenance.json": "schema/experience-packet.schema.json",
               "experience-packet-trajectory-replay.json": "schema/experience-packet.schema.json",
+              "experience-packet-with-security.json": "schema/experience-packet.schema.json",
+              "agent-profile-with-identity.json": "schema/agent-profile.schema.json",
               "negotiation-propose.json": "schema/negotiation.schema.json",
               "negotiation-propose-conditional.json": "schema/negotiation.schema.json",
               "negotiation-accept.json": "schema/negotiation.schema.json",
@@ -59,6 +61,7 @@ jobs:
               "absorption-result-absorbed.json": "schema/absorption-result.schema.json",
               "absorption-result-isolated.json": "schema/absorption-result.schema.json",
               "absorption-result-with-effect.json": "schema/absorption-result.schema.json",
+              "absorption-result-early-reject.json": "schema/absorption-result.schema.json",
           }
 
           resources = []

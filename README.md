@@ -27,6 +27,8 @@ v0.1 parsers still parse core messages (Profile, Experience Packet, negotiation 
 
 v0.3 does not add message types. It tightens Absorption Result: a peer that emits `status=absorbed` MUST include `effect_summary` with a non-empty `note`. v0.2 absorbed results that omitted `effect_summary` are not valid under v0.3 schemas. Metric keys stay OPTIONAL.
 
+Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain valid): an on-wire `version` field (canonical `"0.3"`, no leading `v`); `nonce`, `timestamp`, and `signature` on every message type; and `identity` on Agent Profile. See [docs/VERSIONING.md](docs/VERSIONING.md) and [docs/TRANSPORT.md](docs/TRANSPORT.md).
+
 ## Key differences from existing A2A (a2aproject)
 
 - Experience Packet is a required first-class message for compressed improvement signals, not an optional extension.
@@ -64,6 +66,7 @@ First dual-endpoint comparison task set (non-normative): tool-call timeout / fai
 - Basic negotiation primitives (optional conditional_packet / constraint_scope / duration)
 - Simple discovery (endpoint or local metadata; light interest tags prose)
 - Absorption Result (absorbed / rejected / isolated; `effect_summary.note` MUST when absorbed)
+- Optional on-wire `version`, `nonce`, `timestamp`, `signature`; optional Agent Profile `identity`
 
 ## Quick local check
 

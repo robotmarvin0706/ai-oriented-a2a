@@ -2,6 +2,8 @@
 
 This document does not add wire fields beyond `SPEC.md`. The v0.3 wire hard gate (`effect_summary.note` MUST when `status=absorbed`) is normative in SPEC §3.1. The fuller metric practice below remains host-side experiment-path guidance.
 
+The first-edition minimal library boundary (HTTP binding, hard gate, legal error responses, optional HMAC and replay window; no redaction or provenance implementation) is recorded in [docs/TRANSPORT.md](docs/TRANSPORT.md).
+
 ## Priority path
 
 Prefer a measurable absorption loop and fixed-budget comparison over expanding Schema or discovery first.

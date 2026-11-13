@@ -1,12 +1,12 @@
 # Contributing
 
-This repository defines a **minimal** peer protocol (v0.2). Prefer fixes that make independent implementations interoperable.
+This repository defines a **minimal** peer protocol (v0.3). Prefer fixes that make independent implementations interoperable.
 
 ## What to open
 
 - **Interop defects**: use the Interop defect issue template. Include a minimal payload and a `SPEC.md` section reference. When reporting defects, specify the protocol version.
 - **Docs / examples**: typos, missing examples, broken links — use the General issue template or a small PR.
-- **Design expansions** (full task lifecycle, streaming, enterprise defaults): out of scope for v0.2; open an issue only if you can show a concrete gap in the *current* minimal subset.
+- **Design expansions** (full task lifecycle, streaming, enterprise defaults): out of scope for v0.3; open an issue only if you can show a concrete gap in the *current* minimal subset.
 
 ## Pull requests
 
@@ -22,4 +22,5 @@ This repo needs **no** GitHub Actions secrets for the current `validate` workflo
 
 ```bash
 python3 -c "import json; json.load(open('examples/experience-packet.json')); print('ok')"
+pip install pytest jsonschema referencing -q && pytest tests/interop/ -q
 ```

@@ -1,0 +1,18 @@
+{
+  "constraints": [
+    "tool_whitelist: web_search,code_exec",
+    "no_external_payment"
+  ],
+  "improvement_prefs": [
+    "failure_mode",
+    "strategy_fragment"
+  ],
+  "shareable_types": [
+    "failure_mode"
+  ],
+  "version": "0.3",
+  "identity": {
+    "fingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "alg": "ed25519"
+  }
+}

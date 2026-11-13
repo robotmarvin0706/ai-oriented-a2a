@@ -2,7 +2,7 @@
 
 This document describes the HTTP binding used by `examples/network_dual_end.py`, aligned with [SECURITY.md](SECURITY.md) and the Absorption Result hard gate in [SPEC.md](../SPEC.md) §3.1. It introduces no new mandatory dependencies. The HTTP binding is **not** mandatory: other transports (gRPC, message queues, and similar) are allowed as long as they preserve the same JSON message shapes.
 
-Where the reference example and this contract differ, the difference is called out. Recommended HTTP status codes below are SHOULD-level mappings; they are not yet all implemented by the example.
+Optional security fields (`nonce`, `timestamp`, `signature`) and the OPTIONAL on-wire `version` field are declared in the published schemas (`additionalProperties` remains `false`), so strict schema validation of messages that carry them can pass. Messages that omit them remain valid.
 
 ## Endpoint and media type
 - Canonical HTTP endpoint: `POST /a2a/message`
@@ -11,7 +11,7 @@ Where the reference example and this contract differ, the difference is called o
 
 ## Request shape
 
-The HTTP body **is the message itself** (an Agent Profile, an Experience Packet, a negotiation message, or an Absorption Result). There is no wrapper object such as `{ "version", "packet", ... }` in the current binding, and there is no on-wire `version` field. Protocol version is out-of-band; see [VERSIONING.md](VERSIONING.md).
+The HTTP body **is the message itself** (an Agent Profile, an Experience Packet, a negotiation message, or an Absorption Result). There is no wrapper object such as `{ "version", "packet", ... }`. The message MAY include an OPTIONAL top-level `version` field (`"0.3"`, no leading `v`); if it is omitted, the receiver treats the message as the current normative version. See [VERSIONING.md](VERSIONING.md).
 
 Optional security fields MAY be attached to that message (all OPTIONAL; see [SECURITY.md](SECURITY.md)):
 
@@ -40,6 +40,7 @@ Example Experience Packet as posted (illustrative; required packet fields omitte
     "method": "prompt_injection",
     "hint": "prepend recovery instruction"
   },
+  "version": "0.3",
   "nonce": "nonce-ab12cd34",
   "timestamp": 1731480000,
   "signature": {
@@ -49,7 +50,9 @@ Example Experience Packet as posted (illustrative; required packet fields omitte
 }
 ```
 
-`nonce`, `timestamp`, and `signature` MAY all be omitted. When they are omitted and the receiver has not enabled the corresponding checks, the receiver MUST NOT reject an otherwise-valid message solely because these fields are absent.
+`version`, `nonce`, `timestamp`, and `signature` MAY all be omitted. When they are omitted and the receiver has not enabled the corresponding checks, the receiver MUST NOT reject an otherwise-valid message solely because these fields are absent.
+
+Canonical form for `signature.value` (HMAC-SHA256 in the reference implementation): UTF-8 bytes of `json.dumps(body, separators=(",", ":"), sort_keys=True, ensure_ascii=False)` where `body` is the message object with the `signature` field removed. Integer Unix seconds are recommended for `timestamp` so float formatting does not affect the digest. A complete, verifiable example (HMAC key `demo`) is `examples/experience-packet-with-security.json`.
 
 ## Response shape
 
@@ -93,39 +96,87 @@ The reference example also returns small JSON acknowledgements for a Profile (`{
 
 ## HTTP status codes
 
-### Current reference example (`examples/network_dual_end.py`)
+The following application-level failures MUST return **HTTP 200** and a **valid Absorption Result** (`packet_ref` non-empty, `status` = `rejected`, `reason` present). They MUST NOT use a missing `packet_ref`, an empty-string `packet_ref`, or an HTML error body. They MUST NOT use HTTP `401`, `403`, `409`, or `422` for these outcomes. This replaces the earlier SHOULD mapping of those codes.
 
-- `200`: application outcomes, including a valid Absorption Result, signature verification failure, and replay rejection. The outcome is in the JSON body (`status` / `reason`), not in the HTTP status.
-- `400`: invalid JSON. The example currently uses `BaseHTTPRequestHandler.send_error`, whose body is HTML rather than JSON — a known gap versus the MUST in “Other” below.
-- `404`: path is not `/a2a/message`.
+- Signature verification failure (when a signing key has been provided): `reason` is `signature verification failed`.
+- Replay rejection (when a replay window has been provided): `reason` starts with `replay_or_stale:` (for example `replay_or_stale: duplicate nonce`).
+- Unknown version (including a leading `v`, for example `"v0.3"`, and any value the receiver does not implement): `reason` contains `unsupported_version` (for example `unsupported_version: received 0.4`).
+- Hard-gate failure: an emitter that would have sent `status=absorbed` without a non-empty `effect_summary.note` MUST instead emit `status=rejected` with a `reason`. A receiver that is given such an invalid `absorbed` result MUST also respond with HTTP 200 and a valid rejected Absorption Result, and MUST NOT treat the claim as a successful absorption.
 
-The example does not emit `401`, `403`, `409`, or `422`. Signature and replay failures are HTTP 200 with `status` = `rejected` and a `reason` (replay reasons contain `replay_or_stale`). A hard-gate failure at the emitter is converted to `status` = `rejected` (still HTTP 200) by `Receiver.absorb`, so an invalid `absorbed` result is not sent.
+`packet_ref` equals the request's `id` (or, if the request is itself an Absorption Result, its `packet_ref`). If the request has no usable `id` or `packet_ref`, `packet_ref` is the reserved literal `unknown`. `unknown` is reserved for those early failures; it MUST NOT be used as the `packet_ref` of a successful absorption (`status=absorbed`).
 
-### Recommended mappings (SHOULD)
+Examples:
 
-Implementations MAY adopt these HTTP codes without changing JSON message shapes:
+```json
+{
+  "packet_ref": "pkt-experience-7f3a",
+  "status": "rejected",
+  "reason": "signature verification failed"
+}
+```
 
-- `400`: invalid JSON or schema validation failure of the request. The body MUST be a parseable JSON error object.
-- `401` / `403`: signature verification failure, when signature checking is enabled.
-- `409`: `replay_or_stale` (nonce or timestamp check failure, when replay protection is enabled).
-- `422`: a received Absorption Result violates the hard gate (for example `status=absorbed` with a missing or empty `note`). An emitter that detects this locally SHOULD instead emit `status=rejected` with a `reason`, as the reference receiver does, and MAY still use HTTP 200 for that valid rejected result.
+```json
+{
+  "packet_ref": "pkt-experience-7f3a",
+  "status": "rejected",
+  "reason": "replay_or_stale: duplicate nonce"
+}
+```
+
+```json
+{
+  "packet_ref": "pkt-experience-7f3a",
+  "status": "rejected",
+  "reason": "unsupported_version: received 0.4"
+}
+```
+
+```json
+{
+  "packet_ref": "unknown",
+  "status": "rejected",
+  "reason": "unsupported_version: received 0.4"
+}
+```
+
+### Other HTTP codes (reference example)
+
+- `200`: all application outcomes above, and successful Absorption Results, profile acks, and result acks.
+- `400`: unparseable request body (invalid JSON). The body is still a valid Absorption Result (`packet_ref` = `unknown`, `status` = `rejected`, `reason` = `invalid json`), not HTML. HTTP 400 is kept for this unparseable-body case because it is not one of the application-level failures listed above. (This closes the previous HTML-body gap.)
+- `404`: path is not `/a2a/message`. The body of this path error may still be the stock HTTP HTML page; it is a transport-level routing error, not a protocol message.
 - Other transport-layer errors follow HTTP semantics (`5xx` for server failures, and so on).
 
 ## Security and replay protection (all OPTIONAL)
 
-- Signature, `nonce`, and `timestamp` are all optional on the wire.
-- When the corresponding check **is enabled**: the receiver SHOULD verify the signature and/or the time window; failure returns an explicit error (currently HTTP 200 + `rejected` in the example; recommended `401` / `403` / `409` above).
-- When the corresponding check **is not enabled**: the receiver MUST NOT reject an otherwise-valid packet solely because these fields are absent.
-- A receiver that has chosen a local policy of “require signature” (or require nonce) has enabled that check. [SECURITY.md](SECURITY.md) allows that local policy provided the receiver still emits an explicit Absorption Result (or a JSON error under the recommended codes).
+- Signature, `nonce`, and `timestamp` are all optional on the wire, and are declared in the published schemas.
+- Passing a signing key enables signature verification; passing a replay-window parameter enables replay checks. The two MAY be enabled independently. The default (neither passed) leaves both off, so old peers still work.
+- When the corresponding check **is enabled**: the receiver SHOULD verify the signature and/or the time window; failure MUST return HTTP 200 and a valid rejected Absorption Result as specified above.
+- When the corresponding check **is not enabled**: the receiver MUST NOT reject an otherwise-valid packet solely because these fields are absent, and MUST NOT apply the corresponding check even if the fields are present.
+- A receiver that has chosen a local policy of “require signature” (or require nonce) has enabled that check. [SECURITY.md](SECURITY.md) allows that local policy provided the receiver still emits an explicit Absorption Result.
 
 ## Timeouts and retries (SHOULD)
 
-- Recommended client timeout is at least 30 seconds (absorption MAY include local regression). The reference example currently uses 10 seconds for `send_message` and 5 seconds for a pushed result — a known gap versus this recommendation.
+- Recommended client timeout is at least 30 seconds (absorption MAY include local regression). A library SHOULD use a timeout of at least 30 seconds. The reference implementation (`examples/network_dual_end.py`) uses 30 seconds for both `send_message` and a pushed result.
 - Retryable: network failures, `5xx`, timeouts.
 - Non-retryable: other `4xx` (except `408` and `429`), hard-gate violations, and an explicit Absorption Result with `status=rejected`.
 - On retry, if replay protection is enabled, the client SHOULD use a **fresh** `nonce` (and a current `timestamp`). Reusing a nonce is itself rejected as `replay_or_stale`.
 
 ## Other
 
-- Failure responses MUST return a parseable JSON error object (or a well-formed Absorption Result with `status=rejected` or `isolated`) so peers can distinguish “peer rejection” from “transport failure”. The reference example’s HTTP 400 path does not yet meet this MUST; that is a follow-up for the example, not a new protocol dependency.
+- Failure responses MUST return a parseable JSON error object, preferably a well-formed Absorption Result with `status=rejected` or `isolated`, so peers can distinguish “peer rejection” from “transport failure”. Missing fields, empty-string `packet_ref`, and HTML error bodies MUST NOT be used for the application-level failures listed above, and MUST NOT be used for the invalid-JSON path either.
 - This contract is based on the existing behavior of `examples/network_dual_end.py` and [SECURITY.md](SECURITY.md).
+
+## First-edition minimal library boundary
+
+In scope for the first-edition library (the reference path in `examples/network_dual_end.py`):
+
+- HTTP binding: `POST /a2a/message`
+- Absorption hard gate (`status=absorbed` requires a non-empty `effect_summary.note`)
+- Legal error responses: a valid Absorption Result that always carries a non-empty `packet_ref` and a `reason` on the failure modes above
+- Optional HMAC-SHA256 verification and optional replay window, each enabled only when the corresponding parameter is passed
+
+Out of scope for the first edition (documentation first; implementation later):
+
+- Redaction of packet content
+- Provenance-chain implementation beyond the existing OPTIONAL `provenance` field shape
+- Public-corpus conventions (those wait until the redaction and provenance documents land)

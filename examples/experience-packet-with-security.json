@@ -1,0 +1,25 @@
+{
+  "id": "pkt-experience-7f3a",
+  "type": "failure_mode",
+  "content": {
+    "trigger": "tool_call_timeout on web_search",
+    "observed": "retry_loop exceeded 3 attempts without backoff",
+    "compressed_signal": "insert exponential backoff before third retry; discard partial results older than 30s"
+  },
+  "absorption": {
+    "method": "prompt_injection",
+    "target": "system_or_tool_instruction",
+    "hint": "prepend: 'On timeout, apply exponential backoff and drop results >30s old'"
+  },
+  "expiry": {
+    "condition": "after_local_absorption_or_24h",
+    "discard_if": "constraint_set no longer includes web_search"
+  },
+  "version": "0.3",
+  "nonce": "nonce-ab12cd34",
+  "timestamp": 1731480000,
+  "signature": {
+    "alg": "hmac-sha256",
+    "value": "41810d624a8c4f7c7507981166c8061315efbb17e006efe832e2f12768d4639c"
+  }
+}
