@@ -14,6 +14,16 @@ This repository defines a **minimal** peer protocol (v0.3). Prefer fixes that ma
 2. If you change message shapes, update `SPEC.md` and add or adjust files under `examples/`.
 3. Do not commit secrets, tokens, or private endpoints.
 
+## Datasets
+
+Packets under `datasets/` are a public corpus and follow [docs/DATA_POLICY.md](docs/DATA_POLICY.md):
+
+- Redact credentials, private paths, user identifiers, raw tool payloads, and environment details.
+- Synthetic packets use the `synthetic:` prefix in `provenance.source_ref` and state no numeric uplift (no ΔSR, no "+0.2", no percentages).
+- Every packet carries `verification_claim.expected_effect` and `verification_claim.replay_hint`; `provenance.chain` keeps at most 3 hops.
+- Data under `datasets/` is contributed under CC0 1.0 (see `datasets/LICENSE`), separate from the MIT-licensed code.
+- `tests/interop/test_datasets.py` enforces these checks in CI.
+
 ## Secrets
 
 This repo needs **no** GitHub Actions secrets for the current `validate` workflow. Do not add unused secret names "for later" without documenting why.
