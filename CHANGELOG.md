@@ -11,7 +11,10 @@ The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tag
 
 ## [0.3.2] - 2026-11-14
 
-Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`). This is the first version intended for PyPI (from tag `v0.3.2`, created after merge).
+Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`). This is the first version published to PyPI, built from tag `v0.3.2`.
+
+Published to PyPI on 2026-11-14: https://pypi.org/project/ai-oriented-a2a/0.3.2/
+Also published to TestPyPI the same day: https://test.pypi.org/project/ai-oriented-a2a/0.3.2/
 
 ### Breaking
 
@@ -23,7 +26,7 @@ Library and documentation release. The protocol version is unchanged (v0.3, on-w
 - Replay set eviction: past `SEEN_MAX` (1000) entries the seen set is trimmed to `SEEN_TRIM_TO` (800) by dropping expired entries first, then the oldest timestamps, instead of arbitrary `set.pop()` entries. `seen` is still a plain `set` of `(nonce, str(int(timestamp)))`. Both constants live in `ai_oriented_a2a.protocol`; the replay-after-eviction caveat and smaller-window advice are in SECURITY.md and TRANSPORT.md.
 - `examples/network_dual_end.py`: `A2AHandler` now subclasses `ai_oriented_a2a.transport.A2ARequestHandler`, and pushes and sends through `ai_oriented_a2a.transport.send_message`. Its positional `send_message(url, payload, sign_key=None)` wrapper is kept for existing callers but is deprecated and will be removed; new code should use `ai_oriented_a2a.transport.send_message` with keyword arguments.
 - `docs/KNOWN_GAPS.md`: removed the replay-key and `set.pop()` eviction entries (fixed here) and renumbered the rest.
-- `docs/RELEASING.md`: the first PyPI upload is `0.3.2` from tag `v0.3.2`; `0.3.1` is not uploaded. `pyproject.toml` `Release` URL points at `v0.3.2` (404 until the tag exists).
+- `docs/RELEASING.md`: the first PyPI upload is `0.3.2` from tag `v0.3.2`; `0.3.1` is not uploaded. `pyproject.toml` `Release` URL points at `v0.3.2`.
 
 ### Added
 
@@ -36,7 +39,7 @@ Library and documentation release. The protocol version is unchanged (v0.3, on-w
 - `docs/DATA_POLICY.md` (non-normative): redaction, `provenance.source_ref` prefixes (`synthetic:`, `local_run:`, `peer_absorbed:`), 3-hop chain limit with `content.chain_truncated`, required `expected_effect` + `replay_hint`, no numeric uplift in synthetic data, CC0 for corpora. SPEC and schemas are unchanged; `provenance` stays OPTIONAL on the wire.
 - `datasets/timeout_recovery/`: 8 synthetic Experience Packets and 2 Absorption Results for the tool-call timeout / failure-recovery task, under CC0 1.0 (`datasets/LICENSE`).
 - `tests/interop/test_datasets.py`: CI checks for `datasets/**` (schema, legal prefix, verification claim, chain length, no numeric uplift). The `docs-and-examples` workflow also requires `docs/DATA_POLICY.md` and `datasets/README.md`.
-- Prepared PyPI packaging and manual publish workflow: `pyproject.toml` adds `Repository` / `Changelog` URLs and `license-files`, and drops the legacy MIT license classifier (SPDX `license = "MIT"` already set). New manual-only `.github/workflows/publish.yml` (TestPyPI or PyPI, Trusted Publishing by default) and `docs/RELEASING.md`. README install section now leads with `pip install ai-oriented-a2a`. Not yet published; no version bump.
+- Prepared PyPI packaging and manual publish workflow: `pyproject.toml` adds `Repository` / `Changelog` URLs and `license-files`, and drops the legacy MIT license classifier (SPDX `license = "MIT"` already set). New manual-only `.github/workflows/publish.yml` (TestPyPI or PyPI, Trusted Publishing by default) and `docs/RELEASING.md`. README install section now leads with `pip install ai-oriented-a2a`. That packaging PR did not bump the version.
 - `second_impl/`: an independent minimal implementation (stdlib + optional `jsonschema`, Python 3.8+) written from SPEC and TRANSPORT, with a `send` / `serve` CLI. It does not import `ai_oriented_a2a` or `examples/`. Check order: version, hard gate, schema (on by default, `--no-schema`), signature, replay. Its receiver never returns `absorbed`: packets are `isolated` (`isolated: no local regression available`) and negotiation messages are rejected with `negotiation_unsupported:`. Interoperates with `examples/network_dual_end.py` in both directions.
 - `mcp_a2a/`: one-way MCP bridge (official MCP Python SDK 2.x, `MCPServer`) with `send_packet` and `report_absorption` tools that return the peer's reply unchanged and raise tool errors on local, transport, or protocol failures. New optional extra `[mcp]` (`mcp>=2,<3`, Python ≥ 3.10); the core package still requires Python ≥ 3.8 and has no required dependencies.
 - `docs/TRANSPORT.md`: registers reserved `reason` prefixes `schema_invalid:` and `negotiation_unsupported:` (and the informative `isolated:`) alongside `unsupported_version:` and `replay_or_stale:`. These are reason-string conventions, not new fields; schemas are unchanged.

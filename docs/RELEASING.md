@@ -9,10 +9,12 @@ This document is for maintainers. It covers building the `ai-oriented-a2a` packa
 
 ## First PyPI upload: 0.3.2
 
-Nothing has been uploaded to PyPI or TestPyPI yet. `0.3.1` is never uploaded: tag `v0.3.1` predates the packaging metadata and the package code has changed since. The first upload is `0.3.2`, built from tag `v0.3.2`:
+Done. `0.3.2` was published to TestPyPI and PyPI on 2026-11-14, built from tag `v0.3.2`: https://pypi.org/project/ai-oriented-a2a/0.3.2/. `0.3.1` was never uploaded: tag `v0.3.1` predates the packaging metadata and the package code has changed since.
+
+The steps that were followed:
 
 1. Merge the PR that sets `__version__ = "0.3.2"`.
-2. Create tag `v0.3.2` (and the GitHub release) on that merge commit. Until then the `Release` URL in `pyproject.toml` (`.../releases/tag/v0.3.2`) returns 404.
+2. Create tag `v0.3.2` (and the GitHub release) on that merge commit.
 3. Build from the tag (`git checkout v0.3.2`) and publish with one of the methods below, TestPyPI first.
 
 ## Version numbers can never be reused
