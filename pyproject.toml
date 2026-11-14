@@ -33,6 +33,8 @@ dependencies = []
 
 [project.optional-dependencies]
 schema = ["jsonschema>=4.18"]
+# MCP bridge (mcp_a2a/, run from a checkout; not shipped in the wheel). Needs Python >= 3.10.
+mcp = ['mcp>=2,<3; python_version >= "3.10"']
 
 [project.urls]
 Homepage = "https://github.com/robotmarvin0706/ai-oriented-a2a"
