@@ -67,8 +67,8 @@ SHARED_FUNCTIONS = (
 
 
 def test_version_and_all():
-    assert __version__ == "0.3.1"
-    assert ai_oriented_a2a.__version__ == "0.3.1"
+    assert __version__ == "0.3.2"
+    assert ai_oriented_a2a.__version__ == "0.3.2"
     assert set(__all__) == EXPECTED_EXPORTS
     for name in __all__:
         assert hasattr(ai_oriented_a2a, name)
