@@ -16,7 +16,8 @@ The HTTP body **is the message itself** (an Agent Profile, an Experience Packet,
 Optional security fields MAY be attached to that message (all OPTIONAL; see [SECURITY.md](SECURITY.md)):
 
 - `nonce`: opaque string
-- `timestamp`: Unix seconds (number) or ISO-8601 string. SECURITY.md allows both; the reference example uses Unix seconds as a JSON number.
+- `timestamp`: Unix seconds (JSON number) or an ISO-8601 string **with a timezone**. Since library 0.3.2 the published schemas restrict the string form to `YYYY-MM-DDTHH:MM:SS`, an optional `.fff` or `.ffffff` fraction, and `Z` or `±HH:MM` (for example `2026-11-14T08:00:00Z`, `2026-11-14T16:00:00.123+08:00`). Numeric strings (`"1731480000"`), strings without a timezone, date-only strings, a space instead of `T`, lowercase `t`/`z`, and `+0800` fail schema validation. The pattern does not check calendar validity (for example `2026-02-30`); such a value passes the schema but fails timestamp parsing, which is a replay rejection when the window is on. The reference example sends integer Unix seconds.
+- Compatibility: the reference parser (`ai_oriented_a2a.parse_timestamp`) still treats a naive (no timezone) string as UTC when the message reaches the replay check without schema validation. This is compatibility behaviour only; strict receivers MAY reject such strings with a `schema_invalid:` reason.
 - `signature`: an object, not a bare string. The reference example uses HMAC-SHA256:
 
 ```json
@@ -156,6 +157,7 @@ The `reason` of an Absorption Result is a free-form string. The prefixes below a
 | `signature verification failed` | normative exact string (see above) | Signing key provided and the signature is missing or does not verify. `status=rejected`. |
 | `schema_invalid:` | reserved prefix (SHOULD) | The message fails the published JSON Schema for its type, checked after the version check and the hard gate. `status=rejected`. |
 | `negotiation_unsupported:` | reserved prefix (SHOULD) | The receiver does not implement negotiation. The reply is still a valid Absorption Result: `status=rejected`, `packet_ref` = the `id` of `offered_packet` if present, otherwise `unknown`. |
+| `internal_error:` | reserved prefix (SHOULD) | The receiver's own message handler failed. Sent with HTTP 500 (see below). `status=rejected`. The text after the prefix MUST be a generic description; it MUST NOT contain exception messages, tracebacks, file paths, or other internal details. The reference uses `internal_error: message handler failed`. |
 | `isolated:` | informative | Convention for the reason of an `isolated` result, e.g. `isolated: no local regression available`. Peers MUST NOT parse it for meaning beyond `status=isolated`. |
 
 The reference implementation also uses `invalid json` (HTTP 400, see below), `unsupported method: <method>`, and `hard-gate violation: ...`. These are recommended spellings, not reserved prefixes. The independent `second_impl/` uses the same strings.
@@ -164,6 +166,7 @@ The reference implementation also uses `invalid json` (HTTP 400, see below), `un
 
 - `200`: all application outcomes above, and successful Absorption Results, profile acks, and result acks.
 - `400`: unparseable request body (invalid JSON). The body is still a valid Absorption Result (`packet_ref` = `unknown`, `status` = `rejected`, `reason` = `invalid json`), not HTML. HTTP 400 is kept for this unparseable-body case because it is not one of the application-level failures listed above. (This closes the previous HTML-body gap.)
+- `500`: the receiver's message handler raised an exception. The body is still a valid Absorption Result (`packet_ref` from the request, `status` = `rejected`, `reason` starting with `internal_error:`, signed when a signing key is configured), with no exception text, traceback, or path. Clients treat it as retryable like any `5xx`.
 - `404`: path is not `/a2a/message`. The body of this path error may still be the stock HTTP HTML page; it is a transport-level routing error, not a protocol message.
 - Other transport-layer errors follow HTTP semantics (`5xx` for server failures, and so on).
 
@@ -180,7 +183,11 @@ The reference implementation also uses `invalid json` (HTTP 400, see below), `un
 - Recommended client timeout is at least 30 seconds (absorption MAY include local regression). A library SHOULD use a timeout of at least 30 seconds. The demo HTTP server (`examples/network_dual_end.py`) uses 30 seconds for both `send_message` and a pushed result.
 - Retryable: network failures, `5xx`, timeouts.
 - Non-retryable: other `4xx` (except `408` and `429`), hard-gate violations, and an explicit Absorption Result with `status=rejected`.
-- On retry, if replay protection is enabled, the client SHOULD use a **fresh** `nonce` (and a current `timestamp`). Reusing a nonce is itself rejected as `replay_or_stale`.
+- On retry, if replay protection is enabled, the client SHOULD use a **fresh** `nonce` (and a current `timestamp`). Reusing a nonce is itself rejected as `replay_or_stale`, even with a different `timestamp`.
+
+### Replay cache bounds (reference implementation)
+
+`check_replay` keys a duplicate on the nonce alone: a nonce already in the seen set is rejected whatever its `timestamp`. The seen set is a plain `set` of `(nonce, str(int(timestamp)))` entries. When it grows past `SEEN_MAX` (1000) entries it is trimmed to `SEEN_TRIM_TO` (800): expired entries (outside the window) are dropped first, then the entries with the oldest timestamps. Both are module constants in `ai_oriented_a2a.protocol`. An entry that is dropped while still inside the window can in theory be replayed until its timestamp leaves the window; see [SECURITY.md](SECURITY.md#replay-cache-bounds).
 
 ## Other
 
@@ -190,9 +197,18 @@ The reference implementation also uses `invalid json` (HTTP 400, see below), `un
 
 ## First-edition minimal library boundary
 
-The first-edition installable library is the `ai_oriented_a2a` package (`pip install .` from a checkout). It is also packaged for PyPI as `ai-oriented-a2a` (`pip install ai-oriented-a2a`, import name `ai_oriented_a2a`). Core helpers include `canonical`, `sign_message`, `verify_message`, `check_replay`, `version_rejection`, `reject_result`, `packet_ref_of`, and the combined entry point `check_incoming(msg, sign_key=None, replay_window=None, seen=None)`. Signature verification and the replay window stay off unless the corresponding argument is passed. There is no HTTP server and no central component in the package.
+The first-edition installable library is the `ai_oriented_a2a` package (`pip install .` from a checkout). It is also packaged for PyPI as `ai-oriented-a2a` (`pip install ai-oriented-a2a`, import name `ai_oriented_a2a`). Core helpers include `canonical`, `sign_message`, `verify_message`, `check_replay`, `version_rejection`, `reject_result`, `packet_ref_of`, and the combined entry point `check_incoming(msg, sign_key=None, replay_window=None, seen=None)`. Signature verification and the replay window stay off unless the corresponding argument is passed. There is no central component in the package.
 
-`examples/network_dual_end.py` remains the demo HTTP server: it imports those helpers and implements `POST /a2a/message`.
+Since 0.3.2 the HTTP binding ships as the submodule `ai_oriented_a2a.transport` (standard library only). It is not re-exported from the top-level package, so `import ai_oriented_a2a` does not load `http.server`; import it explicitly:
+
+```python
+from ai_oriented_a2a.transport import send_message, make_server, serve
+```
+
+- `send_message(url, message, *, timeout=30.0, sign_key=None, add_replay_fields=False)` posts to `url` + `/a2a/message` and returns the JSON reply (also for HTTP error statuses with a JSON body). Network errors, timeouts, and non-JSON replies raise `TransportError`. Options are keyword-only.
+- `A2ARequestHandler` (override `handle_message`), `make_handler(on_message, *, sign_key=None, replay_window=None)`, `make_server(on_message, port=0, host="127.0.0.1", ...)`, and `serve(...)` implement the receiver side: 404 for other paths, 400 + Absorption Result for invalid JSON, `check_incoming` before the callback, the hard gate (`guard_result`) on the reply, signed replies when a key is set, and 500 + `internal_error:` if the callback raises. The host callback still decides absorption.
+
+Integrators SHOULD use `ai_oriented_a2a.transport` rather than copy code from `examples/`. `examples/network_dual_end.py` remains the demo dual-endpoint server; its `A2AHandler` now subclasses `A2ARequestHandler`.
 
 In scope for the first-edition library:
 
@@ -201,7 +217,7 @@ In scope for the first-edition library:
 - Legal error responses: a valid Absorption Result that always carries a non-empty `packet_ref` and a `reason` on the failure modes above, via `check_incoming` / `reject_result`
 - Optional HMAC-SHA256 verification and optional replay window, each enabled only when the corresponding parameter is passed (`canonical`, `sign_message`, `verify_message`, `check_replay`)
 
-The HTTP binding itself (`POST /a2a/message`, status codes, timeouts) is specified in this document and demonstrated by `examples/network_dual_end.py`; it is not shipped as a server in the package.
+The HTTP binding itself (`POST /a2a/message`, status codes, timeouts) is specified in this document, shipped as `ai_oriented_a2a.transport`, and demonstrated by `examples/network_dual_end.py`.
 
 Out of scope for the first edition (documentation first; implementation later):
 

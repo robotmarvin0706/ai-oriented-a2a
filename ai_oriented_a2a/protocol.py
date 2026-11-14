@@ -83,8 +83,10 @@ def reject_result(msg: Optional[Dict[str, Any]], reason: str) -> Dict[str, Any]:
 def parse_timestamp(ts: Any) -> Optional[float]:
     """Parse a unix-seconds number or an ISO-8601 string into epoch seconds.
 
-    Naive (no timezone) strings are treated as UTC. A trailing ``Z`` is
-    accepted. Returns None if the value cannot be parsed.
+    Naive (no timezone) strings are treated as UTC. This is compatibility
+    behaviour only: the published schemas require a timezone, and strict
+    receivers MAY reject such strings with ``schema_invalid:``. A trailing
+    ``Z`` is accepted. Returns None if the value cannot be parsed.
     """
     if isinstance(ts, bool):
         return None
@@ -128,6 +130,36 @@ def version_rejection(msg: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+# Replay cache bounds. ``seen`` stays a plain ``set`` of ``(nonce, str(int(ts)))``
+# keys; when it grows past SEEN_MAX it is trimmed to SEEN_TRIM_TO, dropping
+# expired keys first and then the oldest timestamps (never arbitrary keys).
+SEEN_MAX = 1000
+SEEN_TRIM_TO = 800
+
+
+def _key_ts(key: Tuple[str, str]) -> float:
+    try:
+        return float(key[1])
+    except (TypeError, ValueError, IndexError):
+        return float("-inf")
+
+
+def _evict(seen: Set[Tuple[str, str]], now: float, window_seconds: float) -> None:
+    """Trim ``seen`` to SEEN_TRIM_TO: expired keys first, then oldest timestamp.
+
+    Expired keys can never be accepted again (the timestamp check runs
+    first), so dropping them is free. Dropping a key that is still inside
+    the window means that nonce could be replayed; keep the window short
+    if that matters (docs/SECURITY.md).
+    """
+    for key in [k for k in seen if abs(now - _key_ts(k)) > window_seconds]:
+        seen.discard(key)
+    excess = len(seen) - SEEN_TRIM_TO
+    if excess > 0:
+        for key in sorted(seen, key=lambda k: (_key_ts(k), k))[:excess]:
+            seen.discard(key)
+
+
 def check_replay(
     msg: Dict[str, Any],
     seen: Set[Tuple[str, str]],
@@ -137,6 +169,12 @@ def check_replay(
 
     Called only when a replay window has been enabled.
     Both nonce and timestamp are required when the window is on.
+
+    A nonce is a duplicate if it is already in ``seen``, whatever its
+    timestamp (the same nonce with a different timestamp is rejected).
+    ``seen`` is a plain set of ``(nonce, str(int(timestamp)))`` keys; when it
+    exceeds SEEN_MAX it is trimmed to SEEN_TRIM_TO by dropping expired keys
+    first and then the oldest timestamps.
     """
     nonce = msg.get("nonce")
     ts = msg.get("timestamp")
@@ -150,13 +188,11 @@ def check_replay(
     now = time.time()
     if abs(now - parsed) > window_seconds:
         return "replay_or_stale: timestamp outside window"
-    key = (nonce, str(int(parsed)))
-    if key in seen:
+    if any(key[0] == nonce for key in seen):
         return "replay_or_stale: duplicate nonce"
-    seen.add(key)
-    if len(seen) > 1000:
-        while len(seen) > 800:
-            seen.pop()
+    seen.add((nonce, str(int(parsed))))
+    if len(seen) > SEEN_MAX:
+        _evict(seen, now, window_seconds)
     return None
 
 

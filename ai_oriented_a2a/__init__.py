@@ -26,7 +26,7 @@ from .protocol import (
 )
 from .validate import SchemaDependencyError, SCHEMA_KINDS, schema_dir, validate
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     "RESERVED_PACKET_REF",

@@ -9,7 +9,29 @@ The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tag
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-14
+
+Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`). This is the first version intended for PyPI (from tag `v0.3.2`, created after merge).
+
+### Breaking
+
+- **BREAKING:** String `timestamp` values MUST be ISO-8601 **with a timezone**. All 7 `timestamp` definitions in `schema/` now restrict the string form to `YYYY-MM-DDTHH:MM:SS`, an optional 3- or 6-digit fraction, and `Z` or `±HH:MM`. Messages that used other strings now fail schema validation, for example `"1731480000"` (numeric string) and `"2026-11-14T08:00:00"` (no timezone); also date-only, space separator, lowercase `t`/`z`, `+0800`, and 1- or 9-digit fractions. Numeric (JSON number) timestamps are unchanged. The pattern does not check calendar validity (`2026-02-30` passes the schema and then fails timestamp parsing). `ai_oriented_a2a.parse_timestamp` still treats naive strings as UTC as compatibility behaviour only; strict receivers MAY reject them with `schema_invalid:`.
+
+### Changed
+
+- Replay window (behaviour tightening): `check_replay` now treats a nonce as a duplicate whatever its `timestamp`, so the same nonce with a different timestamp is rejected with `replay_or_stale: duplicate nonce`. Previously the key was `(nonce, int(timestamp))`. Matches SECURITY.md and `second_impl/`.
+- Replay set eviction: past `SEEN_MAX` (1000) entries the seen set is trimmed to `SEEN_TRIM_TO` (800) by dropping expired entries first, then the oldest timestamps, instead of arbitrary `set.pop()` entries. `seen` is still a plain `set` of `(nonce, str(int(timestamp)))`. Both constants live in `ai_oriented_a2a.protocol`; the replay-after-eviction caveat and smaller-window advice are in SECURITY.md and TRANSPORT.md.
+- `examples/network_dual_end.py`: `A2AHandler` now subclasses `ai_oriented_a2a.transport.A2ARequestHandler`, and pushes and sends through `ai_oriented_a2a.transport.send_message`. Its positional `send_message(url, payload, sign_key=None)` wrapper is kept for existing callers but is deprecated and will be removed; new code should use `ai_oriented_a2a.transport.send_message` with keyword arguments.
+- `docs/KNOWN_GAPS.md`: removed the replay-key and `set.pop()` eviction entries (fixed here) and renumbered the rest.
+- `docs/RELEASING.md`: the first PyPI upload is `0.3.2` from tag `v0.3.2`; `0.3.1` is not uploaded. `pyproject.toml` `Release` URL points at `v0.3.2` (404 until the tag exists).
+
 ### Added
+
+- `ai_oriented_a2a.transport` (stdlib only, not re-exported; `import ai_oriented_a2a` does not load `http.server`): `send_message(url, message, *, timeout=30.0, sign_key=None, add_replay_fields=False)`, `TransportError`, `A2ARequestHandler`, `make_handler`, `make_server`, `serve`, and `guard_result` (the absorption hard gate on replies).
+- Reserved reason prefix `internal_error:` (TRANSPORT.md). The reference handler answers a handler exception with HTTP 500 and a valid rejected Absorption Result, reason `internal_error: message handler failed`, with no exception text, traceback, or path.
+- Tests: `tests/interop/test_timestamp_replay.py` and `tests/interop/test_transport.py`.
+
+### Also in this release (merged after 0.3.1)
 
 - `docs/DATA_POLICY.md` (non-normative): redaction, `provenance.source_ref` prefixes (`synthetic:`, `local_run:`, `peer_absorbed:`), 3-hop chain limit with `content.chain_truncated`, required `expected_effect` + `replay_hint`, no numeric uplift in synthetic data, CC0 for corpora. SPEC and schemas are unchanged; `provenance` stays OPTIONAL on the wire.
 - `datasets/timeout_recovery/`: 8 synthetic Experience Packets and 2 Absorption Results for the tool-call timeout / failure-recovery task, under CC0 1.0 (`datasets/LICENSE`).

@@ -3,6 +3,7 @@
 Minimal **peer** protocol for AI capability growth: Experience Packets + constraint negotiation.
 Not the Google A2A task/agent-card stack — this repo is about sharing compressed improvement signals between peers.
 - Spec: [SPEC.md](SPEC.md) (v0.3) · Last tagged release: [v0.3.1](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.1) · Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Library version on `main`: 0.3.2 (protocol v0.3). Tag `v0.3.2` is created after this version is merged, so v0.3.1 stays the last tagged release until then.
 - Keywords: experience packet, absorption, proposal_id, peer negotiation, trajectory_replay
 
 Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
@@ -53,6 +54,7 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 | [ai_oriented_a2a/](ai_oriented_a2a/) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
+| [ai_oriented_a2a/transport.py](ai_oriented_a2a/transport.py) | Stdlib HTTP binding: `send_message` client and `POST /a2a/message` request handler / server (import `ai_oriented_a2a.transport` explicitly) |
 | [pyproject.toml](pyproject.toml) | Packaging metadata: `pip install ai-oriented-a2a` or `pip install ".[schema]"` from a checkout |
 | [docs/RELEASING.md](docs/RELEASING.md) | Release checklist and PyPI publishing steps (maintainers) |
 | [second_impl/](second_impl/) | Independent second implementation (client, receiver, CLI); does not import `ai_oriented_a2a` |
@@ -112,7 +114,27 @@ signed = sign_message(msg, "secret")
 rejected = check_incoming(signed, sign_key="secret", replay_window=600, seen=seen)
 ```
 
-`examples/network_dual_end.py` remains the HTTP dual-endpoint demo and imports these helpers. It still runs without installing the package:
+The HTTP binding (`POST /a2a/message`) ships as a submodule. It is not re-exported, so `import ai_oriented_a2a` does not load `http.server`; import it explicitly:
+
+```python
+from ai_oriented_a2a.transport import send_message, make_server, serve
+
+def on_message(msg):
+    # Called only after the version / signature / replay checks pass.
+    # The reply passes the absorption hard gate before it is sent.
+    return {"packet_ref": msg["id"], "status": "isolated", "reason": "isolated: no local regression"}
+
+server = make_server(on_message, port=8002, sign_key="secret", replay_window=600)
+# server.serve_forever()  (or serve(on_message, 8002, ...) to block)
+
+reply = send_message("http://127.0.0.1:8002", msg, sign_key="secret", add_replay_fields=True)
+```
+
+`send_message` options are keyword-only (`timeout` defaults to 30 seconds). If the callback raises, the peer gets HTTP 500 with a rejected Absorption Result whose reason starts with `internal_error:`. See [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md#first-edition-minimal-library-boundary).
+
+String `timestamp` values must be ISO-8601 with a timezone (for example `2026-11-14T08:00:00Z`); integer Unix seconds are recommended.
+
+`examples/network_dual_end.py` remains the HTTP dual-endpoint demo and is built on `ai_oriented_a2a.transport`. New code should use the package module rather than copy the demo. It still runs without installing the package:
 
 ```bash
 python3 examples/network_dual_end.py --role receiver --port 8002
