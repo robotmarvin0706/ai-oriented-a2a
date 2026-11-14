@@ -87,9 +87,11 @@ The core library uses only the Python standard library. Schema validation is an 
 pip install ai-oriented-a2a
 # optional JSON Schema validation:
 pip install "ai-oriented-a2a[schema]"
+# optional MCP bridge (Python ≥ 3.10):
+pip install "ai-oriented-a2a[mcp]"
 ```
 
-The PyPI commands work once `ai-oriented-a2a` has been published to PyPI. The import name is `ai_oriented_a2a`.
+The package is on PyPI. The import name is `ai_oriented_a2a`.
 
 For development, install from a checkout or straight from GitHub:
 
