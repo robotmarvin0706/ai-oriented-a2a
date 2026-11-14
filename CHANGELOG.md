@@ -14,6 +14,7 @@ The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tag
 - `docs/DATA_POLICY.md` (non-normative): redaction, `provenance.source_ref` prefixes (`synthetic:`, `local_run:`, `peer_absorbed:`), 3-hop chain limit with `content.chain_truncated`, required `expected_effect` + `replay_hint`, no numeric uplift in synthetic data, CC0 for corpora. SPEC and schemas are unchanged; `provenance` stays OPTIONAL on the wire.
 - `datasets/timeout_recovery/`: 8 synthetic Experience Packets and 2 Absorption Results for the tool-call timeout / failure-recovery task, under CC0 1.0 (`datasets/LICENSE`).
 - `tests/interop/test_datasets.py`: CI checks for `datasets/**` (schema, legal prefix, verification claim, chain length, no numeric uplift). The `docs-and-examples` workflow also requires `docs/DATA_POLICY.md` and `datasets/README.md`.
+- Prepared PyPI packaging and manual publish workflow: `pyproject.toml` adds `Repository` / `Changelog` URLs and `license-files`, and drops the legacy MIT license classifier (SPDX `license = "MIT"` already set). New manual-only `.github/workflows/publish.yml` (TestPyPI or PyPI, Trusted Publishing by default) and `docs/RELEASING.md`. README install section now leads with `pip install ai-oriented-a2a`. Not yet published; no version bump.
 
 ## [0.3.1] - 2026-11-13
 

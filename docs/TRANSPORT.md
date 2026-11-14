@@ -174,7 +174,7 @@ Examples:
 
 ## First-edition minimal library boundary
 
-The first-edition installable library is the `ai_oriented_a2a` package (`pip install .`). Core helpers include `canonical`, `sign_message`, `verify_message`, `check_replay`, `version_rejection`, `reject_result`, `packet_ref_of`, and the combined entry point `check_incoming(msg, sign_key=None, replay_window=None, seen=None)`. Signature verification and the replay window stay off unless the corresponding argument is passed. There is no HTTP server and no central component in the package.
+The first-edition installable library is the `ai_oriented_a2a` package (`pip install .` from a checkout). It is also packaged for PyPI as `ai-oriented-a2a` (`pip install ai-oriented-a2a`, import name `ai_oriented_a2a`). Core helpers include `canonical`, `sign_message`, `verify_message`, `check_replay`, `version_rejection`, `reject_result`, `packet_ref_of`, and the combined entry point `check_incoming(msg, sign_key=None, replay_window=None, seen=None)`. Signature verification and the replay window stay off unless the corresponding argument is passed. There is no HTTP server and no central component in the package.
 
 `examples/network_dual_end.py` remains the demo HTTP server: it imports those helpers and implements `POST /a2a/message`.
 

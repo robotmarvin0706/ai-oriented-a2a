@@ -53,7 +53,8 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 | [ai_oriented_a2a/](ai_oriented_a2a/) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
-| [pyproject.toml](pyproject.toml) | Packaging metadata: `pip install .` or `pip install ".[schema]"` |
+| [pyproject.toml](pyproject.toml) | Packaging metadata: `pip install ai-oriented-a2a` or `pip install ".[schema]"` from a checkout |
+| [docs/RELEASING.md](docs/RELEASING.md) | Release checklist and PyPI publishing steps (maintainers) |
 
 ## Status
 
@@ -77,10 +78,22 @@ First dual-endpoint comparison task set (non-normative): tool-call timeout / fai
 The core library uses only the Python standard library. Schema validation is an optional extra. Signature verification and the replay window stay off unless you pass the corresponding arguments.
 
 ```bash
-pip install .
+pip install ai-oriented-a2a
 # optional JSON Schema validation:
-pip install ".[schema]"
+pip install "ai-oriented-a2a[schema]"
 ```
+
+The PyPI commands work once `ai-oriented-a2a` has been published to PyPI. The import name is `ai_oriented_a2a`.
+
+For development, install from a checkout or straight from GitHub:
+
+```bash
+pip install -e ".[schema]"
+# or, without cloning:
+pip install "ai-oriented-a2a[schema] @ git+https://github.com/robotmarvin0706/ai-oriented-a2a"
+```
+
+Maintainers: see [docs/RELEASING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/RELEASING.md) for the release and PyPI publishing steps.
 
 ```python
 from ai_oriented_a2a import check_incoming, sign_message
