@@ -7,13 +7,17 @@ This document is for maintainers. It covers building the `ai-oriented-a2a` packa
 - Version source: `__version__` in `ai_oriented_a2a/__init__.py` (read by hatchling)
 - Required dependencies: none. Optional extra: `[schema]` (`jsonschema>=4.18`)
 
-## About 0.3.1
+## First PyPI upload: 0.3.2
 
-`0.3.1` was tagged before the PyPI packaging changes landed. The first PyPI upload of `0.3.1` is built from `main` after the packaging PR is merged. The package contents (`ai_oriented_a2a/` and `schema/`) are identical to tag `v0.3.1`. Only packaging metadata, the README (the PyPI project description), and docs differ.
+Nothing has been uploaded to PyPI or TestPyPI yet. `0.3.1` is never uploaded: tag `v0.3.1` predates the packaging metadata and the package code has changed since. The first upload is `0.3.2`, built from tag `v0.3.2`:
+
+1. Merge the PR that sets `__version__ = "0.3.2"`.
+2. Create tag `v0.3.2` (and the GitHub release) on that merge commit. Until then the `Release` URL in `pyproject.toml` (`.../releases/tag/v0.3.2`) returns 404.
+3. Build from the tag (`git checkout v0.3.2`) and publish with one of the methods below, TestPyPI first.
 
 ## Version numbers can never be reused
 
-PyPI and TestPyPI accept each version of a file only once. A deleted release cannot be uploaded again under the same version. If an upload is wrong, bump the version (for example `0.3.2`) and publish again. Always publish to TestPyPI first.
+PyPI and TestPyPI accept each version of a file only once. A deleted release cannot be uploaded again under the same version. If an upload is wrong, bump the version (for example `0.3.3`) and publish again. Always publish to TestPyPI first.
 
 ## Pre-flight checklist
 
@@ -73,7 +77,7 @@ A single secret holds one token, and PyPI and TestPyPI tokens are different. If 
 
 ## Method 1: GitHub Actions (manual run)
 
-1. Go to Actions → `publish` → "Run workflow", on branch `main`.
+1. Go to Actions → `publish` → "Run workflow", on the release tag (for example `v0.3.2`) or on `main` at the tagged commit.
 2. Choose `target: testpypi` and run. Approve the `pypi` environment if prompted.
 3. Verify the TestPyPI install (see below).
 4. Run the workflow again with `target: pypi`.
@@ -118,15 +122,15 @@ Use a fresh virtual environment. `--extra-index-url` lets pip fetch `jsonschema`
 
 ```bash
 python -m venv /tmp/a2a-check && . /tmp/a2a-check/bin/activate
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ai-oriented-a2a==0.3.1
-python -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"   # expect 0.3.1
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ai-oriented-a2a==0.3.2
+python -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"   # expect 0.3.2
 
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ai-oriented-a2a[schema]==0.3.1"
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ai-oriented-a2a[schema]==0.3.2"
 python -c "import jsonschema, ai_oriented_a2a; print('schema extra ok')"
 deactivate
 ```
 
-After the PyPI upload, repeat the check with plain `pip install ai-oriented-a2a==0.3.1`.
+After the PyPI upload, repeat the check with plain `pip install ai-oriented-a2a==0.3.2`.
 
 ## After publishing
 
