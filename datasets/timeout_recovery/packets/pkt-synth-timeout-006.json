@@ -1,0 +1,29 @@
+{
+  "id": "pkt-synth-timeout-006",
+  "type": "failure_mode",
+  "content": {
+    "trigger": "peer returns an explicit Absorption Result with status=rejected, or a non-retryable 4xx",
+    "observed": "blind retry loop resends the same packet and wastes budget without changing the outcome",
+    "steps": [
+      "classify the response before retrying",
+      "stop on status=rejected and record the reason",
+      "stop on 4xx other than 408 and 429",
+      "stop on hard-gate violations"
+    ],
+    "compressed_signal": "do not retry explicit rejections or non-retryable 4xx"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "retry_classification"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#no-retry-on-reject"
+  },
+  "verification_claim": {
+    "expected_effect": "no retries are issued after an explicit rejection or a non-retryable 4xx, and the rejection reason is kept",
+    "replay_hint": "peer scripted to return status=rejected on the first call; tool budget of 3 calls"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}

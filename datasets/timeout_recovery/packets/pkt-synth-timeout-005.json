@@ -1,0 +1,28 @@
+{
+  "id": "pkt-synth-timeout-005",
+  "type": "tool_trajectory",
+  "content": {
+    "trigger": "retry after timeout while the receiver has the replay window enabled",
+    "steps": [
+      "generate a fresh nonce for every retry",
+      "set a current timestamp on every retry",
+      "re-sign the message if signing is in use",
+      "never resend the exact previous bytes"
+    ],
+    "compressed_signal": "fresh nonce + current timestamp on every retry when replay protection is on"
+  },
+  "absorption": {
+    "method": "trajectory_replay",
+    "target": "retry_with_replay_window"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#fresh-nonce"
+  },
+  "verification_claim": {
+    "expected_effect": "retries are accepted by a receiver with the replay window enabled instead of being rejected as replay_or_stale",
+    "replay_hint": "receiver with replay window on; first attempt forced to time out; one retry"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}

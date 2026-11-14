@@ -1,0 +1,33 @@
+{
+  "id": "pkt-synth-timeout-007",
+  "type": "tool_trajectory",
+  "content": {
+    "trigger": "transport-level failure while sending a packet",
+    "steps": [
+      "retry on 408, 429, 5xx, network failure and timeout",
+      "use exponential backoff between attempts",
+      "respect a fixed retry budget",
+      "surface an explicit failure once the budget is used up"
+    ],
+    "compressed_signal": "retry only retryable classes (408/429/5xx/timeout) under a fixed budget"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "retry_classification"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#retryable-classes",
+    "chain": [
+      "synthetic:manual:timeout-recovery-v1#hop-a",
+      "synthetic:manual:timeout-recovery-v1#hop-b",
+      "synthetic:manual:timeout-recovery-v1#hop-c"
+    ]
+  },
+  "verification_claim": {
+    "expected_effect": "transient 408, 429 and 5xx responses are retried and recovered within the budget, while the budget is never exceeded",
+    "replay_hint": "peer scripted to return 503 once then succeed; separate run returning 429 on every call; budget of 3 calls"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}
