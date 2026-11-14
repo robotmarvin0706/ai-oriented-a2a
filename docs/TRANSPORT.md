@@ -189,6 +189,7 @@ The HTTP binding itself (`POST /a2a/message`, status codes, timeouts) is specifi
 
 Out of scope for the first edition (documentation first; implementation later):
 
-- Redaction of packet content
+- Library-level redaction of packet content. Redaction rules for public corpora are documented in [DATA_POLICY.md](DATA_POLICY.md) (non-normative).
 - Provenance-chain implementation beyond the existing OPTIONAL `provenance` field shape
-- Public-corpus conventions (those wait until the redaction and provenance documents land)
+
+Public-corpus conventions (`source_ref` prefixes, chain truncation, verification claims, licensing) are now documented in [DATA_POLICY.md](DATA_POLICY.md) (non-normative) and checked for `datasets/` in CI.

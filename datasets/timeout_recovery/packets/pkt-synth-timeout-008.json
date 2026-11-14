@@ -1,0 +1,35 @@
+{
+  "id": "pkt-synth-timeout-008",
+  "type": "failure_mode",
+  "content": {
+    "chain_truncated": true,
+    "chain_dropped_hops": 2,
+    "trigger": "packet forwarded across several peers before reaching the receiver",
+    "observed": "long forwarding chains carry little extra signal and leak routing history",
+    "steps": [
+      "keep only the most recent 3 hops in provenance.chain",
+      "mark truncation in content",
+      "treat the remaining chain as context, not as proof of quality"
+    ],
+    "compressed_signal": "truncate forwarded provenance to the last 3 hops and mark it"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "provenance_handling"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#truncated-chain",
+    "chain": [
+      "synthetic:manual:timeout-recovery-v1#hop-c",
+      "synthetic:manual:timeout-recovery-v1#hop-d",
+      "synthetic:manual:timeout-recovery-v1#hop-e"
+    ]
+  },
+  "verification_claim": {
+    "expected_effect": "the receiver reads the truncation marker and does not rely on dropped hops when deciding how to absorb",
+    "replay_hint": "feed this packet alongside an untruncated copy; check that both index to the same retrieval target"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}

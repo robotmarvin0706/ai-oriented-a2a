@@ -1,0 +1,29 @@
+{
+  "id": "pkt-synth-timeout-002",
+  "type": "tool_trajectory",
+  "content": {
+    "trigger": "tool call fails twice in a row with timeout",
+    "steps": [
+      "check local cache for a result of the same call",
+      "use cached result only if its age is within the declared bound",
+      "annotate the response with cache age",
+      "if no fresh cache entry exists, return an explicit failure instead of a stale result"
+    ],
+    "compressed_signal": "age-bounded cache fallback; never serve stale results silently"
+  },
+  "absorption": {
+    "method": "prompt_injection",
+    "target": "timeout_handling",
+    "hint": "inject as a short rule, not as a full trajectory"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#cache-age-bound"
+  },
+  "verification_claim": {
+    "expected_effect": "after repeated timeouts the agent answers from cache only when the cache entry is within the age bound, and reports cache age",
+    "replay_hint": "two forced timeouts; one run with a fresh cache entry and one run with an expired entry"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}

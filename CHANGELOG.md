@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tags may add a patch component.
 
+## [Unreleased]
+
+### Added
+
+- `docs/DATA_POLICY.md` (non-normative): redaction, `provenance.source_ref` prefixes (`synthetic:`, `local_run:`, `peer_absorbed:`), 3-hop chain limit with `content.chain_truncated`, required `expected_effect` + `replay_hint`, no numeric uplift in synthetic data, CC0 for corpora. SPEC and schemas are unchanged; `provenance` stays OPTIONAL on the wire.
+- `datasets/timeout_recovery/`: 8 synthetic Experience Packets and 2 Absorption Results for the tool-call timeout / failure-recovery task, under CC0 1.0 (`datasets/LICENSE`).
+- `tests/interop/test_datasets.py`: CI checks for `datasets/**` (schema, legal prefix, verification claim, chain length, no numeric uplift). The `docs-and-examples` workflow also requires `docs/DATA_POLICY.md` and `datasets/README.md`.
+
 ## [0.3.1] - 2026-11-13
 
 Library and documentation release. The protocol version is unchanged (v0.3). The tightenings in this release only reject previously-malformed messages, or messages that omit required fields when an opt-in check (the replay window) is enabled. Messages that were valid under v0.3 and that do not enable those checks remain valid.

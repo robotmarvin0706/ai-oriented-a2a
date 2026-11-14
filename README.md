@@ -48,6 +48,8 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 | [docs/TRANSPORT.md](docs/TRANSPORT.md) | HTTP binding, error recommendations, retries |
 | [docs/SECURITY.md](docs/SECURITY.md) | Non-normative signature and replay recommendations |
 | [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) | Non-normative absorption delta identity and single-step rollback |
+| [docs/DATA_POLICY.md](docs/DATA_POLICY.md) | Non-normative trust and safety rules for public Experience Packet corpora |
+| [datasets/](datasets/) | Public synthetic Experience Packet corpora (CC0), checked in CI |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
 | [ai_oriented_a2a/](ai_oriented_a2a/) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
