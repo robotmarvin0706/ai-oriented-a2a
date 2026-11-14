@@ -1,0 +1,7 @@
+{
+  "packet_ref": "pkt-synth-timeout-001",
+  "status": "absorbed",
+  "effect_summary": {
+    "note": "synthetic example: stored under timeout_handling for retrieval; local replay recovered from the forced timeout without extra retries. Not a real-run measurement."
+  }
+}

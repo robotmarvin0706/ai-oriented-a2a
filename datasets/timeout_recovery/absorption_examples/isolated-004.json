@@ -1,0 +1,5 @@
+{
+  "packet_ref": "pkt-synth-timeout-004",
+  "status": "isolated",
+  "reason": "counter-example packet kept for retrieval only per DATA_POLICY; not injected into active context"
+}

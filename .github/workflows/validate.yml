@@ -19,6 +19,8 @@ jobs:
           test -s CONTRIBUTING.md
           test -s docs/VERSIONING.md
           test -s docs/TRANSPORT.md
+          test -s docs/DATA_POLICY.md
+          test -s datasets/README.md
 
       - name: Validate examples JSON
         run: |
