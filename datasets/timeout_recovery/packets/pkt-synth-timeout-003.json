@@ -1,0 +1,28 @@
+{
+  "id": "pkt-synth-timeout-003",
+  "type": "failure_mode",
+  "content": {
+    "trigger": "peer absorption includes a local regression and responds slowly",
+    "observed": "client timeout set below the transport recommendation aborts requests that would have succeeded",
+    "steps": [
+      "set client timeout to at least 30s, as recommended in docs/TRANSPORT.md",
+      "treat a timeout as retryable",
+      "keep the same timeout for sending a packet and for a pushed result"
+    ],
+    "compressed_signal": "client timeout >= 30s for absorption round-trips (TRANSPORT alignment)"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "transport_timeouts"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#transport-30s"
+  },
+  "verification_claim": {
+    "expected_effect": "slow but successful peer absorptions complete instead of being aborted and retried",
+    "replay_hint": "peer that takes longer than a short timeout but finishes within 30s; client timeout 30s"
+  },
+  "expiry": {
+    "condition": "after_transport_doc_change_or_90d"
+  }
+}

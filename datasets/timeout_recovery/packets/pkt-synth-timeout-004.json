@@ -1,0 +1,26 @@
+{
+  "id": "pkt-synth-timeout-004",
+  "type": "failure_mode",
+  "content": {
+    "counter_example": true,
+    "note": "Counter-example: do not adopt. docs/TRANSPORT.md recommends a client timeout of at least 30s.",
+    "trigger": "client timeout set to 5s for absorption round-trips",
+    "observed": "requests that need local regression on the peer are aborted and retried, producing duplicate submissions",
+    "compressed_signal": "too-short client timeout causes spurious retries; use the TRANSPORT recommendation instead"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "transport_timeouts",
+    "hint": "index as a negative example only"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1#counter-short-timeout"
+  },
+  "verification_claim": {
+    "expected_effect": "a receiver that indexes this packet recognises the short-timeout pattern as a known anti-pattern and does not adopt it",
+    "replay_hint": "compare a 5s client timeout with a 30s client timeout against a peer that runs a local regression before responding"
+  },
+  "expiry": {
+    "condition": "after_transport_doc_change_or_90d"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "pkt-synth-timeout-001",
+  "type": "tool_trajectory",
+  "content": {
+    "steps": [
+      "tool call times out after 30s",
+      "retry once with exponential backoff",
+      "fallback to cached result if age < 60s"
+    ],
+    "compressed_signal": "single retry + short-cache fallback on tool timeout"
+  },
+  "absorption": {
+    "method": "retrieval",
+    "target": "timeout_handling"
+  },
+  "provenance": {
+    "source_ref": "synthetic:manual:timeout-recovery-v1"
+  },
+  "verification_claim": {
+    "expected_effect": "recover from single tool timeout without unbounded retries",
+    "replay_hint": "fixed budget of 3 tool calls, one forced timeout"
+  },
+  "expiry": {
+    "condition": "after_local_regression_or_30d"
+  }
+}
