@@ -21,6 +21,7 @@ jobs:
           test -s docs/TRANSPORT.md
           test -s docs/DATA_POLICY.md
           test -s datasets/README.md
+          test -s docs/RELEASING.md
 
       - name: Validate examples JSON
         run: |
