@@ -7,7 +7,9 @@ over HTTP using only the Python standard library.
 
 Core helpers (canonical JSON, HMAC, replay window, version rejection,
 legal rejected Absorption Results) live in the installable package
-``ai_oriented_a2a``. This file remains the HTTP dual-endpoint demo.
+``ai_oriented_a2a``, and the HTTP plumbing (client, request handler) lives in
+``ai_oriented_a2a.transport``. This file remains the HTTP dual-endpoint demo:
+integrators should use ``ai_oriented_a2a.transport`` rather than copy it.
 
 For supported absorption methods the receiver runs the local regression +
 isolation N path from minimal_dual_end.Receiver.absorb (experiment-path gate,
@@ -58,8 +60,7 @@ import random
 import sys
 import threading
 import time
-import urllib.request
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import HTTPServer
 from pathlib import Path
 from typing import Any, Dict, Optional, Set, Tuple
 
@@ -70,7 +71,8 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 if str(_EXAMPLES) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES))
-from ai_oriented_a2a import (  # noqa: E402
+# Several names are re-exported for tests and older callers that import them from here.
+from ai_oriented_a2a import (  # noqa: E402,F401
     RESERVED_PACKET_REF,
     SUPPORTED_MAJOR_MINOR,
     VERSION_PATTERN,
@@ -86,6 +88,8 @@ from ai_oriented_a2a import (  # noqa: E402
     verify_message,
     version_rejection,
 )
+from ai_oriented_a2a import transport  # noqa: E402
+from ai_oriented_a2a.transport import A2ARequestHandler, guard_result  # noqa: E402
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
 DEFAULT_REPLAY_WINDOW_SECONDS = 10 * 60  # 10 minutes, per SECURITY.md suggestion
@@ -133,7 +137,15 @@ def guard_reserved_ref(result: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-class A2AHandler(BaseHTTPRequestHandler):
+class A2AHandler(A2ARequestHandler):
+    """Demo receiver built on the package handler (ai_oriented_a2a.transport).
+
+    The package handler does the path check, invalid-JSON reply,
+    check_incoming (version, optional signature, optional replay window),
+    the reply hard gate, and signed replies. This subclass only decides the
+    reply for messages that passed those checks.
+    """
+
     role: str = "receiver"
     peer_url: Optional[str] = None
     sign_key: Optional[str] = None
@@ -146,30 +158,7 @@ class A2AHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.role}] {self.address_string()} - {format % args}")
 
-    def do_POST(self) -> None:
-        if self.path != "/a2a/message":
-            self.send_error(404)
-            return
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
-        try:
-            msg = json.loads(body.decode())
-            if not isinstance(msg, dict):
-                raise ValueError("message must be a JSON object")
-        except Exception:
-            self._reply(reject_result(None, "invalid json"), status=400)
-            return
-
-        rejected = check_incoming(
-            msg,
-            sign_key=self.sign_key,
-            replay_window=self.replay_window,
-            seen=self.seen_nonces,
-        )
-        if rejected:
-            self._reply(rejected)
-            return
-
+    def handle_message(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         print(f"[{self.role}] received: {json.dumps(msg, ensure_ascii=False)[:180]}...")
         self.received.append(msg)
 
@@ -184,7 +173,7 @@ class A2AHandler(BaseHTTPRequestHandler):
             else:
                 rng = random.Random(hash(msg["id"]) & 0xFFFFFFFF)
                 result = self.receiver.absorb(msg, rng)
-            response = guard_reserved_ref(result)
+            response = guard_result(guard_reserved_ref(result))
             if self.role == "receiver" and self.peer_url:
                 threading.Thread(target=self._post_to_peer, args=(response,), daemon=True).start()
         elif "packet_ref" in msg:
@@ -207,17 +196,7 @@ class A2AHandler(BaseHTTPRequestHandler):
             else:
                 response["type"] = "result_ack"
 
-        self._reply(response)
-
-    def _reply(self, payload: Dict[str, Any], status: int = 200) -> None:
-        if self.sign_key:
-            payload = sign_message(payload, self.sign_key)
-        data = json.dumps(payload).encode()
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+        return response
 
     def _post_to_peer(self, payload: Dict[str, Any]) -> None:
         if not self.peer_url:
@@ -230,19 +209,15 @@ class A2AHandler(BaseHTTPRequestHandler):
         if payload.get("timestamp") is None:
             payload = dict(payload)
             payload["timestamp"] = int(time.time())
-        if self.sign_key:
-            payload = sign_message(payload, self.sign_key)
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(
-            self.peer_url.rstrip("/") + "/a2a/message",
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(req, timeout=CLIENT_TIMEOUT_SECONDS) as resp:
-                print(f"[{self.role}] pushed result, status={resp.status}")
-        except Exception as e:
+            transport.send_message(
+                self.peer_url,
+                payload,
+                timeout=CLIENT_TIMEOUT_SECONDS,
+                sign_key=self.sign_key,
+            )
+            print(f"[{self.role}] pushed result")
+        except transport.TransportError as e:
             print(f"[{self.role}] push failed: {e}")
 
 
@@ -268,17 +243,14 @@ def run_server(
 
 
 def send_message(url: str, payload: Dict[str, Any], sign_key: Optional[str] = None) -> Dict[str, Any]:
-    if sign_key:
-        payload = sign_message(payload, sign_key)
-    data = json.dumps(payload).encode()
-    req = urllib.request.Request(
-        url.rstrip("/") + "/a2a/message",
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=CLIENT_TIMEOUT_SECONDS) as resp:
-        return json.loads(resp.read().decode())
+    """DEPRECATED demo wrapper; will be removed in a future release.
+
+    It keeps the old positional ``sign_key`` argument for existing callers
+    (network_multi_node_demo.py and tests). New code MUST NOT copy it: use
+    ``ai_oriented_a2a.transport.send_message(url, message, timeout=..., sign_key=...)``
+    with keyword arguments instead.
+    """
+    return transport.send_message(url, payload, timeout=CLIENT_TIMEOUT_SECONDS, sign_key=sign_key)
 
 
 def main() -> None:
