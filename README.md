@@ -55,6 +55,10 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 | [ai_oriented_a2a/](ai_oriented_a2a/) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
 | [pyproject.toml](pyproject.toml) | Packaging metadata: `pip install ai-oriented-a2a` or `pip install ".[schema]"` from a checkout |
 | [docs/RELEASING.md](docs/RELEASING.md) | Release checklist and PyPI publishing steps (maintainers) |
+| [second_impl/](second_impl/) | Independent second implementation (client, receiver, CLI); does not import `ai_oriented_a2a` |
+| [mcp_a2a/](mcp_a2a/) | One-way MCP bridge: MCP hosts send packets and report results to A2A peers (optional `[mcp]` extra, Python ≥ 3.10) |
+| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | What an implementation must pass, and how to run the conformance suite against another implementation |
+| [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
 
 ## Status
 

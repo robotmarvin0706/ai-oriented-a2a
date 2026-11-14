@@ -22,6 +22,8 @@ jobs:
           test -s docs/DATA_POLICY.md
           test -s datasets/README.md
           test -s docs/RELEASING.md
+          test -s docs/COMPLIANCE.md
+          test -s docs/KNOWN_GAPS.md
 
       - name: Validate examples JSON
         run: |
@@ -110,4 +112,20 @@ jobs:
         run: |
           pip install -e ".[schema]" pytest -q
           python3 -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"
-          pytest tests/interop/ -q
+          pytest tests/interop/ tests/conformance/ -q
+
+  # Optional MCP bridge tests (mcp_a2a/). Not a required status check.
+  mcp-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run MCP bridge tests
+        run: |
+          pip install -e ".[schema,mcp]" pytest -q
+          python3 -c "import mcp.server; print('mcp ok')"
+          pytest tests/mcp_bridge/ -q

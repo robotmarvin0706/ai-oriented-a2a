@@ -35,4 +35,12 @@ python3 -c "import json; json.load(open('examples/experience-packet.json')); pri
 pip install -e ".[schema]" pytest referencing -q && pytest tests/interop/ -q
 ```
 
+Conformance tests and the independent implementation:
+
+```bash
+pytest tests/interop/ tests/conformance/ -q
+```
+
+`tests/conformance/` runs every HTTP case against the reference and `second_impl/`; see [docs/COMPLIANCE.md](docs/COMPLIANCE.md) to run it against your own implementation. Its HTTP cases are copies of those in `tests/interop/test_optional_fields.py`: change both copies together until they are merged (see [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)). `second_impl/` must not import `ai_oriented_a2a` or `examples/`.
+
 `pip install -e .` is enough if you do not need schema tests. The package has no required dependencies; `jsonschema` is only the optional `schema` extra.

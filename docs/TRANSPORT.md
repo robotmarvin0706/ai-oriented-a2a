@@ -145,6 +145,21 @@ Examples:
 }
 ```
 
+### Reserved reason prefixes
+
+The `reason` of an Absorption Result is a free-form string. The prefixes below are **reserved**: they are conventions for the beginning of that existing `reason` string, so that independent implementations report the same failure the same way. They are **not** new fields; no schema changes, and receivers MUST NOT require them for messages to be valid. An implementation MUST NOT use a reserved prefix for a different meaning, and SHOULD use the matching prefix when it reports the listed condition. Text after the prefix is free-form.
+
+| Prefix or string | Status | Meaning |
+| --- | --- | --- |
+| `unsupported_version:` | normative (contained in `reason`, see above) | Unknown or unimplemented `version`, including a leading `v` such as `"v0.3"`. `status=rejected`. |
+| `replay_or_stale:` | normative (see above) | Replay window enabled and the message has a missing or invalid `nonce` / `timestamp`, a duplicate nonce, or a timestamp outside the window. `status=rejected`. |
+| `signature verification failed` | normative exact string (see above) | Signing key provided and the signature is missing or does not verify. `status=rejected`. |
+| `schema_invalid:` | reserved prefix (SHOULD) | The message fails the published JSON Schema for its type, checked after the version check and the hard gate. `status=rejected`. |
+| `negotiation_unsupported:` | reserved prefix (SHOULD) | The receiver does not implement negotiation. The reply is still a valid Absorption Result: `status=rejected`, `packet_ref` = the `id` of `offered_packet` if present, otherwise `unknown`. |
+| `isolated:` | informative | Convention for the reason of an `isolated` result, e.g. `isolated: no local regression available`. Peers MUST NOT parse it for meaning beyond `status=isolated`. |
+
+The reference implementation also uses `invalid json` (HTTP 400, see below), `unsupported method: <method>`, and `hard-gate violation: ...`. These are recommended spellings, not reserved prefixes. The independent `second_impl/` uses the same strings.
+
 ### Other HTTP codes (reference example)
 
 - `200`: all application outcomes above, and successful Absorption Results, profile acks, and result acks.
@@ -171,6 +186,7 @@ Examples:
 
 - Failure responses MUST return a parseable JSON error object, preferably a well-formed Absorption Result with `status=rejected` or `isolated`, so peers can distinguish “peer rejection” from “transport failure”. Missing fields, empty-string `packet_ref`, and HTML error bodies MUST NOT be used for the application-level failures listed above, and MUST NOT be used for the invalid-JSON path either.
 - This HTTP contract is based on the existing behavior of the demo server `examples/network_dual_end.py` and [SECURITY.md](SECURITY.md). Protocol helpers live in the `ai_oriented_a2a` package.
+- An independent second implementation of this binding lives in `second_impl/` (it does not import `ai_oriented_a2a`). The tests a receiver must pass, and how to run them against another implementation, are in [COMPLIANCE.md](COMPLIANCE.md).
 
 ## First-edition minimal library boundary
 
