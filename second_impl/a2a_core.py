@@ -24,6 +24,14 @@ rejects a match with ``content_policy: ...`` before any other decision.
 ``untrusted_block`` is this implementation's wrapper for prompt injection;
 its output format is the same as the reference library's (IMPLEMENTATION.md,
 "Untrusted content"). Both are written here from DATA_POLICY.md, not shared.
+
+Negotiation (SPEC §3): after the content check, ``respond`` applies the
+optional ``NegotiationLimits`` state: more than ``DEFAULT_ROUND_CAP`` (3)
+messages with one ``negotiation_id`` get ``negotiation_limit: ...`` (so does
+an optional per-peer rate limit, off by default), and a propose or counter
+whose ``target_constraint`` is one of the receiver's ``core_constraints``
+gets ``immutable_constraint: ...``. Anything left gets
+``negotiation_unsupported: ...``.
 """
 
 from __future__ import annotations
@@ -41,7 +49,8 @@ import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from collections import OrderedDict
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 UNKNOWN_REF = "unknown"
 # On-wire "0.4" is current; "0.3" is still accepted and handled under 0.4 rules.
@@ -70,6 +79,10 @@ REASON_INTERNAL = "internal_error: message handler failed"
 REASON_PAYLOAD_TOO_LARGE = "payload_too_large"
 REASON_INVALID_TIMESTAMP = REASON_REPLAY + ": invalid timestamp"
 REASON_CONTENT_POLICY = "content_policy"
+REASON_IMMUTABLE = "immutable_constraint"
+REASON_NEGOTIATION_LIMIT = "negotiation_limit"
+DEFAULT_ROUND_CAP = 3  # SPEC §3 default; override with NegotiationLimits(round_cap=...)
+ROUND_TABLE_SIZE = 10_000  # oldest negotiation_id dropped first
 ISOLATED_REASON = "isolated: no local regression available"
 
 # HTTP binding: request bodies above this many bytes get HTTP 413.
@@ -571,20 +584,99 @@ def untrusted_block(packet: Message) -> str:
 # ---------------------------------------------------------------------------
 
 
-def respond(msg: Message) -> Message:
+class NegotiationLimits:
+    """Per-receiver negotiation state (SPEC §3).
+
+    ``round_cap``: a ``negotiation_id`` may appear on at most this many
+    messages; later ones are over the limit. Messages without a
+    ``negotiation_id`` are not counted at all.
+    ``per_peer`` / ``window``: optional rate limit, at most ``per_peer``
+    negotiation messages per peer key in ``window`` seconds. ``None`` = off.
+    """
+
+    def __init__(
+        self,
+        round_cap: int = DEFAULT_ROUND_CAP,
+        *,
+        per_peer: Optional[int] = None,
+        window: float = 60.0,
+    ) -> None:
+        if round_cap < 1 or (per_peer is not None and per_peer < 1):
+            raise ValueError("limits must be positive")
+        self.round_cap = round_cap
+        self.per_peer = per_peer
+        self.window = window
+        self._seen: "OrderedDict[str, int]" = OrderedDict()
+        self._peers: Dict[str, List[float]] = {}
+        self._lock = threading.Lock()
+
+    def note(self, msg: Message, peer: Optional[str] = None, now: Optional[float] = None) -> Optional[str]:
+        """Count ``msg``; return a ``negotiation_limit:`` reason when over a limit."""
+        nid = msg.get("negotiation_id")
+        clock = time.time() if now is None else now
+        with self._lock:
+            too_many_rounds = False
+            if isinstance(nid, str) and nid:
+                count = self._seen.pop(nid, 0) + 1
+                self._seen[nid] = count
+                if len(self._seen) > ROUND_TABLE_SIZE:
+                    self._seen.popitem(last=False)
+                too_many_rounds = count > self.round_cap
+            too_fast = False
+            if self.per_peer is not None and peer is not None:
+                recent = [t for t in self._peers.get(peer, []) if clock - t < self.window]
+                recent.append(clock)
+                self._peers[peer] = recent
+                too_fast = len(recent) > self.per_peer
+        if too_many_rounds:
+            return f"{REASON_NEGOTIATION_LIMIT}: more than {self.round_cap} rounds for negotiation_id {nid}"
+        if too_fast:
+            return f"{REASON_NEGOTIATION_LIMIT}: peer rate limit exceeded"
+        return None
+
+
+def immutable_problem(msg: Message, core_constraints: Iterable[str]) -> Optional[str]:
+    """``immutable_constraint:`` reason if a propose/counter targets a core constraint."""
+    is_counter = msg.get("status") == "counter"
+    is_propose = "status" not in msg and "proposed_change" in msg
+    target = msg.get("target_constraint")
+    if not (is_counter or is_propose) or not isinstance(target, str):
+        return None
+    if any(target == c for c in core_constraints):
+        return f"{REASON_IMMUTABLE}: {target!r} is a core constraint of this receiver"
+    return None
+
+
+def respond(
+    msg: Message,
+    *,
+    core_constraints: Iterable[str] = (),
+    limits: Optional[NegotiationLimits] = None,
+    peer: Optional[str] = None,
+) -> Message:
     """Reply for a message that already passed ``check_incoming``.
 
     This implementation never returns ``absorbed``: it runs no local
     regression, so it cannot produce honest ``effect_summary`` evidence.
     Directive-like content (SPEC §2.1) is rejected with ``content_policy:``
     first, for packets and for the nested packets of negotiation messages.
+    Negotiation messages are then counted against ``limits`` (when given)
+    and checked against ``core_constraints``, in that order.
     """
     kind = kind_of(msg)
+    # A negotiation message counts as a round even when it is rejected below.
+    limit_reason = limits.note(msg, peer) if (kind == "negotiation" and limits is not None) else None
     if kind in ("experience-packet", "negotiation"):
         problem = content_problem(msg)
         if problem is not None:
             ref, reason = problem
             return {"packet_ref": ref, "status": "rejected", "reason": reason}
+    if kind == "negotiation":
+        if limit_reason is not None:
+            return rejected(msg, limit_reason)
+        immutable = immutable_problem(msg, list(core_constraints))
+        if immutable is not None:
+            return rejected(msg, immutable)
     if kind == "experience-packet":
         if ref_of(msg) == UNKNOWN_REF:
             return rejected(msg, "reserved or missing packet id: 'unknown' cannot be reported")
@@ -612,7 +704,9 @@ __all__: List[str] = [
     "CLIENT_TIMEOUT_SECONDS",
     "FORBIDDEN_DIRECTIVES",
     "ISOLATED_REASON",
+    "DEFAULT_ROUND_CAP",
     "MUST_METHODS",
+    "NegotiationLimits",
     "ReplayWindow",
     "UNKNOWN_REF",
     "canonical_bytes",
@@ -623,6 +717,7 @@ __all__: List[str] = [
     "directive_hits",
     "fresh_replay_fields",
     "gate_problem",
+    "immutable_problem",
     "is_absorption_result",
     "kind_of",
     "parse_timestamp",

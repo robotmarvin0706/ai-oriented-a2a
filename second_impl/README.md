@@ -39,11 +39,15 @@ Replies to messages that pass the checks:
 | Experience Packet, method `prompt_injection` or `retrieval` | `isolated`, `isolated: no local regression available` |
 | Experience Packet, any other method | `rejected`, `unsupported method: <method>` |
 | Experience Packet with `id` `unknown` | `rejected` (the reserved literal cannot be reported) |
-| Negotiation (any branch) | `rejected`, `negotiation_unsupported: ...`, `packet_ref` = `offered_packet.id` or `unknown` |
+| Negotiation message, 4th or later with the same `negotiation_id` (cap `DEFAULT_ROUND_CAP` = 3, `--max-rounds`) | `rejected`, `negotiation_limit: more than 3 rounds for negotiation_id <id>` |
+| Propose, or counter with `target_constraint`, targeting a `--core-constraint` | `rejected`, `immutable_constraint: ...` |
+| Negotiation (any other) | `rejected`, `negotiation_unsupported: ...`, `packet_ref` = `offered_packet.id` or `unknown` |
 | Absorption Result | `{"ack": true, "type": "result_ack"}` |
 | Agent Profile | `{"ack": true, "type": "profile_ack"}` |
 
 With `--sign-key`, every reply is signed.
+
+Negotiation (SPEC §3.0, since v0.4): `NegotiationLimits(round_cap=DEFAULT_ROUND_CAP, per_peer=None, window=60.0)` counts every negotiation message per `negotiation_id` (rejected ones too; messages without one are not counted) and keeps at most 10000 ids. The per-peer rate limit (`per_peer`, keyed by client address in `make_server(peer_rate_limit=...)`) is off by default. `immutable_problem(msg, core_constraints)` does the exact-string core-constraint check. `respond(msg, core_constraints=..., limits=..., peer=...)` applies `content_policy:`, then `negotiation_limit:`, then `immutable_constraint:`; without `limits` it counts nothing. Written from SPEC §3.0, not from the reference.
 
 Untrusted content (SPEC §2.1, since v0.4): `directive_hits(content)` checks every string value and key of `content` against the forbidden directive patterns of DATA_POLICY.md (its own regular expressions, not imported from the reference); `content_problem(msg)` applies it to a packet and to the nested `offered_packet` / `conditional_packet` of a negotiation message. `untrusted_block(packet)` wraps a packet for `prompt_injection` in the marker format documented in [IMPLEMENTATION.md](../IMPLEMENTATION.md#untrusted-content-wrapper-reference-library). This receiver never absorbs, so it does not inject anything; the wrapper is there for hosts that build on it. `tests/interop/test_content_policy.py` checks that both implementations give the same hits and the same wrapped bytes. The pattern check is a baseline, not a complete security guarantee.
 
@@ -51,7 +55,8 @@ Untrusted content (SPEC §2.1, since v0.4): `directive_hits(content)` checks eve
 
 ```bash
 # receiver
-python second_impl/minimal_client.py serve --port 8002 [--sign-key KEY] [--replay-window SECONDS] [--no-schema]
+python second_impl/minimal_client.py serve --port 8002 [--sign-key KEY] [--replay-window SECONDS] [--no-schema] \
+    [--core-constraint TEXT ...] [--max-rounds N]
 
 # send one message (packet, Absorption Result, profile, or negotiation)
 python second_impl/minimal_client.py send examples/experience-packet.json \
