@@ -17,3 +17,7 @@ Merge plan (tracked in [docs/KNOWN_GAPS.md](../../docs/KNOWN_GAPS.md)): remove t
 ## Untrusted content cases (not duplicated)
 
 `test_untrusted_content.py` (since 0.4.0, SPEC §2.1) has no copy elsewhere. It uses `start_receiver`, so it runs against `reference`, `second_impl`, and `external`: the `datasets/content_policy/` counter-examples, standalone and nested as `offered_packet`, must be rejected with a reason starting with `content_policy:`, and on-wire `"0.3"` and `"0.4"` must both be accepted.
+
+## Core constraint cases (not duplicated)
+
+`test_core_constraints.py` (since 0.4.0, SPEC §3.0) has no copy elsewhere. It uses `start_receiver(core_constraints=[...])`, so it runs against `reference`, `second_impl`, and `external` (passed as `--core-constraint TEXT` to `A2A_PEER_CMD`, or described by `A2A_PEER_CORE_CONSTRAINTS` for `A2A_PEER_URL`): a propose or counter targeting a core constraint → `immutable_constraint:`; the 4th message with one `negotiation_id` → `negotiation_limit:` (default cap 3); no counting without `negotiation_id`; and the order `content_policy:` → `negotiation_limit:` → `immutable_constraint:`. Ids are fresh per test, so a long-running peer does not carry rounds between tests.

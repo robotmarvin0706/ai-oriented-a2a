@@ -32,6 +32,8 @@ import network_dual_end  # noqa: E402
 
 EXPECTED_EXPORTS = {
     "CURRENT_MAJOR_MINOR",
+    "DEFAULT_MAX_NEGOTIATION_ROUNDS",
+    "NegotiationGuard",
     "PROTOCOL_VERSION",
     "RESERVED_PACKET_REF",
     "SCHEMA_KINDS",
@@ -44,6 +46,7 @@ EXPECTED_EXPORTS = {
     "check_incoming",
     "check_replay",
     "content_policy_rejection",
+    "immutable_constraint_rejection",
     "new_id",
     "packet_ref_of",
     "parse_timestamp",

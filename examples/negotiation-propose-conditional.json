@@ -1,5 +1,6 @@
 {
   "proposal_id": "prop-cond-2e91",
+  "negotiation_id": "neg-cond-2e91",
   "target_constraint": "tool_whitelist",
   "proposed_change": "temporarily allow web_search for the current local task only",
   "constraint_scope": "tool_whitelist.web_search",

@@ -76,9 +76,9 @@ First dual-endpoint comparison task set (non-normative): tool-call timeout / fai
 
 ## Minimal subset (v0.4)
 
-- Agent Profile (optional `interest_tags`)
+- Agent Profile (optional `interest_tags`; optional `core_constraints` since v0.4)
 - Experience Packet + absorption metadata (optional provenance / verification_claim; method layering)
-- Basic negotiation primitives (optional conditional_packet / constraint_scope / duration)
+- Basic negotiation primitives (optional conditional_packet / constraint_scope / duration; optional `negotiation_id` since v0.4, with a round cap of 3 by default, `negotiation_limit:` over it, and `immutable_constraint:` for a target in `core_constraints`)
 - Simple discovery (endpoint or local metadata; light interest tags prose)
 - Absorption Result (absorbed / rejected / isolated; `effect_summary.note` MUST when absorbed)
 - Optional on-wire `version`, `nonce`, `timestamp`, `signature`; optional Agent Profile `identity`

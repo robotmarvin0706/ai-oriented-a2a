@@ -7,7 +7,8 @@ Does not import ``ai_oriented_a2a`` or ``examples/``.
   python second_impl/minimal_client.py send PACKET.json --url http://127.0.0.1:8002 \
       [--sign-key KEY] [--with-nonce] [--no-schema]
   python second_impl/minimal_client.py serve --port 8002 \
-      [--sign-key KEY] [--replay-window SECONDS] [--no-schema]
+      [--sign-key KEY] [--replay-window SECONDS] [--no-schema] \
+      [--core-constraint TEXT ...] [--max-rounds N]
 
 ``send`` exit codes: 0 accepted (isolated, absorbed, or an ack),
 1 rejected by the peer, 3 the peer's reply violates the protocol,
@@ -160,6 +161,9 @@ def make_server(
     replay_window: Optional[float] = None,
     schema: bool = True,
     log: bool = False,
+    core_constraints: Optional[List[str]] = None,
+    round_cap: int = core.DEFAULT_ROUND_CAP,
+    peer_rate_limit: Optional[int] = None,
 ) -> ThreadingHTTPServer:
     """Build (but do not start) a receiver for POST /a2a/message.
 
@@ -168,8 +172,15 @@ def make_server(
     ``Content-Length``, get HTTP 413 and ``payload_too_large:``. An
     unexpected error in the checks or the reply gets HTTP 500 and
     ``internal_error: message handler failed``.
+
+    Negotiation (SPEC §3): ``core_constraints`` are this receiver's
+    immutable constraints; ``round_cap`` caps messages per
+    ``negotiation_id``; ``peer_rate_limit`` (negotiation messages per minute
+    per client address) is off when None.
     """
     replay = core.ReplayWindow(replay_window) if replay_window is not None else None
+    cores = list(core_constraints or [])
+    limits = core.NegotiationLimits(round_cap, per_peer=peer_rate_limit)
     received: List[Dict[str, Any]] = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -204,7 +215,9 @@ def make_server(
                 rejection = core.check_incoming(msg, sign_key=sign_key, replay=replay, schema=schema)
                 if rejection is None:
                     received.append(msg)
-                reply = rejection if rejection else core.respond(msg)
+                reply = rejection if rejection else core.respond(
+                    msg, core_constraints=cores, limits=limits, peer=self.client_address[0]
+                )
             except Exception:
                 # No exception text, path, or traceback on the wire.
                 if log:
@@ -281,6 +294,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="enable the replay window: incoming messages must carry nonce and timestamp",
     )
     p_serve.add_argument("--no-schema", action="store_true", help="skip JSON Schema checks of incoming messages")
+    p_serve.add_argument(
+        "--core-constraint",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help="immutable constraint (repeatable): a propose/counter targeting it gets immutable_constraint:",
+    )
+    p_serve.add_argument(
+        "--max-rounds",
+        type=int,
+        default=core.DEFAULT_ROUND_CAP,
+        help="messages allowed per negotiation_id before negotiation_limit: (default 3)",
+    )
     return parser
 
 
@@ -298,6 +324,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             replay_window=args.replay_window,
             schema=not args.no_schema,
             log=True,
+            core_constraints=args.core_constraint,
+            round_cap=args.max_rounds,
         )
         window = f"{args.replay_window}s" if args.replay_window is not None else "off"
         print(

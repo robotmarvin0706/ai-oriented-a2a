@@ -3,6 +3,9 @@
     "tool_whitelist: web_search,code_exec",
     "no_external_payment"
   ],
+  "core_constraints": [
+    "no_external_payment"
+  ],
   "improvement_prefs": [
     "failure_mode",
     "strategy_fragment"

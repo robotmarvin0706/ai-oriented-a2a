@@ -1,7 +1,9 @@
 """Implementation selection for the HTTP conformance suite.
 
-``start_receiver(sign_key=None, replay_window=None)`` returns the base URL
-of a receiver configured with that signing key and replay window. It is
+``start_receiver(sign_key=None, replay_window=None, core_constraints=None)``
+returns the base URL of a receiver configured with that signing key, replay
+window and (SPEC §3) core constraints. ``core_constraints=None`` means the
+test does not care; every receiver uses the default round cap of 3. It is
 parametrized over the implementations named in ``A2A_CONFORMANCE_IMPLS``
 (comma-separated). Default: ``reference,second_impl``, plus ``external``
 when ``A2A_PEER_CMD`` or ``A2A_PEER_URL`` is set.
@@ -11,10 +13,12 @@ when ``A2A_PEER_CMD`` or ``A2A_PEER_URL`` is set.
 - ``external``: an implementation under test, either
   - ``A2A_PEER_CMD``: a command template containing ``{port}``. The runner
     starts a fresh process per configuration, appending
-    ``--sign-key KEY`` and/or ``--replay-window SECONDS`` when a test needs
-    them, and waits for the port to accept connections; or
+    ``--sign-key KEY``, ``--replay-window SECONDS`` and one
+    ``--core-constraint TEXT`` per core constraint when a test needs them,
+    and waits for the port to accept connections; or
   - ``A2A_PEER_URL``: an already running receiver whose configuration is
-    described by ``A2A_PEER_SIGN_KEY`` and ``A2A_PEER_REPLAY_WINDOW``.
+    described by ``A2A_PEER_SIGN_KEY``, ``A2A_PEER_REPLAY_WINDOW`` and
+    ``A2A_PEER_CORE_CONSTRAINTS`` (a JSON array of strings).
     Tests that need a different configuration are skipped. A long-running
     peer keeps its replay state across tests, so ``A2A_PEER_CMD`` is the
     more faithful mode.
@@ -24,6 +28,7 @@ See docs/COMPLIANCE.md.
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import socket
@@ -83,10 +88,10 @@ def start_receiver(request):
     impl = request.param
     cleanups = []
 
-    def _start(sign_key=None, replay_window=None):
+    def _start(sign_key=None, replay_window=None, core_constraints=None):
         if impl == "reference":
             from minimal_dual_end import Receiver
-            from network_dual_end import A2AHandler
+            from network_dual_end import A2AHandler, NegotiationGuard
 
             A2AHandler.role = "receiver"
             A2AHandler.peer_url = None
@@ -95,6 +100,8 @@ def start_receiver(request):
             A2AHandler.received = []
             A2AHandler.receiver = Receiver(isolation_n=3, regression_drop_threshold=0.10)
             A2AHandler.seen_nonces = set()
+            A2AHandler.core_constraints = list(core_constraints or [])
+            A2AHandler.negotiation_guard = NegotiationGuard()
             server = HTTPServer(("127.0.0.1", 0), A2AHandler)
             threading.Thread(target=server.serve_forever, daemon=True).start()
             cleanups.append(lambda: (server.shutdown(), server.server_close()))
@@ -103,7 +110,9 @@ def start_receiver(request):
         if impl == "second_impl":
             from second_impl.minimal_client import start_in_thread
 
-            server, url = start_in_thread(sign_key=sign_key, replay_window=replay_window)
+            server, url = start_in_thread(
+                sign_key=sign_key, replay_window=replay_window, core_constraints=core_constraints
+            )
             cleanups.append(lambda: (server.shutdown(), server.server_close()))
             return url
 
@@ -116,6 +125,8 @@ def start_receiver(request):
                     cmd += ["--sign-key", sign_key]
                 if replay_window is not None:
                     cmd += ["--replay-window", str(replay_window)]
+                for text in core_constraints or []:
+                    cmd += ["--core-constraint", text]
                 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 cleanups.append(lambda: (proc.terminate(), proc.wait(timeout=10)))
                 _wait_for_port(port, proc)
@@ -129,6 +140,13 @@ def start_receiver(request):
                     f"replay_window={peer_window!r}; test needs {sign_key!r}, {replay_window!r} "
                     "(use A2A_PEER_CMD to run every configuration)"
                 )
+            if core_constraints is not None:
+                peer_cores = json.loads(os.environ.get("A2A_PEER_CORE_CONSTRAINTS") or "[]")
+                if sorted(peer_cores) != sorted(core_constraints):
+                    pytest.skip(
+                        f"external peer has core_constraints={peer_cores!r}; test needs "
+                        f"{list(core_constraints)!r} (set A2A_PEER_CORE_CONSTRAINTS or use A2A_PEER_CMD)"
+                    )
             return url
 
         raise ValueError(f"unknown implementation {impl!r} in A2A_CONFORMANCE_IMPLS")
