@@ -14,6 +14,11 @@ reason set, local injection/retrieval rolled back. metrics always record
 declared_N, declared_threshold, rollback_triggered, rollback_action
 (legacy isolation_n / drop_threshold mirrored for convenience).
 
+Absorption (since 0.4.1): the receiver's new policy is parsed from packet
+content by experiments/timeout_recovery/strategy.py (backoff, max_attempts,
+drop_stale_partials); content with no such parameter changes nothing and is
+rejected, and a change with no measured gain is rolled back.
+
 Run from repo root:
   python3 examples/minimal_dual_end.py
   python3 examples/minimal_dual_end.py --seed 42 --trials 20 --isolation-n 3 --drop-threshold 0.10
@@ -55,6 +60,8 @@ if str(REPO_ROOT) not in sys.path:
 # SPEC §2.1: packet content is untrusted data (scan before absorbing, wrap
 # before prompt injection).
 from ai_oriented_a2a.content import UNTRUSTED_NOTICE, scan_directives, wrap_untrusted  # noqa: E402
+# Strategy parameters are parsed from packet content (never from the hint).
+from experiments.timeout_recovery.strategy import parse_recovery_params  # noqa: E402
 MUST_METHODS = frozenset({"prompt_injection", "retrieval"})
 ARM_NAMES = (
     "no_sharing",
@@ -85,6 +92,18 @@ def optional_schema_validate(packet: dict, result: dict) -> str:
 # ---------------------------------------------------------------------------
 # Simulated tool-call timeout / recovery
 # ---------------------------------------------------------------------------
+
+
+# Upper bound on attempts when a packet asks for unbounded retries. The
+# simulated tool throttles immediate retries (see THROTTLE_AFTER_IMMEDIATE), so
+# the cap only bounds the loop; it does not add successes.
+UNBOUNDED_ATTEMPT_CAP = 50
+# After this many consecutive immediate retries (no backoff) the simulated tool
+# throttles the caller and every further attempt fails. The default policies use
+# at most 3 attempts, so they never reach it and earlier tables are unchanged.
+THROTTLE_AFTER_IMMEDIATE = 3
+# Context cost of carrying an absorbed strategy (same value as before 0.4.1).
+INJECTED_STRATEGY_TOKENS = 48
 
 
 @dataclass
@@ -128,6 +147,12 @@ def run_web_search(policy: Policy, rng: random.Random) -> TrialResult:
 
     for attempt in range(policy.max_attempts):
         tool_calls += 1
+        if not policy.backoff and attempt >= THROTTLE_AFTER_IMMEDIATE:
+            # Retry storm: the tool throttles a caller that keeps retrying
+            # immediately. No random draw, so earlier attempts stay paired.
+            timed_out_any = True
+            notes.append(f"attempt {attempt + 1}: throttled (immediate retry storm)")
+            continue
         if rng.random() < _timeout_prob(attempt, policy.backoff):
             timed_out_any = True
             notes.append(f"attempt {attempt + 1}: timeout")
@@ -188,6 +213,32 @@ def recovered_policy() -> Policy:
         backoff=True,
         drop_stale_partials=True,
         injected_tokens=48,
+    )
+
+
+def policy_from_params(current: Policy, params: Dict[str, Any]) -> Policy:
+    """Return a copy of ``current`` with the parsed packet parameters applied.
+
+    Keys the packet does not state keep their current value. ``max_attempts``
+    of None (unbounded) is capped at UNBOUNDED_ATTEMPT_CAP for the loop.
+    """
+    new = deepcopy(current)
+    if "backoff" in params:
+        new.backoff = bool(params["backoff"])
+    if "max_attempts" in params:
+        value = params["max_attempts"]
+        new.max_attempts = UNBOUNDED_ATTEMPT_CAP if value is None else max(1, int(value))
+    if "drop_stale_partials" in params:
+        new.drop_stale_partials = bool(params["drop_stale_partials"])
+    new.injected_tokens = max(new.injected_tokens, INJECTED_STRATEGY_TOKENS)
+    return new
+
+
+def policy_label(policy: Policy) -> str:
+    """Short metric string for a policy (effect_summary metrics are scalars)."""
+    return (
+        f"max_attempts={policy.max_attempts},backoff={policy.backoff},"
+        f"drop_stale_partials={policy.drop_stale_partials}"
     )
 
 
@@ -659,15 +710,44 @@ class Receiver:
         prompt_before = self.state.prompt_prefix
         store_before_keys = sorted(self.state.retrieval_store.keys())
 
-        raw = content.get("raw_trajectory")
-        applied = False
-        if raw is not None:
-            if extract_recovery_from_raw(raw):
-                self._apply_recovery(method, hint or "backoff from raw trajectory", packet)
-                applied = True
-        else:
-            self._apply_recovery(method, hint, packet)
-            applied = True
+        # The new policy comes from the packet content only. Nothing parsed
+        # means nothing applied, and that is recorded rather than hidden.
+        params, evidence = parse_recovery_params(content)
+        if not params:
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "rejected",
+                    "reason": (
+                        "no recovery parameters found in packet content; "
+                        "local policy unchanged"
+                    ),
+                    "effect_summary": {
+                        "note": "no local change applied; content stated no backoff, "
+                        "attempt, or stale-result parameter",
+                        "metrics": stamp_isolation_declaration(
+                            {
+                                "method": method,
+                                "payload_tokens": approx_payload_tokens(packet),
+                                "strategy_parsed": False,
+                                "applied": False,
+                                "baseline_sr": round(baseline_sr, 4),
+                                # Policy unchanged, so no regression was run;
+                                # baseline stands in to keep the gate satisfied.
+                                "regression_sr": round(baseline_sr, 4),
+                                "regression_run": False,
+                            },
+                            declared_n=self.isolation_n,
+                            declared_threshold=self.regression_drop_threshold,
+                            rollback_triggered=False,
+                            rollback_action=ROLLBACK_ACTION_NONE,
+                        ),
+                    },
+                }
+            )
+        policy_before = deepcopy(self.state.policy)
+        self._apply_recovery(method, hint, packet, params)
+        applied = True
 
         prompt_after = self.state.prompt_prefix
         store_after_keys = sorted(self.state.retrieval_store.keys())
@@ -694,6 +774,10 @@ class Receiver:
                 "payload_tokens": payload_tokens,
                 "adapter": method,
                 "applied": applied,
+                "strategy_parsed": True,
+                "strategy_source": ",".join(evidence),
+                "policy_before": policy_label(policy_before),
+                "policy_after": policy_label(self.state.policy),
                 "prompt_before": _describe_prompt(prompt_before),
                 "prompt_after": _describe_prompt(prompt_after),
                 "prompt_changed": prompt_before != prompt_after,
@@ -705,6 +789,12 @@ class Receiver:
             rollback_triggered=False,
             rollback_action=ROLLBACK_ACTION_NONE,
         )
+
+        post_sr = (regression["successes"] + isolation["successes"]) / max(
+            1, regression["n"] + isolation["n"]
+        )
+        # Pooled post-change SR (regression + isolation), used by the no-gain rule.
+        metrics["post_change_sr"] = round(post_sr, 4)
 
         # Performance drop past threshold → rejected + rollback.
         if drop > self.regression_drop_threshold and iso_sr < baseline_sr:
@@ -757,6 +847,33 @@ class Receiver:
                 }
             )
 
+        # No measured gain over regression + isolation trials pooled: the
+        # change is not kept (since 0.4.1; before, any change that did not
+        # drop past the threshold was absorbed, including bad advice).
+        if post_sr <= baseline_sr:
+            _rollback(self.state)
+            metrics = stamp_isolation_declaration(
+                metrics,
+                declared_n=self.isolation_n,
+                declared_threshold=self.regression_drop_threshold,
+                rollback_triggered=True,
+                rollback_action=ROLLBACK_ACTION_CLEAR,
+            )
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "rejected",
+                    "reason": (
+                        f"no measured gain: post-change SR {post_sr:.3f} (regression + isolation) "
+                        f"not above baseline {baseline_sr:.3f}"
+                    ),
+                    "effect_summary": {
+                        "note": "change rolled back: no gain over the current policy",
+                        "metrics": metrics,
+                    },
+                }
+            )
+
         note = (
             f"{method} applied; isolation {self.isolation_n} trials "
             f"SR {iso_sr:.3f} (baseline {baseline_sr:.3f})"
@@ -777,8 +894,9 @@ class Receiver:
         method: str,
         hint: str,
         packet: Dict[str, Any],
+        params: Dict[str, Any],
     ) -> None:
-        self.state.policy = recovered_policy()
+        self.state.policy = policy_from_params(self.state.policy, params)
         if method == "prompt_injection":
             # SPEC §2.1 (b): the injected text is the packet wrapped in the
             # library's untrusted markers, for a role below system/host
