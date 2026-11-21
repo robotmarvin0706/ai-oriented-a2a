@@ -261,7 +261,8 @@ def test_receiver_absorb_produces_compliant_or_rejected():
     }
     import random
     result = recv.absorb(packet, random.Random(42))
-    assert result["status"] in ("absorbed", "rejected", "isolated")
+    # Seeded rng and a parsed "backoff" strategy: the outcome is fixed.
+    assert result["status"] == "absorbed"
     if result["status"] != "absorbed":
         assert "reason" in result
     # experiment path always emits a compliant summary after the gate
