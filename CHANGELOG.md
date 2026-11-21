@@ -13,6 +13,9 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 This release collects `spec/content-is-data` (#47) and `spec/core-constraints` (#48), built from tag `v0.4.0`.
 
+Published to PyPI on 2026-11-22, built from tag `v0.4.0`: https://pypi.org/project/ai-oriented-a2a/0.4.0/
+Also published to TestPyPI the same day: https://test.pypi.org/project/ai-oriented-a2a/0.4.0/
+
 Protocol v0.4 (on-wire `"0.4"`) and library 0.4.0. During 0.x, SPEC tightenings that add receiver MUSTs take a minor bump ([docs/VERSIONING.md](docs/VERSIONING.md)). Receivers implementing 0.4 still accept on-wire `"0.3"` and omitted `version` (omitted is treated as the current normative version and processed under 0.4 rules).
 
 ### Breaking (specification tightening)
