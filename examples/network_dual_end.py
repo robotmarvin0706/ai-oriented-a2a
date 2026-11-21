@@ -13,9 +13,13 @@ integrators should use ``ai_oriented_a2a.transport`` rather than copy it.
 
 For supported absorption methods the receiver runs the local regression +
 isolation N path from minimal_dual_end.Receiver.absorb (experiment-path gate,
-stricter than the v0.3 wire hard gate). Unsupported methods are rejected
-explicitly. On the wire, effect_summary.note is MUST when status is absorbed
-(SPEC §3.1); full metrics remain OPTIONAL. The receiver converts a missing
+stricter than the wire hard gate). Unsupported methods are rejected
+explicitly. Packet content is untrusted data (SPEC §2.1): a packet, or a
+negotiation message whose offered_packet / conditional_packet, matches a
+forbidden directive pattern (docs/DATA_POLICY.md) is rejected with
+content_policy: before the method check, and is never absorbed. On the wire,
+effect_summary.note is MUST when status is absorbed (SPEC §3.1); full
+metrics remain OPTIONAL. The receiver converts a missing
 or non-compliant summary to rejected rather than emitting an invalid absorbed
 result.
 
@@ -89,7 +93,7 @@ from ai_oriented_a2a import (  # noqa: E402,F401
     verify_message,
     version_rejection,
 )
-from ai_oriented_a2a import transport  # noqa: E402
+from ai_oriented_a2a import content_policy_rejection, transport  # noqa: E402
 from ai_oriented_a2a.transport import A2ARequestHandler, guard_result  # noqa: E402
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
@@ -181,15 +185,23 @@ class A2AHandler(A2ARequestHandler):
         self.received.append(msg)
 
         response: Dict[str, Any] = {"ack": True}
+        is_packet = "id" in msg and "absorption" in msg
+        # SPEC §2.1 (c): directive-like content in a packet or in a nested
+        # packet of a negotiation message is rejected, never absorbed.
+        policy = (
+            content_policy_rejection(msg) if is_packet or "proposal_id" in msg else None
+        )
 
-        if "proposal_id" in msg:
+        if policy is not None:
+            response = guard_result(policy)
+        elif "proposal_id" in msg:
             # Negotiation (propose / accept / reject / counter): not
             # implemented here, so reject with a legal Absorption Result
             # instead of a bare ack (KNOWN_GAPS fix in 0.3.3).
             response = negotiation_rejection(msg)
         elif "constraints" in msg:
             response["type"] = "profile_ack"
-        elif "id" in msg and "absorption" in msg:
+        elif is_packet:
             method = msg.get("absorption", {}).get("method")
             if method not in MUST_METHODS and method not in ("local_adapter_hint", "trajectory_replay"):
                 result = reject_result(msg, f"unsupported method: {method}")

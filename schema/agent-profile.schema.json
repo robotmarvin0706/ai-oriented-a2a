@@ -16,7 +16,7 @@
     "version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
-      "description": "Optional on-wire protocol version. Canonical value is \"0.3\". Values with a leading v (e.g. \"v0.3\") are treated as unknown and MUST be rejected."
+      "description": "Optional on-wire protocol version. Canonical value is \"0.4\". A v0.4 receiver also accepts the 0.3 line (\"0.3\", \"0.3.x\") and processes it under v0.4 rules. Values with a leading v (e.g. \"v0.4\") are treated as unknown and MUST be rejected."
     },
     "nonce": { "type": "string", "minLength": 1 },
     "timestamp": { "oneOf": [{ "type": "number" }, { "type": "string", "format": "date-time", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]{3}|\\.[0-9]{6})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$" }] },

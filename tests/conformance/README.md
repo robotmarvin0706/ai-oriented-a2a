@@ -1,6 +1,6 @@
 # Conformance suite
 
-HTTP-level tests that any AI-oriented A2A v0.3 receiver should pass. The `start_receiver` fixture in `conftest.py` is parametrized over implementations: the reference (`examples/network_dual_end.py`), `second_impl/`, and optionally an external implementation (`A2A_PEER_CMD` or `A2A_PEER_URL`). How to run it is in [docs/COMPLIANCE.md](../../docs/COMPLIANCE.md#4-running-the-suite).
+HTTP-level tests that any AI-oriented A2A v0.4 receiver should pass. The `start_receiver` fixture in `conftest.py` is parametrized over implementations: the reference (`examples/network_dual_end.py`), `second_impl/`, and optionally an external implementation (`A2A_PEER_CMD` or `A2A_PEER_URL`). How to run it is in [docs/COMPLIANCE.md](../../docs/COMPLIANCE.md#4-running-the-suite).
 
 ## Duplication: keep in sync
 
@@ -13,3 +13,7 @@ Merge plan (tracked in [docs/KNOWN_GAPS.md](../../docs/KNOWN_GAPS.md)): remove t
 ## Robustness cases (not duplicated)
 
 `test_robustness.py` (since 0.3.3) has no copy elsewhere: non-finite timestamps, the 413 request-body limit, negotiation rejection, and 16 concurrent requests with distinct nonces. The first three use `start_receiver`. The concurrency case needs a `ThreadingHTTPServer`, and the `reference` receiver of `start_receiver` is `examples/network_dual_end.py` on a synchronous `HTTPServer`, so it uses its own fixture: `ai_oriented_a2a.transport.make_server` for `reference` and `second_impl.minimal_client.make_server` for `second_impl` (no `external` mode).
+
+## Untrusted content cases (not duplicated)
+
+`test_untrusted_content.py` (since 0.4.0, SPEC §2.1) has no copy elsewhere. It uses `start_receiver`, so it runs against `reference`, `second_impl`, and `external`: the `datasets/content_policy/` counter-examples, standalone and nested as `offered_packet`, must be rejected with a reason starting with `content_policy:`, and on-wire `"0.3"` and `"0.4"` must both be accepted.

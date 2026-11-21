@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal independent A2A v0.3 client and receiver (HTTP binding).
+"""Minimal independent A2A v0.4 client and receiver (HTTP binding).
 
 Standard library only (plus optional ``jsonschema`` for schema checks).
 Does not import ``ai_oriented_a2a`` or ``examples/``.
@@ -252,7 +252,7 @@ SEND_HELP = (
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="minimal_client.py",
-        description="Independent minimal client and receiver for AI-oriented A2A v0.3.",
+        description="Independent minimal client and receiver for AI-oriented A2A v0.4.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

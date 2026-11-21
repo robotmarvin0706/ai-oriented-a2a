@@ -107,10 +107,10 @@ def _assert_valid_rejection(status, body, reason_part, packet_ref=None):
 
 def test_http_unknown_version_returns_200_rejected(start_receiver):
     url = start_receiver()
-    pkt = _valid_packet(version="0.4")
+    pkt = _valid_packet(version="0.5")
     status, body = _post(url, pkt)
     _assert_valid_rejection(status, body, "unsupported_version", pkt["id"])
-    assert "0.4" in body["reason"]
+    assert "0.5" in body["reason"]
 
     pkt2 = _valid_packet(version="v0.3")
     status, body = _post(url, pkt2)
@@ -120,7 +120,7 @@ def test_http_unknown_version_returns_200_rejected(start_receiver):
 
 def test_http_unknown_version_without_id_uses_reserved_ref(start_receiver):
     url = start_receiver()
-    status, body = _post(url, {"version": "0.4", "constraints": []})
+    status, body = _post(url, {"version": "0.5", "constraints": []})
     _assert_valid_rejection(status, body, "unsupported_version", "unknown")
 
 

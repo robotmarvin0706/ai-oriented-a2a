@@ -92,6 +92,8 @@ def check_public_packet(packet):
         texts += [str(claim.get("expected_effect", "")), str(claim.get("replay_hint", ""))]
         for hit in _uplift_hits(texts):
             errors.append(f"numeric uplift in synthetic packet: {hit!r}")
+        if "value" in claim:
+            errors.append("synthetic packet carries verification_claim.value (a measured number)")
 
     return errors
 
@@ -201,11 +203,24 @@ def test_counter_example_marker_allowed():
         (lambda p: p["content"].update(note="0.72 -> 0.81"), "numeric uplift"),
         (lambda p: p["content"].update(note="success up 12%"), "numeric uplift"),
         (lambda p: p["content"].update(note="positive ΔSR"), "numeric uplift"),
+        (
+            lambda p: p["verification_claim"].update(metric="recovery_sr", value=0.8),
+            "carries verification_claim.value",
+        ),
     ],
 )
 def test_checker_rejects(mutate, expected):
     errors = check_public_packet(_variant(mutate))
     assert any(expected in e for e in errors), errors
+
+
+def test_synthetic_packet_may_carry_scenario_ref_and_repro():
+    packet = _variant(
+        lambda p: p["verification_claim"].update(
+            scenario_ref="pkt-synth-timeout-001", metric="recovery_sr", repro={"seed": 7, "n": 20}
+        )
+    )
+    assert check_public_packet(packet) == []
 
 
 def test_hyphenated_ids_are_not_uplift():

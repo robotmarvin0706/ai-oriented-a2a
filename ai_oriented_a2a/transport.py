@@ -1,4 +1,4 @@
-"""Minimal HTTP binding for AI-oriented A2A v0.3 (standard library only).
+"""Minimal HTTP binding for AI-oriented A2A v0.4 (standard library only).
 
 Import it explicitly; it is not re-exported from the top-level package, so
 ``import ai_oriented_a2a`` does not load ``http.server`` or ``urllib``::
@@ -29,7 +29,10 @@ class, shared by every request thread of the server. ``make_handler`` injects
 a fresh one; it is never per request instance, because
 ``BaseHTTPRequestHandler`` builds a new instance for each request.
 
-The package does not decide absorption: the host's callback does.
+The package does not decide absorption: the host's callback does. Packet
+``content`` is untrusted data (SPEC §2.1): a callback SHOULD reply with
+``ai_oriented_a2a.content_policy_rejection(msg)`` when it is not None, and
+MUST wrap content with ``wrap_untrusted`` before any ``prompt_injection``.
 """
 
 from __future__ import annotations

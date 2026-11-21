@@ -1,9 +1,9 @@
-# AI-Oriented A2A (v0.3)
+# AI-Oriented A2A (v0.4)
 
 Minimal **peer** protocol for AI capability growth: Experience Packets + constraint negotiation.
 Not the Google A2A task/agent-card stack — this repo is about sharing compressed improvement signals between peers.
-- Spec: [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) (v0.3) · Last tagged release: [v0.3.3](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.3) · Changelog: [CHANGELOG.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CHANGELOG.md)
-- Library version on `main`: 0.3.3 (protocol v0.3).
+- Spec: [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) (v0.4) · Last tagged release: [v0.3.3](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.3) · Changelog: [CHANGELOG.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CHANGELOG.md)
+- Library version on `main`: 0.4.0 (protocol v0.4), not released yet. The latest release on PyPI is 0.3.3 (protocol v0.3).
 - Keywords: experience packet, absorption, proposal_id, peer negotiation, trajectory_replay
 
 Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
@@ -30,6 +30,10 @@ v0.3 does not add message types. It tightens Absorption Result: a peer that emit
 
 Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain valid): an on-wire `version` field (canonical `"0.3"`, no leading `v`); `nonce`, `timestamp`, and `signature` on every message type; and `identity` on Agent Profile. See [docs/VERSIONING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/VERSIONING.md) and [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md).
 
+### v0.4 subset note
+
+v0.4 does not add message types or required fields. It tightens what a receiver may do with packet content ([SPEC §2.1](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md#21-untrusted-content)): `content`, including nested `offered_packet` / `conditional_packet`, is untrusted data and never an instruction; `prompt_injection` wraps it in documented untrusted markers below system and host instructions; content with a forbidden directive pattern ([DATA_POLICY](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md#forbidden-directive-patterns-normative)) SHOULD be rejected with `content_policy:` and MUST NOT be absorbed automatically. `verification_claim` gains OPTIONAL `scenario_ref`, `metric`, `value`, and `repro`. The on-wire version is `"0.4"`; v0.4 receivers still accept `"0.3"`.
+
 ## Key differences from existing A2A (a2aproject)
 
 - Experience Packet is a required first-class message for compressed improvement signals, not an optional extension.
@@ -41,7 +45,7 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 
 | Path | Role |
 | --- | --- |
-| [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) | Normative minimal subset (v0.3) |
+| [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) | Normative minimal subset (v0.4) |
 | [schema/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/schema) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
 | [examples/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/examples) | Concrete messages (Profile, packets, negotiation, absorption results) |
 | [IMPLEMENTATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/IMPLEMENTATION.md) | Non-normative dual-endpoint implementation notes |
@@ -49,8 +53,8 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 | [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md) | HTTP binding, error recommendations, retries |
 | [docs/SECURITY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/SECURITY.md) | Non-normative signature and replay recommendations |
 | [docs/ABSORPTION_STATE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/ABSORPTION_STATE.md) | Non-normative absorption delta identity and single-step rollback |
-| [docs/DATA_POLICY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md) | Non-normative trust and safety rules for public Experience Packet corpora |
-| [datasets/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/datasets) | Public synthetic Experience Packet corpora (CC0), checked in CI |
+| [docs/DATA_POLICY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md) | Trust and safety rules for public Experience Packet corpora (advisory), plus the normative forbidden directive patterns for SPEC §2.1 |
+| [datasets/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/datasets) | Public synthetic Experience Packet corpora (CC0), including `content_policy:` counter-examples, checked in CI |
 | [CONTRIBUTING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CONTRIBUTING.md) | How to report defects and send PRs |
 | [keywords.txt](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/keywords.txt) | Explicit term list for retrieval / indexing |
 | [ai_oriented_a2a/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/ai_oriented_a2a) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
@@ -64,13 +68,13 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 
 ## Status
 
-v0.3 minimal subset documented with schemas and examples. Independent implementations of this minimal subset are welcome. Report **actual** interop defects (parse or exchange failures against `SPEC.md`, `schema/`, and `examples/`) rather than open-ended design suggestions. When reporting defects, specify the protocol version.
+v0.4 minimal subset documented with schemas and examples. Independent implementations of this minimal subset are welcome. Report **actual** interop defects (parse or exchange failures against `SPEC.md`, `schema/`, and `examples/`) rather than open-ended design suggestions. When reporting defects, specify the protocol version.
 
 ## Next steps
 
 First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative) and [IMPLEMENTATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/IMPLEMENTATION.md).
 
-## Minimal subset (v0.3)
+## Minimal subset (v0.4)
 
 - Agent Profile (optional `interest_tags`)
 - Experience Packet + absorption metadata (optional provenance / verification_claim; method layering)
@@ -78,6 +82,7 @@ First dual-endpoint comparison task set (non-normative): tool-call timeout / fai
 - Simple discovery (endpoint or local metadata; light interest tags prose)
 - Absorption Result (absorbed / rejected / isolated; `effect_summary.note` MUST when absorbed)
 - Optional on-wire `version`, `nonce`, `timestamp`, `signature`; optional Agent Profile `identity`
+- Packet content is untrusted data (§2.1): documented wrapping for `prompt_injection`, `content_policy:` rejection of directive-like content
 
 ## Install
 
@@ -106,7 +111,7 @@ Maintainers: see [docs/RELEASING.md](https://github.com/robotmarvin0706/ai-orien
 ```python
 from ai_oriented_a2a import check_incoming, sign_message
 
-msg = {"id": "pkt-1", "version": "0.3"}
+msg = {"id": "pkt-1", "version": "0.4"}
 # Default: version check only; signature and replay stay off.
 rejected = check_incoming(msg)  # None, or a legal rejected Absorption Result
 
@@ -119,11 +124,16 @@ rejected = check_incoming(signed, sign_key="secret", replay_window=600, seen=see
 The HTTP binding (`POST /a2a/message`) ships as a submodule. It is not re-exported, so `import ai_oriented_a2a` does not load `http.server`; import it explicitly:
 
 ```python
+from ai_oriented_a2a import content_policy_rejection, wrap_untrusted
 from ai_oriented_a2a.transport import send_message, make_server, serve
 
 def on_message(msg):
     # Called only after the version / signature / replay checks pass.
     # The reply passes the absorption hard gate before it is sent.
+    rejected = content_policy_rejection(msg)  # SPEC §2.1: content is data, not instructions
+    if rejected:
+        return rejected
+    # For prompt_injection, put wrap_untrusted(msg) in a user/tool message, never the system prompt.
     return {"packet_ref": msg["id"], "status": "isolated", "reason": "isolated: no local regression"}
 
 server = make_server(on_message, port=8002, sign_key="secret", replay_window=600)
@@ -131,6 +141,8 @@ server = make_server(on_message, port=8002, sign_key="secret", replay_window=600
 
 reply = send_message("http://127.0.0.1:8002", msg, sign_key="secret", add_replay_fields=True)
 ```
+
+`content_policy_rejection` and `scan_directives` are a baseline check against the [forbidden directive patterns](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md#forbidden-directive-patterns-normative), not a complete security guarantee. The `wrap_untrusted` marker format is documented in [IMPLEMENTATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/IMPLEMENTATION.md#untrusted-content-wrapper-reference-library).
 
 `send_message` options are keyword-only (`timeout` defaults to 30 seconds). If the callback raises, the peer gets HTTP 500 with a rejected Absorption Result whose reason starts with `internal_error:`. See [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md#first-edition-minimal-library-boundary).
 

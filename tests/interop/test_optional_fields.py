@@ -3,7 +3,7 @@
 Covers:
   - New OPTIONAL fields (version, nonce, timestamp, signature, identity)
     do not invalidate existing examples; additionalProperties stays false.
-  - version pattern: "0.3" / "0.3.0" valid, "v0.3" invalid at schema and
+  - version pattern: "0.3" / "0.3.0" / "0.4" valid, "v0.3" invalid at schema and
     rejected by the reference handler with unsupported_version.
   - Canonical HMAC-SHA256 signing (json.dumps separators=(',', ':'),
     sort_keys=True, ensure_ascii=False, UTF-8, excluding signature).
@@ -168,6 +168,8 @@ def test_version_pattern_accepts_0_3_and_rejects_leading_v():
     with pytest.raises(jsonschema.ValidationError):
         PACKET_V.validate(pkt)
     pkt["version"] = "0.4"
+    PACKET_V.validate(pkt)
+    pkt["version"] = "0.5"
     PACKET_V.validate(pkt)  # pattern matches; protocol still rejects (see below)
 
 
@@ -282,10 +284,16 @@ def test_version_rejection_omitted_and_supported():
     assert version_rejection({"version": "0.3"}) is None
     assert version_rejection({"version": "0.3.0"}) is None
     assert supported_version("0.3.1") is True
+    # v0.4 is current; 0.4 receivers still accept the 0.3 line (VERSIONING.md).
+    assert version_rejection({"version": "0.4"}) is None
+    assert version_rejection({"version": "0.4.0"}) is None
+    assert supported_version("0.4.2") is True
     reason = version_rejection({"version": "v0.3"})
     assert reason is not None and "unsupported_version" in reason and "v0.3" in reason
-    reason = version_rejection({"version": "0.4"})
-    assert reason is not None and "unsupported_version" in reason and "0.4" in reason
+    reason = version_rejection({"version": "v0.4"})
+    assert reason is not None and "unsupported_version" in reason and "v0.4" in reason
+    reason = version_rejection({"version": "0.5"})
+    assert reason is not None and "unsupported_version" in reason and "0.5" in reason
     reason = version_rejection({"version": "0.2"})
     assert reason is not None and "unsupported_version" in reason
 
@@ -434,10 +442,10 @@ def _assert_valid_rejection(status, body, reason_part, packet_ref=None):
 
 def test_http_unknown_version_returns_200_rejected(start_receiver):
     url = start_receiver()
-    pkt = _valid_packet(version="0.4")
+    pkt = _valid_packet(version="0.5")
     status, body = _post(url, pkt)
     _assert_valid_rejection(status, body, "unsupported_version", pkt["id"])
-    assert "0.4" in body["reason"]
+    assert "0.5" in body["reason"]
 
     pkt2 = _valid_packet(version="v0.3")
     status, body = _post(url, pkt2)
@@ -447,7 +455,7 @@ def test_http_unknown_version_returns_200_rejected(start_receiver):
 
 def test_http_unknown_version_without_id_uses_reserved_ref(start_receiver):
     url = start_receiver()
-    status, body = _post(url, {"version": "0.4", "constraints": []})
+    status, body = _post(url, {"version": "0.5", "constraints": []})
     _assert_valid_rejection(status, body, "unsupported_version", "unknown")
 
 

@@ -1,6 +1,6 @@
 # second_impl: an independent minimal implementation
 
-A second, independent implementation of AI-oriented A2A v0.3 over the HTTP binding, written from [SPEC.md](../SPEC.md) and [docs/TRANSPORT.md](../docs/TRANSPORT.md) only. It exists so the protocol does not depend on a single codebase: if it and the reference disagree, one of them (or the spec) has a bug.
+A second, independent implementation of AI-oriented A2A v0.4 over the HTTP binding, written from [SPEC.md](../SPEC.md), [docs/TRANSPORT.md](../docs/TRANSPORT.md), and [docs/DATA_POLICY.md](../docs/DATA_POLICY.md) only. It exists so the protocol does not depend on a single codebase: if it and the reference disagree, one of them (or the spec) has a bug.
 
 - Standard library only. JSON Schema checks use the optional `jsonschema` package (`pip install "ai-oriented-a2a[schema]"` or `pip install jsonschema`). Without it, schema checks are skipped with one warning on stderr.
 - Python 3.8+.
@@ -14,14 +14,14 @@ A second, independent implementation of AI-oriented A2A v0.3 over the HTTP bindi
 
 | File | Purpose |
 | --- | --- |
-| `a2a_core.py` | Protocol logic: version check, hard gate, schema check, HMAC-SHA256 sign/verify, replay window, legal rejected results, reply checks |
+| `a2a_core.py` | Protocol logic: version check, hard gate, schema check, HMAC-SHA256 sign/verify, replay window, legal rejected results, reply checks, untrusted-content check and wrapper |
 | `minimal_client.py` | HTTP client (`send`), receiver (`serve`), and CLI |
 
 ## Receiver check order
 
 `check_incoming` runs, in order, stopping at the first failure:
 
-1. **version**: `unsupported_version: received <value>` (unknown versions include `"v0.3"`)
+1. **version**: `unsupported_version: received <value>` (`"0.3"` and `"0.4"` are supported; unknown versions include `"v0.4"` and `"0.5"`)
 2. **hard gate** (Absorption Results only): `hard-gate violation: ...`
 3. **schema** (on by default; `--no-schema` turns it off): `schema_invalid: <path>: <message>`
 4. **signature** (only with `--sign-key`): `signature verification failed`
@@ -35,6 +35,7 @@ Replies to messages that pass the checks:
 
 | Message | Reply |
 | --- | --- |
+| Experience Packet or negotiation message whose (nested) `content` matches a forbidden directive pattern | `rejected`, `content_policy: directive pattern(s) in content: <names>`, `packet_ref` = id of the matching packet (checked first) |
 | Experience Packet, method `prompt_injection` or `retrieval` | `isolated`, `isolated: no local regression available` |
 | Experience Packet, any other method | `rejected`, `unsupported method: <method>` |
 | Experience Packet with `id` `unknown` | `rejected` (the reserved literal cannot be reported) |
@@ -43,6 +44,8 @@ Replies to messages that pass the checks:
 | Agent Profile | `{"ack": true, "type": "profile_ack"}` |
 
 With `--sign-key`, every reply is signed.
+
+Untrusted content (SPEC §2.1, since v0.4): `directive_hits(content)` checks every string value and key of `content` against the forbidden directive patterns of DATA_POLICY.md (its own regular expressions, not imported from the reference); `content_problem(msg)` applies it to a packet and to the nested `offered_packet` / `conditional_packet` of a negotiation message. `untrusted_block(packet)` wraps a packet for `prompt_injection` in the marker format documented in [IMPLEMENTATION.md](../IMPLEMENTATION.md#untrusted-content-wrapper-reference-library). This receiver never absorbs, so it does not inject anything; the wrapper is there for hosts that build on it. `tests/interop/test_content_policy.py` checks that both implementations give the same hits and the same wrapped bytes. The pattern check is a baseline, not a complete security guarantee.
 
 ## CLI
 
