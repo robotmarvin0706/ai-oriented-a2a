@@ -11,7 +11,7 @@ Protect the long-term value of already-absorbed packets and reduce rework caused
 
 ### Accepting 0.3 messages in a 0.4 receiver
 
-v0.4 tightens receiver behaviour (SPEC §2.1, untrusted content) and adds OPTIONAL `verification_claim` fields. It does not change any message shape that v0.3 senders produce. So a v0.4 receiver:
+v0.4 tightens receiver behaviour (SPEC §2.1, untrusted content; SPEC §3.0, core constraints and the negotiation round cap) and adds OPTIONAL fields (`verification_claim` details, Agent Profile `core_constraints`, negotiation `negotiation_id`, counter `target_constraint`). It does not change any message shape that v0.3 senders produce. So a v0.4 receiver:
 
 - MUST accept on-wire `"0.3"` (and `"0.3.x"`) as a supported version, in addition to `"0.4"` (and `"0.4.x"`).
 - Processes a `"0.3"` message under the v0.4 rules, including §2.1. There is no separate 0.3 processing mode.
