@@ -1,12 +1,12 @@
 # Contributing
 
-This repository defines a **minimal** peer protocol (v0.3). Prefer fixes that make independent implementations interoperable.
+This repository defines a **minimal** peer protocol (v0.4). Prefer fixes that make independent implementations interoperable.
 
 ## What to open
 
 - **Interop defects**: use the Interop defect issue template. Include a minimal payload and a `SPEC.md` section reference. When reporting defects, specify the protocol version.
 - **Docs / examples**: typos, missing examples, broken links — use the General issue template or a small PR.
-- **Design expansions** (full task lifecycle, streaming, enterprise defaults): out of scope for v0.3; open an issue only if you can show a concrete gap in the *current* minimal subset.
+- **Design expansions** (full task lifecycle, streaming, enterprise defaults): out of scope for v0.4; open an issue only if you can show a concrete gap in the *current* minimal subset.
 
 ## Pull requests
 
@@ -22,7 +22,9 @@ Packets under `datasets/` are a public corpus and follow [docs/DATA_POLICY.md](d
 - Synthetic packets use the `synthetic:` prefix in `provenance.source_ref` and state no numeric uplift (no ΔSR, no "+0.2", no percentages).
 - Every packet carries `verification_claim.expected_effect` and `verification_claim.replay_hint`; `provenance.chain` keeps at most 3 hops.
 - Data under `datasets/` is contributed under CC0 1.0 (see `datasets/LICENSE`), separate from the MIT-licensed code.
-- `tests/interop/test_datasets.py` enforces these checks in CI.
+- Synthetic packets MUST NOT carry `verification_claim.value` (a measured number); `scenario_ref` and `repro` are fine.
+- Counter-examples that contain forbidden directive patterns go under `datasets/content_policy/` with `content.counter_example: true`; every other dataset must match no pattern.
+- `tests/interop/test_datasets.py` and `tests/interop/test_content_policy.py` enforce these checks in CI.
 
 ## Secrets
 

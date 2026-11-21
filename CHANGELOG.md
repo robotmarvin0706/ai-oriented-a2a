@@ -5,9 +5,37 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tags may add a patch component.
+The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers still accept `"0.3"`). Library and release tags may add a patch component.
 
 ## [Unreleased]
+
+## [0.4.0] - 2026-11-22
+
+Not released yet. This section is still open: the `spec/core-constraints` PR appends to it, and tag `v0.4.0` is created only after both PRs are merged.
+
+Protocol v0.4 (on-wire `"0.4"`) and library 0.4.0. During 0.x, SPEC tightenings that add receiver MUSTs take a minor bump ([docs/VERSIONING.md](docs/VERSIONING.md)). Receivers implementing 0.4 still accept on-wire `"0.3"` and omitted `version` (omitted is treated as the current normative version and processed under 0.4 rules).
+
+### Breaking (specification tightening)
+
+- SPEC §2.1 Untrusted content: receivers MUST treat Experience Packet `content` (and nested `offered_packet` / `conditional_packet`) as untrusted external data, never as instructions to the receiver. Absorption with `prompt_injection` MUST wrap the content in explicit untrusted markers and place it in a role below system and host instructions (marker format is implementation-defined and MUST be documented). Receivers SHOULD reject directive-like content with `content_policy:` and MUST NOT auto-absorb it.
+- On-wire `version` is now `"0.4"`. `SUPPORTED_MAJOR_MINOR` (reference and `second_impl`) changes from the pair `(0, 3)` to the tuple of supported pairs `((0, 3), (0, 4))`; code that compared against it with `==` must use `in`. `"0.5"` and `"v0.4"` are rejected with `unsupported_version:`.
+
+### Added
+
+- OPTIONAL `verification_claim` fields: `scenario_ref`, `metric`, `value`, and `repro` (object with `seed`, `model`, and `n`). A packet that reports a prior absorption SHOULD include them so a third party can rerun the claim. Schema keeps `additionalProperties: false` on `verification_claim` and on `repro`. `audit_request` is not in this release.
+- `ai_oriented_a2a.content`: `wrap_untrusted(packet)`, `scan_directives(content)`, and `content_policy_rejection(msg)`, re-exported from the top-level package (standard library only). Documented as a baseline check, not a complete security guarantee. The `wrap_untrusted` marker format is in IMPLEMENTATION.md. New top-level constants `PROTOCOL_VERSION` (`"0.4"`) and `CURRENT_MAJOR_MINOR` (`(0, 4)`).
+- `second_impl` has an equivalent check and wrapper (`directive_hits`, `content_problem`, `untrusted_block`) and does not import `ai_oriented_a2a`. Tests check that both give the same pattern hits and byte-identical wrapped output.
+- `docs/DATA_POLICY.md` section "Forbidden directive patterns" is normative (the rest of that file stays advisory): `ignore_prior_instructions`, `modify_constraints`, `claim_system_or_host`, `disable_verification`, `bypass_isolation`, `exfiltrate_or_override_policy`. Synthetic corpus packets MUST NOT carry `verification_claim.value`.
+- Two CC0 synthetic counter-example packets under `datasets/content_policy/` (`pkt-synth-inject-001`, `pkt-synth-inject-002`) and the expected rejection.
+- Reserved reason prefix `content_policy:` in TRANSPORT.md.
+- Conformance cases in `tests/conformance/test_untrusted_content.py` (reference, `second_impl`, external) and unit / parity tests in `tests/interop/test_content_policy.py`.
+
+### Changed
+
+- Reference receivers: `examples/network_dual_end.py` rejects a packet, or a negotiation message whose nested packet, matches a forbidden directive pattern with `content_policy:` before the method check. `examples/minimal_dual_end.py` rejects such packets without touching local state, and its `prompt_injection` path now injects `wrap_untrusted(packet)` instead of the sender's `absorption.hint` (the four-arm table is unchanged; the `prompt_after` metric shows a short label for the wrapped block).
+- `second_impl` `respond` rejects directive-like content with `content_policy:` before its isolate / `unsupported method` / `negotiation_unsupported:` decisions.
+- Examples that carried `"version": "0.3"` now carry `"0.4"`; the signed example `experience-packet-with-security.json` was re-signed with the documented key `demo`.
+- Docs (SPEC, VERSIONING, TRANSPORT, COMPLIANCE, SECURITY, IMPLEMENTATION, README, `second_impl/` and `mcp_a2a/` READMEs) say v0.4. Unknown-version examples use `0.5` instead of `0.4`.
 
 ## [0.3.3] - 2026-11-21
 
@@ -103,6 +131,7 @@ Protocol v0.3.
 - New docs: [docs/VERSIONING.md](docs/VERSIONING.md), [docs/TRANSPORT.md](docs/TRANSPORT.md).
 - Reference `examples/network_dual_end.py`: HMAC verification and replay window are each opt-in (`--sign-key`, `--replay-window`); canonical JSON signing; 30s client timeout.
 
+[0.4.0]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.0...v0.3.1
