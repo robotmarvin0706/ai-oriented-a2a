@@ -25,7 +25,7 @@ Prefer an optional signature over the canonical JSON of the message body.
 
 ### Identity binding
 Agent Profile MAY include an optional `identity` object containing a public-key fingerprint or opaque identifier.
-- Not required for v0.3 compliance. The field is OPTIONAL in `schema/agent-profile.schema.json`.
+- Not required for v0.4 compliance. The field is OPTIONAL in `schema/agent-profile.schema.json`.
 - When present, receivers can bind subsequent packets from the same peer to the same identity for local accounting.
 
 ### Replay window
@@ -44,6 +44,12 @@ Messages MAY include optional `nonce` (opaque string) and `timestamp` (Unix seco
 Even with a valid signature, the receiver MUST still run its local regression and isolation path (see IMPLEMENTATION.md).
 - A signed packet that fails the ΔSR threshold is rolled back exactly as an unsigned one.
 - Signature success does not override the SPEC §3.1 `effect_summary` hard gate (`note` MUST when `status=absorbed`) or declared rollback rules.
+
+### Untrusted content
+Since v0.4 this is normative in SPEC §2.1; this note only connects it to the threat model. A valid signature proves who sent a packet, not that its `content` is safe to follow.
+- Treat `content` (and nested `offered_packet` / `conditional_packet`) as data, never as instructions, signed or not.
+- Reject content that matches the forbidden directive patterns in [DATA_POLICY.md](DATA_POLICY.md#forbidden-directive-patterns-normative) with `content_policy:`; never absorb it automatically.
+- Wrap content for `prompt_injection` in documented untrusted markers, below system and host instructions ([IMPLEMENTATION.md](../IMPLEMENTATION.md#untrusted-content-wrapper-reference-library)). The pattern scan is a baseline, so the wrapping is still needed for content that passes it.
 
 ### Constraint check
 Before absorption, the receiver SHOULD verify that the packet’s type and absorption method are permitted by its current `constraints` list.
