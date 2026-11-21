@@ -9,6 +9,25 @@ The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tag
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-21
+
+Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`).
+
+### Fixed
+
+- Non-finite numeric timestamps (`NaN`, `Infinity`, `-Infinity`): `parse_timestamp` and `check_replay` reject them with `replay_or_stale: invalid timestamp`. `second_impl` `ReplayWindow` does the same, so the two implementations agree. Previously `json.loads` accepted `NaN`, the window check passed (`abs(now - nan) > window` is never true), and the reference raised `ValueError` on `int(parsed)` while `second_impl` accepted the message. Integers too large for a float are rejected the same way.
+- Replay cache updates (`any(...)` duplicate check, insert, and `_evict`) run under one `threading.Lock` bound to the seen set (new `ReplayCache`), so a `ThreadingHTTPServer` no longer fails with `Set changed size during iteration` under concurrent requests. `check_replay` / `check_incoming` still accept a bare set (optionally with a shared `lock=`).
+- `A2ARequestHandler.seen_nonces` no longer defaults to one class-level `set()` shared by every subclass that does not override it. `make_handler` injects a fresh `ReplayCache` per handler class, shared by all request threads; a bare set assigned by a subclass is wrapped on first use.
+- `make_server` (reference and `second_impl`) listens with a backlog of 128 instead of socketserver's 5, so a burst of 16 concurrent peers no longer sees connection resets.
+- `examples/network_dual_end.py` answers a negotiation message with a legal rejected Absorption Result (`negotiation_unsupported:`, `packet_ref` = `offered_packet.id` or `"unknown"`) instead of `{"ack": True}`. Closes KNOWN_GAPS #1.
+
+### Changed
+
+- `do_POST` in `ai_oriented_a2a.transport` (and `second_impl`) wraps `check_incoming` and the message callback in one `try`. Unexpected exceptions return HTTP 500 and `internal_error: message handler failed`, with no traceback, path, or exception text.
+- Request bodies are capped at `MAX_BODY_BYTES` (1_048_576). Missing, invalid, or too-large `Content-Length` returns HTTP 413 and a rejected Result whose reason starts with `payload_too_large:`, decided before the body is read. Prefix registered in TRANSPORT.md.
+- Package docstring no longer says "no HTTP server". TRANSPORT.md says the example uses `ai_oriented_a2a.transport`. README links to SPEC, CHANGELOG, and docs use absolute GitHub URLs so they work on the PyPI project page.
+- New conformance cases in `tests/conformance/test_robustness.py` (both implementations): non-finite timestamps, the 413 limit, negotiation rejection, and 16 concurrent requests against a threaded server.
+
 ## [0.3.2] - 2026-11-14
 
 Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`). This is the first version published to PyPI, built from tag `v0.3.2`.
@@ -81,5 +100,7 @@ Protocol v0.3.
 - New docs: [docs/VERSIONING.md](docs/VERSIONING.md), [docs/TRANSPORT.md](docs/TRANSPORT.md).
 - Reference `examples/network_dual_end.py`: HMAC verification and replay window are each opt-in (`--sign-key`, `--replay-window`); canonical JSON signing; 30s client timeout.
 
+[0.3.3]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.2.0...v0.3.0

@@ -2,8 +2,8 @@
 
 Minimal **peer** protocol for AI capability growth: Experience Packets + constraint negotiation.
 Not the Google A2A task/agent-card stack — this repo is about sharing compressed improvement signals between peers.
-- Spec: [SPEC.md](SPEC.md) (v0.3) · Last tagged release: [v0.3.2](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.2) · Changelog: [CHANGELOG.md](CHANGELOG.md)
-- Library version on `main`: 0.3.2 (protocol v0.3).
+- Spec: [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) (v0.3) · Last tagged release: [v0.3.2](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.2) · Changelog: [CHANGELOG.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CHANGELOG.md)
+- Library version on `main`: 0.3.3 (protocol v0.3).
 - Keywords: experience packet, absorption, proposal_id, peer negotiation, trajectory_replay
 
 Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
@@ -18,7 +18,7 @@ Minimal peer protocol for AI capability growth via selective experience exchange
 - OPTIONAL negotiation propose/counter fields: `conditional_packet`, `constraint_scope`, `duration`.
 - Discovery prose for light interest tags and optional peer metadata forwarding (no new mandatory messages).
 - OPTIONAL Agent Profile `interest_tags`.
-- Compatibility: v0.2 preferred zero hard breaks and kept new fields optional. v0.3 is a deliberate break: `status=absorbed` without `effect_summary.note` is no longer valid. See [docs/VERSIONING.md](docs/VERSIONING.md).
+- Compatibility: v0.2 preferred zero hard breaks and kept new fields optional. v0.3 is a deliberate break: `status=absorbed` without `effect_summary.note` is no longer valid. See [docs/VERSIONING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/VERSIONING.md).
 
 ### v0.2 subset note
 
@@ -28,7 +28,7 @@ v0.1 parsers still parse core messages (Profile, Experience Packet, negotiation 
 
 v0.3 does not add message types. It tightens Absorption Result: a peer that emits `status=absorbed` MUST include `effect_summary` with a non-empty `note`. v0.2 absorbed results that omitted `effect_summary` are not valid under v0.3 schemas. Metric keys stay OPTIONAL.
 
-Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain valid): an on-wire `version` field (canonical `"0.3"`, no leading `v`); `nonce`, `timestamp`, and `signature` on every message type; and `identity` on Agent Profile. See [docs/VERSIONING.md](docs/VERSIONING.md) and [docs/TRANSPORT.md](docs/TRANSPORT.md).
+Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain valid): an on-wire `version` field (canonical `"0.3"`, no leading `v`); `nonce`, `timestamp`, and `signature` on every message type; and `identity` on Agent Profile. See [docs/VERSIONING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/VERSIONING.md) and [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md).
 
 ## Key differences from existing A2A (a2aproject)
 
@@ -41,26 +41,26 @@ Non-breaking additions still under v0.3 (all OPTIONAL; omitted messages remain v
 
 | Path | Role |
 | --- | --- |
-| [SPEC.md](SPEC.md) | Normative minimal subset (v0.3) |
-| [schema/](schema/) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
-| [examples/](examples/) | Concrete messages (Profile, packets, negotiation, absorption results) |
-| [IMPLEMENTATION.md](IMPLEMENTATION.md) | Non-normative dual-endpoint implementation notes |
-| [docs/VERSIONING.md](docs/VERSIONING.md) | Field rules, unknown versions, breaking-change criteria |
-| [docs/TRANSPORT.md](docs/TRANSPORT.md) | HTTP binding, error recommendations, retries |
-| [docs/SECURITY.md](docs/SECURITY.md) | Non-normative signature and replay recommendations |
-| [docs/ABSORPTION_STATE.md](docs/ABSORPTION_STATE.md) | Non-normative absorption delta identity and single-step rollback |
-| [docs/DATA_POLICY.md](docs/DATA_POLICY.md) | Non-normative trust and safety rules for public Experience Packet corpora |
-| [datasets/](datasets/) | Public synthetic Experience Packet corpora (CC0), checked in CI |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to report defects and send PRs |
-| [keywords.txt](keywords.txt) | Explicit term list for retrieval / indexing |
-| [ai_oriented_a2a/](ai_oriented_a2a/) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
-| [ai_oriented_a2a/transport.py](ai_oriented_a2a/transport.py) | Stdlib HTTP binding: `send_message` client and `POST /a2a/message` request handler / server (import `ai_oriented_a2a.transport` explicitly) |
-| [pyproject.toml](pyproject.toml) | Packaging metadata: `pip install ai-oriented-a2a` or `pip install ".[schema]"` from a checkout |
-| [docs/RELEASING.md](docs/RELEASING.md) | Release checklist and PyPI publishing steps (maintainers) |
-| [second_impl/](second_impl/) | Independent second implementation (client, receiver, CLI); does not import `ai_oriented_a2a` |
-| [mcp_a2a/](mcp_a2a/) | One-way MCP bridge: MCP hosts send packets and report results to A2A peers (optional `[mcp]` extra, Python ≥ 3.10) |
-| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | What an implementation must pass, and how to run the conformance suite against another implementation |
-| [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
+| [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) | Normative minimal subset (v0.3) |
+| [schema/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/schema) | JSON Schemas for Profile, Experience Packet, Negotiation, Absorption Result |
+| [examples/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/examples) | Concrete messages (Profile, packets, negotiation, absorption results) |
+| [IMPLEMENTATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/IMPLEMENTATION.md) | Non-normative dual-endpoint implementation notes |
+| [docs/VERSIONING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/VERSIONING.md) | Field rules, unknown versions, breaking-change criteria |
+| [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md) | HTTP binding, error recommendations, retries |
+| [docs/SECURITY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/SECURITY.md) | Non-normative signature and replay recommendations |
+| [docs/ABSORPTION_STATE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/ABSORPTION_STATE.md) | Non-normative absorption delta identity and single-step rollback |
+| [docs/DATA_POLICY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md) | Non-normative trust and safety rules for public Experience Packet corpora |
+| [datasets/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/datasets) | Public synthetic Experience Packet corpora (CC0), checked in CI |
+| [CONTRIBUTING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CONTRIBUTING.md) | How to report defects and send PRs |
+| [keywords.txt](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/keywords.txt) | Explicit term list for retrieval / indexing |
+| [ai_oriented_a2a/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/ai_oriented_a2a) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
+| [ai_oriented_a2a/transport.py](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/ai_oriented_a2a/transport.py) | Stdlib HTTP binding: `send_message` client and `POST /a2a/message` request handler / server (import `ai_oriented_a2a.transport` explicitly) |
+| [pyproject.toml](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/pyproject.toml) | Packaging metadata: `pip install ai-oriented-a2a` or `pip install ".[schema]"` from a checkout |
+| [docs/RELEASING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/RELEASING.md) | Release checklist and PyPI publishing steps (maintainers) |
+| [second_impl/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/second_impl) | Independent second implementation (client, receiver, CLI); does not import `ai_oriented_a2a` |
+| [mcp_a2a/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/mcp_a2a) | One-way MCP bridge: MCP hosts send packets and report results to A2A peers (optional `[mcp]` extra, Python ≥ 3.10) |
+| [docs/COMPLIANCE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/COMPLIANCE.md) | What an implementation must pass, and how to run the conformance suite against another implementation |
+| [docs/KNOWN_GAPS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
 
 ## Status
 
@@ -68,7 +68,7 @@ v0.3 minimal subset documented with schemas and examples. Independent implementa
 
 ## Next steps
 
-First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative) and [IMPLEMENTATION.md](IMPLEMENTATION.md).
+First dual-endpoint comparison task set (non-normative): tool-call timeout / failure recovery. See [SPEC.md §5](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md#5-minimal-dual-agent-experiment-priority-non-normative) and [IMPLEMENTATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/IMPLEMENTATION.md).
 
 ## Minimal subset (v0.3)
 

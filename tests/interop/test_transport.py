@@ -231,3 +231,152 @@ def test_transport_not_reexported():
 
     for name in ("send_message", "make_server", "serve", "A2ARequestHandler"):
         assert name not in ai_oriented_a2a.__all__
+
+
+# ---------------------------------------------------------------------------
+# 0.3.3: request body limit, wider 500 net, replay cache injection
+# ---------------------------------------------------------------------------
+
+
+def _raw_post(url, content_length, body=b"", timeout=5):
+    import http.client
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(url)
+    conn = http.client.HTTPConnection(parts.hostname, parts.port, timeout=timeout)
+    try:
+        conn.putrequest("POST", transport.ENDPOINT)
+        conn.putheader("Content-Type", "application/json")
+        if content_length is not None:
+            conn.putheader("Content-Length", content_length)
+        conn.endheaders()
+        if body:
+            conn.send(body)
+        resp = conn.getresponse()
+        return resp.status, json.loads(resp.read().decode())
+    finally:
+        conn.close()
+
+
+def test_max_body_bytes_constant_matches_second_impl():
+    from second_impl import a2a_core as core
+
+    assert transport.MAX_BODY_BYTES == 1_048_576 == core.MAX_BODY_BYTES
+    assert "MAX_BODY_BYTES" in transport.__all__
+
+
+@pytest.mark.parametrize(
+    "length, reason",
+    [
+        (str(transport.MAX_BODY_BYTES + 1), transport.PAYLOAD_TOO_LARGE_REASON),
+        (None, transport.LENGTH_REQUIRED_REASON),
+        ("nope", transport.LENGTH_REQUIRED_REASON),
+        ("-3", transport.LENGTH_REQUIRED_REASON),
+        ("\u00b2", transport.LENGTH_REQUIRED_REASON),
+    ],
+    ids=["too-large", "missing", "garbage", "negative", "unicode-digit"],
+)
+def test_413_before_reading_body(server_url, length, reason):
+    calls = []
+    url = server_url(on_message=lambda m: calls.append(m) or _absorb(m), sign_key=KEY)
+    # Only headers are sent: if the server tried to read the announced body
+    # it would block until the client timeout.
+    status, reply = _raw_post(url, length)
+    assert status == 413
+    assert reply["status"] == "rejected"
+    assert reply["packet_ref"] == "unknown"
+    assert reply["reason"] == reason
+    assert reply["reason"].startswith("payload_too_large:")
+    assert verify_message(reply, KEY)  # signed like any other reply
+    assert calls == []
+
+
+def test_content_length_parser():
+    parse = transport._content_length
+    assert parse("0") == 0
+    assert parse(" 12 ") == 12
+    for bad in (None, "", " ", "-1", "+1", "1.0", "0x10", "1e3", "\u0663"):
+        assert parse(bad) is None, bad
+
+
+def test_check_incoming_exception_is_500_without_leak(server_url, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError(SECRET_TEXT)
+
+    monkeypatch.setattr(transport, "check_incoming", boom)
+    url = server_url()
+    packet = network_dual_end.make_packet()
+    req = urllib.request.Request(
+        url + transport.ENDPOINT,
+        data=json.dumps(packet).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(req, timeout=5)
+    assert exc_info.value.code == 500
+    body = exc_info.value.read().decode()
+    reply = json.loads(body)
+    assert reply == {"packet_ref": packet["id"], "status": "rejected", "reason": transport.INTERNAL_ERROR_REASON}
+    for leak in (SECRET_TEXT, "RuntimeError", "Traceback", ".py"):
+        assert leak not in body
+
+
+def test_nan_timestamp_over_http_is_rejected_not_crash(server_url):
+    url = server_url(replay_window=300)
+    packet = network_dual_end.make_packet()
+    packet["timestamp"] = float("nan")
+    reply = send_message(url, packet)
+    assert reply["status"] == "rejected"
+    assert reply["reason"] == "replay_or_stale: invalid timestamp"
+
+
+def test_replay_cache_is_shared_per_class_not_per_request():
+    from ai_oriented_a2a import ReplayCache
+
+    assert A2ARequestHandler.seen_nonces is None  # no mutable default shared by subclasses
+    handler = transport.make_handler(_absorb, replay_window=300)
+    assert isinstance(handler.seen_nonces, ReplayCache)
+
+    a = type("A", (A2ARequestHandler,), {})
+    b = type("B", (A2ARequestHandler,), {})
+    cache_a = A2ARequestHandler._replay_cache(a.__new__(a))
+    cache_b = A2ARequestHandler._replay_cache(b.__new__(b))
+    assert cache_a is not cache_b
+    assert A2ARequestHandler._replay_cache(a.__new__(a)) is cache_a  # same cache for every request
+    assert A2ARequestHandler.seen_nonces is None
+
+    legacy = set()
+    c = type("C", (A2ARequestHandler,), {"seen_nonces": legacy})
+    cache_c = A2ARequestHandler._replay_cache(c.__new__(c))
+    assert cache_c.seen is legacy  # a bare set is wrapped, not copied
+
+
+def test_replay_window_shared_across_requests(server_url):
+    url = server_url(replay_window=300)
+    packet = dict(network_dual_end.make_packet())
+    assert send_message(url, packet)["status"] == "absorbed"
+    assert send_message(url, packet)["reason"] == "replay_or_stale: duplicate nonce"
+
+
+def test_make_server_listen_backlog():
+    server = make_server(_absorb)
+    try:
+        assert server.request_queue_size >= 64
+        assert server.daemon_threads
+    finally:
+        server.server_close()
+
+
+def test_demo_rejects_negotiation_instead_of_ack():
+    propose = json.loads((EXAMPLES / "negotiation-propose.json").read_text())
+    assert network_dual_end.negotiation_rejection(propose) == {
+        "packet_ref": propose["offered_packet"]["id"],
+        "status": "rejected",
+        "reason": network_dual_end.NEGOTIATION_UNSUPPORTED_REASON,
+    }
+    assert network_dual_end.NEGOTIATION_UNSUPPORTED_REASON.startswith("negotiation_unsupported:")
+    bare = {"proposal_id": "prop-1", "target_constraint": "x", "proposed_change": "y"}
+    assert network_dual_end.negotiation_rejection(bare)["packet_ref"] == "unknown"
+    blank = dict(bare, offered_packet={"id": "  "})
+    assert network_dual_end.negotiation_rejection(blank)["packet_ref"] == "unknown"

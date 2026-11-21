@@ -3,7 +3,9 @@
 Covers KNOWN_GAPS items closed in 0.3.2: string timestamps must be
 ISO-8601 with a timezone (schema pattern), the replay set is trimmed by
 age rather than arbitrarily, and a nonce is a duplicate whatever its
-timestamp.
+timestamp. Also covers the 0.3.3 fixes: non-finite numeric timestamps are
+rejected the same way by both implementations, and the replay cache is
+guarded by one lock.
 """
 
 from __future__ import annotations
@@ -187,3 +189,127 @@ def test_eviction_then_drops_oldest_live_keys():
 def test_constants_documented_values():
     assert protocol.SEEN_MAX == 1000
     assert protocol.SEEN_TRIM_TO == 800
+
+
+# ---------------------------------------------------------------------------
+# Non-finite timestamps (0.3.3)
+# ---------------------------------------------------------------------------
+
+NON_FINITE = [float("nan"), float("inf"), float("-inf"), 10 ** 400]
+NON_FINITE_IDS = ["NaN", "Infinity", "-Infinity", "int-overflows-float"]
+
+
+@pytest.mark.parametrize("value", NON_FINITE, ids=NON_FINITE_IDS)
+def test_parse_timestamp_rejects_non_finite_in_both_impls(value):
+    assert parse_timestamp(value) is None
+    assert core.parse_timestamp(value) is None
+
+
+@pytest.mark.parametrize("value", NON_FINITE, ids=NON_FINITE_IDS)
+def test_non_finite_timestamp_same_reason_in_both_impls(value):
+    msg = _msg("nf-" + str(id(value)), value)
+    seen: set = set()
+    reference = check_replay(msg, seen, 300)  # must not raise ValueError
+    second = core.ReplayWindow(300).check(msg)
+    assert reference == second == "replay_or_stale: invalid timestamp"
+    assert seen == set()  # nothing recorded
+
+
+def test_non_finite_timestamp_from_json_text():
+    for text in ("NaN", "Infinity", "-Infinity"):
+        msg = json.loads('{"nonce": "n-%s", "timestamp": %s}' % (text, text))
+        assert check_replay(msg, set(), 300) == protocol.INVALID_TIMESTAMP_REASON
+        assert core.ReplayWindow(300).check(msg) == core.REASON_INVALID_TIMESTAMP
+
+
+def test_finite_float_timestamp_still_accepted():
+    now = time.time()
+    assert check_replay(_msg("float-ok", now), set(), 300) is None
+    assert core.ReplayWindow(300).check(_msg("float-ok", now)) is None
+
+
+# ---------------------------------------------------------------------------
+# Replay cache lock (0.3.3)
+# ---------------------------------------------------------------------------
+
+
+def test_replay_cache_lock_guards_check_and_insert():
+    import threading
+
+    cache = protocol.ReplayCache()
+    done = threading.Event()
+
+    def call():
+        check_replay(_msg("locked", int(time.time())), cache, 300)
+        done.set()
+
+    with cache.lock:
+        t = threading.Thread(target=call, daemon=True)
+        t.start()
+        assert not done.wait(0.2)  # blocked on the cache lock
+        assert len(cache) == 0
+    assert done.wait(5)
+    assert any(k[0] == "locked" for k in cache.seen)
+
+
+def test_replay_cache_wraps_existing_set_without_copy():
+    seen = {("old", str(int(time.time())))}
+    cache = protocol.ReplayCache(seen)
+    assert cache.seen is seen
+    assert check_replay(_msg("old", int(time.time())), cache, 300) == "replay_or_stale: duplicate nonce"
+
+
+def _hammer(target, lock=None, threads=16, per_thread=200):
+    import threading
+
+    errors = []
+    now = int(time.time())
+
+    def worker(t):
+        try:
+            for i in range(per_thread):
+                if lock is None:
+                    check_replay(_msg(f"h{t}-{i}", now), target, 300)
+                else:
+                    check_replay(_msg(f"h{t}-{i}", now), target, 300, lock=lock)
+        except Exception as exc:
+            errors.append(repr(exc))
+
+    old = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)
+    try:
+        workers = [threading.Thread(target=worker, args=(t,)) for t in range(threads)]
+        for w in workers:
+            w.start()
+        for w in workers:
+            w.join(60)
+    finally:
+        sys.setswitchinterval(old)
+    return errors
+
+
+def test_concurrent_check_replay_with_replay_cache():
+    # 16 * 200 keys crosses SEEN_MAX, so eviction runs while other threads check.
+    cache = protocol.ReplayCache()
+    assert _hammer(cache) == []
+    assert len(cache) <= protocol.SEEN_MAX
+
+
+def test_concurrent_check_replay_with_bare_set_and_shared_lock():
+    import threading
+
+    seen: set = set()
+    assert _hammer(seen, lock=threading.Lock()) == []
+    assert len(seen) <= protocol.SEEN_MAX
+
+
+def test_check_incoming_accepts_replay_cache():
+    from ai_oriented_a2a import check_incoming
+
+    cache = protocol.ReplayCache()
+    msg = {"id": "pkt-rc", "nonce": "rc-1", "timestamp": int(time.time())}
+    assert check_incoming(msg, replay_window=300, seen=cache) is None
+    dup = check_incoming(msg, replay_window=300, seen=cache)
+    assert dup["reason"] == "replay_or_stale: duplicate nonce"
+    nan = check_incoming({"id": "pkt-nan", "nonce": "rc-2", "timestamp": float("nan")}, replay_window=300, seen=cache)
+    assert nan == {"packet_ref": "pkt-nan", "status": "rejected", "reason": "replay_or_stale: invalid timestamp"}
