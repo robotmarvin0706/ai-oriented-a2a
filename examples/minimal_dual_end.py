@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import sys
 import uuid
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -48,6 +49,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = REPO_ROOT / "schema"
+# Allow `python3 examples/minimal_dual_end.py` without installing the package.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+# SPEC §2.1: packet content is untrusted data (scan before absorbing, wrap
+# before prompt injection).
+from ai_oriented_a2a.content import UNTRUSTED_NOTICE, scan_directives, wrap_untrusted  # noqa: E402
 MUST_METHODS = frozenset({"prompt_injection", "retrieval"})
 ARM_NAMES = (
     "no_sharing",
@@ -527,6 +534,15 @@ def _rollback(state: ReceiverState) -> None:
     state.retrieval_store = dict(state._rollback_store)
 
 
+def _describe_prompt(text: str) -> str:
+    """Short metric label for the injected prompt (wrapped blocks are long)."""
+    if not text:
+        return "(empty)"
+    if text.startswith(UNTRUSTED_NOTICE):
+        return f"(wrapped untrusted packet content, {len(text)} chars)"
+    return text
+
+
 class Receiver:
     """In-process peer that absorbs Experience Packets under SPEC MUST rules."""
 
@@ -570,6 +586,38 @@ class Receiver:
                 result,
                 isolation_n=self.isolation_n,
                 drop_threshold=self.regression_drop_threshold,
+            )
+
+        # SPEC §2.1 (c): directive-like content is rejected with
+        # content_policy: and never absorbed automatically. Nothing is applied.
+        directive_hits = scan_directives(packet.get("content"))
+        if directive_hits:
+            return _finalize(
+                {
+                    "packet_ref": packet_id,
+                    "status": "rejected",
+                    "reason": (
+                        "content_policy: directive pattern(s) in content: "
+                        + ", ".join(directive_hits)
+                    ),
+                    "effect_summary": {
+                        "note": "no local change applied; content treated as untrusted data",
+                        "metrics": stamp_isolation_declaration(
+                            {
+                                "method": method,
+                                "payload_tokens": approx_payload_tokens(packet),
+                                # No trials run; SR placeholders keep the hard gate satisfied.
+                                "baseline_sr": 0.0,
+                                "regression_sr": 0.0,
+                                "isolation_sr": 0.0,
+                            },
+                            declared_n=self.isolation_n,
+                            declared_threshold=self.regression_drop_threshold,
+                            rollback_triggered=False,
+                            rollback_action=ROLLBACK_ACTION_NONE,
+                        ),
+                    },
+                }
             )
 
         if method not in MUST_METHODS:
@@ -646,8 +694,8 @@ class Receiver:
                 "payload_tokens": payload_tokens,
                 "adapter": method,
                 "applied": applied,
-                "prompt_before": prompt_before or "(empty)",
-                "prompt_after": prompt_after or "(empty)",
+                "prompt_before": _describe_prompt(prompt_before),
+                "prompt_after": _describe_prompt(prompt_after),
                 "prompt_changed": prompt_before != prompt_after,
                 "retrieval_keys_before": ",".join(store_before_keys) or "(none)",
                 "retrieval_keys_after": ",".join(store_after_keys) or "(none)",
@@ -732,7 +780,12 @@ class Receiver:
     ) -> None:
         self.state.policy = recovered_policy()
         if method == "prompt_injection":
-            self.state.prompt_prefix = hint
+            # SPEC §2.1 (b): the injected text is the packet wrapped in the
+            # library's untrusted markers, for a role below system/host
+            # instructions; the sender's hint is never injected as a rule.
+            # Token accounting still uses the hint so the four-arm numbers
+            # stay comparable with earlier runs.
+            self.state.prompt_prefix = wrap_untrusted(packet)
             self.state.policy.injected_tokens = max(
                 self.state.policy.injected_tokens, len(hint) // 4
             )

@@ -10,7 +10,7 @@
   "shareable_types": [
     "failure_mode"
   ],
-  "version": "0.3",
+  "version": "0.4",
   "identity": {
     "fingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
     "alg": "ed25519"

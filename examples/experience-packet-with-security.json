@@ -15,11 +15,11 @@
     "condition": "after_local_absorption_or_24h",
     "discard_if": "constraint_set no longer includes web_search"
   },
-  "version": "0.3",
+  "version": "0.4",
   "nonce": "nonce-ab12cd34",
   "timestamp": 1731480000,
   "signature": {
     "alg": "hmac-sha256",
-    "value": "41810d624a8c4f7c7507981166c8061315efbb17e006efe832e2f12768d4639c"
+    "value": "2c04cc685cab3a6e5aa1e2cf46dd37e9f7b7a26b84cbc9a2b96deff61dc815d0"
   }
 }
