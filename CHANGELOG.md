@@ -11,7 +11,7 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [0.4.0] - 2026-11-22
 
-Not released yet. This section collects `spec/content-is-data` (#47) and `spec/core-constraints`; tag `v0.4.0` is created only after both PRs are merged.
+This release collects `spec/content-is-data` (#47) and `spec/core-constraints` (#48), built from tag `v0.4.0`.
 
 Protocol v0.4 (on-wire `"0.4"`) and library 0.4.0. During 0.x, SPEC tightenings that add receiver MUSTs take a minor bump ([docs/VERSIONING.md](docs/VERSIONING.md)). Receivers implementing 0.4 still accept on-wire `"0.3"` and omitted `version` (omitted is treated as the current normative version and processed under 0.4 rules).
 
@@ -20,7 +20,7 @@ Protocol v0.4 (on-wire `"0.4"`) and library 0.4.0. During 0.x, SPEC tightenings 
 - SPEC §2.1 Untrusted content: receivers MUST treat Experience Packet `content` (and nested `offered_packet` / `conditional_packet`) as untrusted external data, never as instructions to the receiver. Absorption with `prompt_injection` MUST wrap the content in explicit untrusted markers and place it in a role below system and host instructions (marker format is implementation-defined and MUST be documented). Receivers SHOULD reject directive-like content with `content_policy:` and MUST NOT auto-absorb it.
 - On-wire `version` is now `"0.4"`. `SUPPORTED_MAJOR_MINOR` (reference and `second_impl`) changes from the pair `(0, 3)` to the tuple of supported pairs `((0, 3), (0, 4))`; code that compared against it with `==` must use `in`. `"0.5"` and `"v0.4"` are rejected with `unsupported_version:`.
 
-### Added
+### Added (untrusted content, #47)
 
 - OPTIONAL `verification_claim` fields: `scenario_ref`, `metric`, `value`, and `repro` (object with `seed`, `model`, and `n`). A packet that reports a prior absorption SHOULD include them so a third party can rerun the claim. Schema keeps `additionalProperties: false` on `verification_claim` and on `repro`. `audit_request` is not in this release.
 - `ai_oriented_a2a.content`: `wrap_untrusted(packet)`, `scan_directives(content)`, and `content_policy_rejection(msg)`, re-exported from the top-level package (standard library only). Documented as a baseline check, not a complete security guarantee. The `wrap_untrusted` marker format is in IMPLEMENTATION.md. New top-level constants `PROTOCOL_VERSION` (`"0.4"`) and `CURRENT_MAJOR_MINOR` (`(0, 4)`).
@@ -30,14 +30,14 @@ Protocol v0.4 (on-wire `"0.4"`) and library 0.4.0. During 0.x, SPEC tightenings 
 - Reserved reason prefix `content_policy:` in TRANSPORT.md.
 - Conformance cases in `tests/conformance/test_untrusted_content.py` (reference, `second_impl`, external) and unit / parity tests in `tests/interop/test_content_policy.py`.
 
-### Changed
+### Changed (untrusted content, #47)
 
 - Reference receivers: `examples/network_dual_end.py` rejects a packet, or a negotiation message whose nested packet, matches a forbidden directive pattern with `content_policy:` before the method check. `examples/minimal_dual_end.py` rejects such packets without touching local state, and its `prompt_injection` path now injects `wrap_untrusted(packet)` instead of the sender's `absorption.hint` (the four-arm table is unchanged; the `prompt_after` metric shows a short label for the wrapped block).
 - `second_impl` `respond` rejects directive-like content with `content_policy:` before its isolate / `unsupported method` / `negotiation_unsupported:` decisions.
 - Examples that carried `"version": "0.3"` now carry `"0.4"`; the signed example `experience-packet-with-security.json` was re-signed with the documented key `demo`.
 - Docs (SPEC, VERSIONING, TRANSPORT, COMPLIANCE, SECURITY, IMPLEMENTATION, README, `second_impl/` and `mcp_a2a/` READMEs) say v0.4. Unknown-version examples use `0.5` instead of `0.4`.
 
-### Added (also in 0.4.0)
+### Added (core constraints, #48)
 
 From `spec/core-constraints`. The fields are OPTIONAL; the new MUSTs apply only when a receiver has `core_constraints` or a `negotiation_id` passes the round cap, so they ride on the same 0.x minor bump ([docs/VERSIONING.md](docs/VERSIONING.md)) and need no further version change.
 
@@ -50,7 +50,7 @@ From `spec/core-constraints`. The fields are OPTIONAL; the new MUSTs apply only 
 - `ai_oriented_a2a.negotiation`: `NegotiationGuard` (round cap, optional per-peer rate limit, bounded table), `immutable_constraint_rejection`, and `DEFAULT_MAX_NEGOTIATION_ROUNDS = 3`, re-exported from the top-level package. `second_impl` has its own `NegotiationLimits`, `immutable_problem`, and `DEFAULT_ROUND_CAP = 3`, and still does not import `ai_oriented_a2a`.
 - Conformance cases in `tests/conformance/test_core_constraints.py` (reference, `second_impl`, external; the conftest `start_receiver` takes `core_constraints`, passed to external peers as `--core-constraint` or described by `A2A_PEER_CORE_CONSTRAINTS`) and unit / parity tests in `tests/interop/test_negotiation_limits.py`.
 
-### Changed (also in 0.4.0)
+### Changed (core constraints, #48)
 
 - `examples/network_dual_end.py` and `second_impl` run the round cap and core-constraint check on negotiation messages after `content_policy:` and before `negotiation_unsupported:`. New flag `--core-constraint TEXT` (repeatable) on both receivers; `second_impl serve` also has `--max-rounds`. The reference profile lists `core_constraints` when any are set.
 - Examples: `agent-profile-with-identity.json` carries `core_constraints`; `negotiation-propose-conditional.json` carries `negotiation_id`.
