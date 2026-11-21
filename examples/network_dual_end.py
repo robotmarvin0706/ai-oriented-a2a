@@ -64,6 +64,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import sys
@@ -101,6 +102,16 @@ from ai_oriented_a2a import (  # noqa: E402,F401
 from ai_oriented_a2a import NegotiationGuard, content_policy_rejection, transport  # noqa: E402
 from ai_oriented_a2a.transport import A2ARequestHandler, guard_result  # noqa: E402
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
+
+
+def stable_seed(packet_id: Any) -> int:
+    """Seed for the simulated regression: first 8 bytes of sha256(id).
+
+    Python's built-in ``hash()`` of a string changes per process, so the same
+    packet could be absorbed in one run and rejected in the next.
+    """
+    return int.from_bytes(hashlib.sha256(str(packet_id).encode("utf-8")).digest()[:8], "big")
+
 
 NEGOTIATION_UNSUPPORTED_REASON = (
     "negotiation_unsupported: this demo receiver does not implement negotiation; "
@@ -231,7 +242,7 @@ class A2AHandler(A2ARequestHandler):
             if method not in MUST_METHODS and method not in ("local_adapter_hint", "trajectory_replay"):
                 result = reject_result(msg, f"unsupported method: {method}")
             else:
-                rng = random.Random(hash(msg["id"]) & 0xFFFFFFFF)
+                rng = random.Random(stable_seed(msg["id"]))
                 result = self.receiver.absorb(msg, rng)
             response = guard_result(guard_reserved_ref(result))
             if self.role == "receiver" and self.peer_url:
