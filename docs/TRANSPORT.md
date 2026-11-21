@@ -11,7 +11,7 @@ Optional security fields (`nonce`, `timestamp`, `signature`) and the OPTIONAL on
 
 ## Request shape
 
-The HTTP body **is the message itself** (an Agent Profile, an Experience Packet, a negotiation message, or an Absorption Result). There is no wrapper object such as `{ "version", "packet", ... }`. The message MAY include an OPTIONAL top-level `version` field (`"0.3"`, no leading `v`); if it is omitted, the receiver treats the message as the current normative version. See [VERSIONING.md](VERSIONING.md).
+The HTTP body **is the message itself** (an Agent Profile, an Experience Packet, a negotiation message, or an Absorption Result). There is no wrapper object such as `{ "version", "packet", ... }`. The message MAY include an OPTIONAL top-level `version` field (`"0.4"`, no leading `v`; a v0.4 receiver also accepts `"0.3"`); if it is omitted, the receiver treats the message as the current normative version. See [VERSIONING.md](VERSIONING.md).
 
 Optional security fields MAY be attached to that message (all OPTIONAL; see [SECURITY.md](SECURITY.md)):
 
@@ -41,7 +41,7 @@ Example Experience Packet as posted (illustrative; required packet fields omitte
     "method": "prompt_injection",
     "hint": "prepend recovery instruction"
   },
-  "version": "0.3",
+  "version": "0.4",
   "nonce": "nonce-ab12cd34",
   "timestamp": 1731480000,
   "signature": {
@@ -99,7 +99,7 @@ Isolated (`reason` is MUST, same as v0.2; `effect_summary` is OPTIONAL):
 
 `status` is one of `absorbed`, `rejected`, `isolated`. When `status` is `absorbed`, `effect_summary.note` is MUST (non-empty). Optional metric hints, when present, SHOULD be placed in `effect_summary.metrics`.
 
-The reference example also returns small JSON acknowledgements for a Profile (`{"ack": true, "type": "profile_ack"}`) and for a received Absorption Result (`{"ack": true, "type": "result_ack"}`). Those acks are implementation conveniences, not additional protocol message types. Since 0.3.3 the reference example answers a negotiation message (`proposal_id` present) with a rejected Absorption Result whose reason starts with `negotiation_unsupported:` (`packet_ref` = `offered_packet.id`, else `unknown`), never with an ack.
+The reference example also returns small JSON acknowledgements for a Profile (`{"ack": true, "type": "profile_ack"}`) and for a received Absorption Result (`{"ack": true, "type": "result_ack"}`). Those acks are implementation conveniences, not additional protocol message types. Since 0.3.3 the reference example answers a negotiation message (`proposal_id` present) with a rejected Absorption Result whose reason starts with `negotiation_unsupported:` (`packet_ref` = `offered_packet.id`, else `unknown`), never with an ack. Since 0.4.0 both in-repo receivers first check packet `content` (and `offered_packet` / `conditional_packet` of a negotiation message) against the forbidden directive patterns in [DATA_POLICY.md](DATA_POLICY.md#forbidden-directive-patterns-normative) and answer a match with a rejected Absorption Result whose reason starts with `content_policy:` (SPEC §2.1).
 
 ## HTTP status codes
 
@@ -107,7 +107,7 @@ The following application-level failures MUST return **HTTP 200** and a **valid 
 
 - Signature verification failure (when a signing key has been provided): `reason` is `signature verification failed`.
 - Replay rejection (when a replay window has been provided): `reason` starts with `replay_or_stale:` (for example `replay_or_stale: duplicate nonce`).
-- Unknown version (including a leading `v`, for example `"v0.3"`, and any value the receiver does not implement): `reason` contains `unsupported_version` (for example `unsupported_version: received 0.4`).
+- Unknown version (including a leading `v`, for example `"v0.3"`, and any value the receiver does not implement): `reason` contains `unsupported_version` (for example `unsupported_version: received 0.5`).
 - Hard-gate failure: an emitter that would have sent `status=absorbed` without a non-empty `effect_summary.note` MUST instead emit `status=rejected` with a `reason`. A receiver that is given such an invalid `absorbed` result MUST also respond with HTTP 200 and a valid rejected Absorption Result, and MUST NOT treat the claim as a successful absorption.
 
 `packet_ref` equals the request's `id` (or, if the request is itself an Absorption Result, its `packet_ref`). If the request has no usable `id` or `packet_ref`, `packet_ref` is the reserved literal `unknown`. `unknown` is reserved for those early failures; it MUST NOT be used as the `packet_ref` of a successful absorption (`status=absorbed`).
@@ -134,7 +134,7 @@ Examples:
 {
   "packet_ref": "pkt-experience-7f3a",
   "status": "rejected",
-  "reason": "unsupported_version: received 0.4"
+  "reason": "unsupported_version: received 0.5"
 }
 ```
 
@@ -142,7 +142,7 @@ Examples:
 {
   "packet_ref": "unknown",
   "status": "rejected",
-  "reason": "unsupported_version: received 0.4"
+  "reason": "unsupported_version: received 0.5"
 }
 ```
 
@@ -159,6 +159,7 @@ The `reason` of an Absorption Result is a free-form string. The prefixes below a
 | `negotiation_unsupported:` | reserved prefix (SHOULD) | The receiver does not implement negotiation. The reply is still a valid Absorption Result: `status=rejected`, `packet_ref` = the `id` of `offered_packet` if present, otherwise `unknown`. |
 | `payload_too_large:` | reserved prefix (SHOULD) | The request body is larger than the receiver accepts, or `Content-Length` is missing or invalid. Sent with HTTP 413 (see below). `packet_ref` = `unknown`, `status=rejected`. Both in-repo implementations cap bodies at 1048576 bytes (`MAX_BODY_BYTES`) and use `payload_too_large: request body exceeds 1048576 bytes` or `payload_too_large: missing or invalid Content-Length`. |
 | `internal_error:` | reserved prefix (SHOULD) | The receiver's own message handler failed. Sent with HTTP 500 (see below). `status=rejected`. The text after the prefix MUST be a generic description; it MUST NOT contain exception messages, tracebacks, file paths, or other internal details. The reference uses `internal_error: message handler failed`. |
+| `content_policy:` | reserved prefix (SHOULD) | Since protocol v0.4 (SPEC §2.1 (c)). Packet `content`, or the `content` of a nested `offered_packet` / `conditional_packet`, contains a directive aimed at the receiver (change constraints, ignore existing policy, bypass isolation, and the other patterns in [DATA_POLICY.md](DATA_POLICY.md#forbidden-directive-patterns-normative)). `status=rejected`, HTTP 200, `packet_ref` = the `id` of the packet that matched. Such a packet MUST NOT be absorbed automatically. Both in-repo implementations use `content_policy: directive pattern(s) in content: <pattern names>`. |
 | `isolated:` | informative | Convention for the reason of an `isolated` result, e.g. `isolated: no local regression available`. Peers MUST NOT parse it for meaning beyond `status=isolated`. |
 
 The reference implementation also uses `invalid json` (HTTP 400, see below), `unsupported method: <method>`, and `hard-gate violation: ...`. These are recommended spellings, not reserved prefixes. The independent `second_impl/` uses the same strings.
@@ -209,6 +210,7 @@ from ai_oriented_a2a.transport import send_message, make_server, serve
 
 - `send_message(url, message, *, timeout=30.0, sign_key=None, add_replay_fields=False)` posts to `url` + `/a2a/message` and returns the JSON reply (also for HTTP error statuses with a JSON body). Network errors, timeouts, and non-JSON replies raise `TransportError`. Options are keyword-only.
 - `A2ARequestHandler` (override `handle_message`), `make_handler(on_message, *, sign_key=None, replay_window=None)`, `make_server(on_message, port=0, host="127.0.0.1", ...)`, and `serve(...)` implement the receiver side: 404 for other paths, 400 + Absorption Result for invalid JSON, `check_incoming` before the callback, the hard gate (`guard_result`) on the reply, signed replies when a key is set, 413 + `payload_too_large:` for a missing, invalid, or too-large `Content-Length` (`MAX_BODY_BYTES` = 1048576, checked before the body is read), and 500 + `internal_error:` if `check_incoming` or the callback raises. The replay window is one `ReplayCache` (seen set + `threading.Lock`) per handler class, injected by `make_handler` and shared by every request thread; `make_server` returns a `ThreadingHTTPServer` with a listen backlog of 128. The host callback still decides absorption.
+- `ai_oriented_a2a.content` (since 0.4.0, re-exported from the top-level package): `scan_directives(content)`, `content_policy_rejection(msg)`, and `wrap_untrusted(packet)` for SPEC §2.1. The transport handler does not call them on its own; the host callback SHOULD reply with `content_policy_rejection(msg)` when it is not `None`, and MUST wrap content with `wrap_untrusted` (or its own documented markers) before any `prompt_injection`. The marker format is in [IMPLEMENTATION.md](../IMPLEMENTATION.md#untrusted-content-wrapper-reference-library).
 
 Integrators SHOULD use `ai_oriented_a2a.transport` rather than copy code from `examples/`. `examples/network_dual_end.py` remains the demo dual-endpoint server; its `A2AHandler` now subclasses `A2ARequestHandler`.
 
@@ -218,6 +220,7 @@ In scope for the first-edition library:
 - Absorption hard gate (`status=absorbed` requires a non-empty `effect_summary.note`)
 - Legal error responses: a valid Absorption Result that always carries a non-empty `packet_ref` and a `reason` on the failure modes above, via `check_incoming` / `reject_result`
 - Optional HMAC-SHA256 verification and optional replay window, each enabled only when the corresponding parameter is passed (`canonical`, `sign_message`, `verify_message`, `check_replay`)
+- Since 0.4.0: a baseline directive scan and the untrusted-content wrapper for SPEC §2.1 (`scan_directives`, `content_policy_rejection`, `wrap_untrusted`)
 
 The HTTP binding itself (`POST /a2a/message`, status codes, timeouts) is specified in this document, shipped as `ai_oriented_a2a.transport`, and demonstrated by `examples/network_dual_end.py`.
 
