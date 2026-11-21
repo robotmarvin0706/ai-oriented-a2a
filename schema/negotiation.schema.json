@@ -8,6 +8,7 @@
       "required": ["proposal_id", "target_constraint", "proposed_change"],
       "properties": {
         "proposal_id": { "type": "string", "minLength": 1 },
+        "negotiation_id": { "type": "string", "minLength": 1, "description": "Optional (v0.4). Opaque id shared by every message of one negotiation chain, across proposal_ids. A receiver SHOULD cap rounds per negotiation_id (default 3) and MUST reject a message over its cap with a reason starting with negotiation_limit:." },
         "target_constraint": { "type": "string" },
         "proposed_change": { "type": "string" },
         "offered_packet": { "$ref": "experience-packet.schema.json" },
@@ -38,6 +39,7 @@
       "required": ["proposal_id"],
       "properties": {
         "proposal_id": { "type": "string" },
+        "negotiation_id": { "type": "string", "minLength": 1, "description": "Optional (v0.4). Opaque id shared by every message of one negotiation chain, across proposal_ids. A receiver SHOULD cap rounds per negotiation_id (default 3) and MUST reject a message over its cap with a reason starting with negotiation_limit:." },
         "status": { "const": "accept" },
         "version": {
           "type": "string",
@@ -63,6 +65,7 @@
       "required": ["proposal_id"],
       "properties": {
         "proposal_id": { "type": "string" },
+        "negotiation_id": { "type": "string", "minLength": 1, "description": "Optional (v0.4). Opaque id shared by every message of one negotiation chain, across proposal_ids. A receiver SHOULD cap rounds per negotiation_id (default 3) and MUST reject a message over its cap with a reason starting with negotiation_limit:." },
         "status": { "const": "reject" },
         "reason": { "type": "string" },
         "version": {
@@ -89,7 +92,9 @@
       "required": ["proposal_id", "revised_change"],
       "properties": {
         "proposal_id": { "type": "string" },
+        "negotiation_id": { "type": "string", "minLength": 1, "description": "Optional (v0.4). Opaque id shared by every message of one negotiation chain, across proposal_ids. A receiver SHOULD cap rounds per negotiation_id (default 3) and MUST reject a message over its cap with a reason starting with negotiation_limit:." },
         "status": { "const": "counter" },
+        "target_constraint": { "type": "string", "description": "Optional (v0.4). The constraint the revised change touches. A receiver MUST reject a counter whose target_constraint is one of its core_constraints with a reason starting with immutable_constraint:." },
         "revised_change": { "type": "string" },
         "offered_packet": { "$ref": "experience-packet.schema.json" },
         "conditional_packet": { "$ref": "experience-packet.schema.json" },

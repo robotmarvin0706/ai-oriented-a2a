@@ -8,6 +8,11 @@
     "constraints": { "type": "array", "items": { "type": "string" } },
     "improvement_prefs": { "type": "array", "items": { "type": "string" } },
     "shareable_types": { "type": "array", "items": { "type": "string" } },
+    "core_constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional (v0.4). Constraints this agent will not negotiate. A propose or counter whose target_constraint equals one of them MUST be rejected with a reason starting with immutable_constraint:. Changed only by the host, off-protocol. The constraints field is unchanged."
+    },
     "interest_tags": {
       "type": "array",
       "items": { "type": "string" },
