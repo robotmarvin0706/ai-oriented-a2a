@@ -83,7 +83,8 @@ def test_second_client_to_reference_receiver_signed_with_replay(reference):
     pkt = _packet()
     reply = mc.send(url, pkt, sign_key=KEY, with_nonce=True)
     assert reply["packet_ref"] == pkt["id"]
-    assert reply["status"] in ("absorbed", "rejected", "isolated")
+    # The reference seeds its regression with sha256(packet id): fixed result.
+    assert reply["status"] == "absorbed"
     assert core.verify(reply, KEY)
     if reply["status"] == "absorbed":
         assert reply["effect_summary"]["note"].strip()

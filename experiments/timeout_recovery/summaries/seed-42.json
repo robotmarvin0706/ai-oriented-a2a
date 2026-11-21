@@ -1,0 +1,243 @@
+{
+  "arms": {
+    "distilled_packet": {
+      "acceptance_rate": 0.9,
+      "accepted": 27,
+      "arm": "distilled_packet",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.0778,
+      "delayed_sr": 0.8222,
+      "delta_sr": 0.5778,
+      "delta_sr_ci95": [
+        0.4667,
+        0.6778
+      ],
+      "extra_tokens": 2025.1333,
+      "extra_tool_calls": 13.7333,
+      "immediate_sr": 0.9,
+      "isolation_dsr_mean": 0.5222,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 3,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 3,
+      "sr": 0.8611,
+      "strategy_parsed": 30
+    },
+    "empty_packet": {
+      "acceptance_rate": 0.0,
+      "accepted": 0,
+      "arm": "empty_packet",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1778,
+      "delta_sr": 0.0,
+      "delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "extra_tokens": 65.0,
+      "extra_tool_calls": 0.0,
+      "immediate_sr": 0.3889,
+      "isolation_dsr_mean": null,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "sr": 0.2833,
+      "strategy_parsed": 0
+    },
+    "injection_packet": {
+      "acceptance_rate": 0.0,
+      "accepted": 0,
+      "arm": "injection_packet",
+      "candidates": 30,
+      "content_policy_rejections": 30,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1778,
+      "delta_sr": 0.0,
+      "delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "extra_tokens": 0.0,
+      "extra_tool_calls": 0.0,
+      "immediate_sr": 0.3889,
+      "isolation_dsr_mean": null,
+      "model_calls": 0,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "sr": 0.2833,
+      "strategy_parsed": 0
+    },
+    "irrelevant_packet": {
+      "acceptance_rate": 0.0,
+      "accepted": 0,
+      "arm": "irrelevant_packet",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1778,
+      "delta_sr": 0.0,
+      "delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "extra_tokens": 97.0,
+      "extra_tool_calls": 0.0,
+      "immediate_sr": 0.3889,
+      "isolation_dsr_mean": null,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "sr": 0.2833,
+      "strategy_parsed": 0
+    },
+    "no_sharing": {
+      "acceptance_rate": null,
+      "accepted": 0,
+      "arm": "no_sharing",
+      "candidates": 0,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1778,
+      "delta_sr": 0.0,
+      "delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "extra_tokens": 0.0,
+      "extra_tool_calls": 0.0,
+      "immediate_sr": 0.3889,
+      "isolation_dsr_mean": null,
+      "model_calls": 0,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "sr": 0.2833,
+      "strategy_parsed": 0
+    },
+    "own_history": {
+      "acceptance_rate": 0.3333,
+      "accepted": 10,
+      "arm": "own_history",
+      "candidates": 25,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.1889,
+      "delayed_sr": 0.2333,
+      "delta_sr": 0.0444,
+      "delta_sr_ci95": [
+        0.0111,
+        0.0889
+      ],
+      "extra_tokens": 716.4667,
+      "extra_tool_calls": 16.9667,
+      "immediate_sr": 0.4222,
+      "isolation_dsr_mean": 0.1733,
+      "model_calls": 0,
+      "n": 30,
+      "policy_unchanged": 20,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 15,
+      "sr": 0.3278,
+      "strategy_parsed": 25
+    },
+    "raw_trajectory": {
+      "acceptance_rate": 0.3333,
+      "accepted": 10,
+      "arm": "raw_trajectory",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.1333,
+      "delayed_sr": 0.3111,
+      "delta_sr": 0.0944,
+      "delta_sr_ci95": [
+        0.0333,
+        0.1667
+      ],
+      "extra_tokens": 1756.8,
+      "extra_tool_calls": 7.6667,
+      "immediate_sr": 0.4444,
+      "isolation_dsr_mean": 0.2121,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 20,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 12,
+      "sr": 0.3778,
+      "strategy_parsed": 22
+    },
+    "wrong_packet": {
+      "acceptance_rate": 0.0,
+      "accepted": 0,
+      "arm": "wrong_packet",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1778,
+      "delta_sr": 0.0,
+      "delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "extra_tokens": 1366.6667,
+      "extra_tool_calls": 21.0667,
+      "immediate_sr": 0.3889,
+      "isolation_dsr_mean": 0.0,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 30,
+      "sr": 0.2833,
+      "strategy_parsed": 30
+    }
+  },
+  "config": {
+    "absorb_token_budget": 800,
+    "ci_method": "paired bootstrap over cases, percentile 95% CI, B=2000",
+    "dsr_threshold": 0.05,
+    "episodes_per_window": {
+      "delayed": 3,
+      "explore": 3,
+      "immediate": 3,
+      "isolation": 3,
+      "peer": 1,
+      "rollback_check": 3
+    },
+    "extra_cost_cap_vs_own_history": 1.5,
+    "isolation_n": 3,
+    "model": "deterministic-rule-host-v1",
+    "n_cases": 30,
+    "peer_policy": "backoff=exp400ms,max_attempts=4,drop_stale=True",
+    "scenario": "sim-v1",
+    "total_token_budget": 3000
+  },
+  "controls": {
+    "empty_packet_policy_unchanged": true,
+    "injection_packet_rejected_by_content_policy": true,
+    "irrelevant_packet_policy_unchanged": true,
+    "wrong_packet_final_delta_sr_le_0": true,
+    "wrong_packet_isolation_dsr_le_0_all_cases": true,
+    "wrong_packet_rolled_back_all_cases": true
+  },
+  "judgement": {
+    "checks": {
+      "distilled_delta_sr_ge_threshold": true,
+      "distilled_not_below_own_history": true,
+      "extra_tokens_within_cap": false,
+      "rollback_recovers": true
+    },
+    "distilled_minus_own_history": 0.5334,
+    "net_value": false
+  },
+  "seed": 42
+}

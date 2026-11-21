@@ -473,7 +473,8 @@ def test_http_signature_failure_returns_200_rejected(start_receiver):
     good = sign_message(_valid_packet(), "secret")
     status, body = _post(url, good)
     assert status == 200
-    assert body["status"] in ("absorbed", "rejected", "isolated")
+    # Seeded by sha256(packet id), so the reference result is fixed (fixed in 0.4.1).
+    assert body["status"] == "absorbed"
     if body["status"] == "absorbed":
         assert body["packet_ref"] != "unknown"
         assert body["effect_summary"]["note"].strip()
@@ -546,7 +547,8 @@ def test_http_replay_off_accepts_messages_without_nonce_or_timestamp(start_recei
     status, body = _post(url, pkt)
     assert status == 200
     assert "replay_or_stale" not in body.get("reason", "")
-    assert body["status"] in ("absorbed", "rejected", "isolated")
+    # Seeded by sha256(packet id), so the reference result is fixed (fixed in 0.4.1).
+    assert body["status"] == "absorbed"
     # a second send without those fields is still not a replay rejection
     status2, body2 = _post(url, pkt)
     assert status2 == 200
@@ -578,7 +580,8 @@ def test_http_omitted_version_still_absorbed_or_valid_result(start_receiver):
     assert "version" not in pkt
     status, body = _post(url, pkt)
     assert status == 200
-    assert body["status"] in ("absorbed", "rejected", "isolated")
+    # Seeded by sha256(packet id), so the reference result is fixed (fixed in 0.4.1).
+    assert body["status"] == "absorbed"
     assert body["packet_ref"] == pkt["id"]
     if body["status"] == "absorbed":
         assert body["effect_summary"]["note"].strip()

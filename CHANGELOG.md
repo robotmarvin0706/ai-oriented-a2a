@@ -9,6 +9,19 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+Targeting 0.4.1. Experiment, example fixes, tests and data only: no wire-protocol change, no new fields, SPEC.md unchanged.
+
+### Fixed
+
+- `examples/minimal_dual_end.py`: absorption no longer sets a hard-coded `recovered_policy()` whatever the packet says. The receiver parses `backoff`, `max_attempts` and `drop_stale_partials` from packet `content` (structured `recovery_policy`, a raw trajectory, or the recommendation text; never `absorption.hint`). Content with no such parameter leaves the policy unchanged and is rejected with `strategy_parsed: false` in the metrics. A change with no measured gain over regression + isolation (pooled) is now rolled back instead of absorbed. The simulated tool throttles a caller after 3 consecutive immediate retries, so unbounded retries without backoff cannot add successes. The default four-arm table is unchanged; `net_delta_sr_experiment.py` and `gossip_sim.py`, which reuse this receiver, now give different numbers (for example seed 42 Stage 1: distilled ΔSR +0.356 instead of +0.402).
+- `examples/network_dual_end.py`: the simulated regression is seeded with the first 8 bytes of sha256(packet id) (`stable_seed`) instead of `hash(id)`, so the result is the same in every process. The reference receiver now returns `absorbed` for `examples/experience-packet.json`, and the tests that accepted any of `absorbed` / `rejected` / `isolated` for it assert `absorbed` (in the conformance copy, only for the `reference` implementation). Removed from `docs/KNOWN_GAPS.md` (remaining entries renumbered).
+
+### Added
+
+- `experiments/timeout_recovery/` (non-normative): a minimal host with a tool-call loop against a simulated `web_search` tool, absorption through the library's public interfaces (`check_incoming`, `content_policy_rejection`, `NegotiationGuard`, `wrap_untrusted`, `transport.guard_result`, `transport.make_server`), a pluggable strategy model (default deterministic rule model; optional OpenAI-compatible adapter, skipped when not configured), four arms plus four control packets, and fixed decision rules. One command reproduces it: `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30`. Results: `experiments/timeout_recovery/RESULTS.md` (verdict: no net value, because the distilled arm's extra tokens are about 2.6–2.8× own_history against a 1.5× cap; distilled ΔSR is above own_history on all three seeds).
+- `datasets/timeout_recovery/runs/<seed>/`: trajectories of that run as v0.4 Experience Packets (JSON Lines) with `verification_claim` (`scenario_ref`, `metric`, `value`, `repro`), with per-seed summaries in `experiments/timeout_recovery/summaries/`. Described in `datasets/README.md` (CC0, like the rest of `datasets/`).
+- `tests/experiments/`: byte-identical reruns (also across processes), committed data matches a fresh run, wrong-experience packets give ΔSR ≤ 0 and roll back, empty or unrelated packets leave the policy unchanged, directive content is rejected with `content_policy:` before the strategy model sees it, schema validation, and an HTTP round trip through `transport.make_server`.
+
 ## [0.4.0] - 2026-11-22
 
 This release collects `spec/content-is-data` (#47) and `spec/core-constraints` (#48), built from tag `v0.4.0`.
