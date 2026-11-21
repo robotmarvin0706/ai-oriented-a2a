@@ -29,7 +29,7 @@ A second, independent implementation of AI-oriented A2A v0.3 over the HTTP bindi
 
 Replay runs after the signature check, so an unsigned or forged message cannot use up a nonce. The replay window is keyed on the nonce alone and entries expire after the window.
 
-Every failure is HTTP 200 with a valid Absorption Result: `status=rejected`, a non-empty `packet_ref` (the message `id`, its `packet_ref`, or the `offered_packet.id` of a negotiation message, else `unknown`), and a non-empty `reason`. An unparseable body gives HTTP 400 with `reason` `invalid json`. Reason prefixes are registered in [docs/TRANSPORT.md](../docs/TRANSPORT.md#reserved-reason-prefixes).
+Every failure is HTTP 200 with a valid Absorption Result: `status=rejected`, a non-empty `packet_ref` (the message `id`, its `packet_ref`, or the `offered_packet.id` of a negotiation message, else `unknown`), and a non-empty `reason`. An unparseable body gives HTTP 400 with `reason` `invalid json`. A missing, invalid, or too-large `Content-Length` (over `MAX_BODY_BYTES` = 1048576) gives HTTP 413 with a reason starting with `payload_too_large:`, without reading the body. An unexpected error in the checks or the reply gives HTTP 500 with `internal_error: message handler failed` and no details. A non-finite numeric `timestamp` with the window on gives `replay_or_stale: invalid timestamp`, as in the reference. Reason prefixes are registered in [docs/TRANSPORT.md](../docs/TRANSPORT.md#reserved-reason-prefixes).
 
 Replies to messages that pass the checks:
 

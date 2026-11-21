@@ -133,6 +133,25 @@ def send(
 # ---------------------------------------------------------------------------
 
 
+class _Server(ThreadingHTTPServer):
+    # socketserver's default backlog of 5 resets bursts of concurrent peers.
+    daemon_threads = True
+    request_queue_size = 128
+
+
+def _content_length(raw: Optional[str]) -> Optional[int]:
+    """Content-Length as a non-negative int, or None if missing or invalid."""
+    if raw is None:
+        return None
+    text = raw.strip()
+    if not (text.isascii() and text.isdigit()):
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 def make_server(
     port: int = 0,
     *,
@@ -145,6 +164,10 @@ def make_server(
     """Build (but do not start) a receiver for POST /a2a/message.
 
     ``server.received`` lists the messages that passed every check.
+    Bodies above ``core.MAX_BODY_BYTES``, or with a missing or invalid
+    ``Content-Length``, get HTTP 413 and ``payload_too_large:``. An
+    unexpected error in the checks or the reply gets HTTP 500 and
+    ``internal_error: message handler failed``.
     """
     replay = core.ReplayWindow(replay_window) if replay_window is not None else None
     received: List[Dict[str, Any]] = []
@@ -158,7 +181,17 @@ def make_server(
             if self.path != ENDPOINT:
                 self.send_error(404)
                 return
-            length = int(self.headers.get("Content-Length", 0) or 0)
+            length = _content_length(self.headers.get("Content-Length"))
+            if length is None or length > core.MAX_BODY_BYTES:
+                detail = (
+                    "missing or invalid Content-Length"
+                    if length is None
+                    else f"request body exceeds {core.MAX_BODY_BYTES} bytes"
+                )
+                # Do not read the body; close so leftover bytes are not parsed.
+                self.close_connection = True
+                self._reply(core.rejected(None, f"{core.REASON_PAYLOAD_TOO_LARGE}: {detail}"), 413)
+                return
             raw = self.rfile.read(length)
             try:
                 msg = json.loads(raw.decode("utf-8"))
@@ -167,12 +200,18 @@ def make_server(
             if not isinstance(msg, dict):
                 self._reply(core.rejected(None, core.REASON_INVALID_JSON), 400)
                 return
-            rejection = core.check_incoming(msg, sign_key=sign_key, replay=replay, schema=schema)
-            if rejection:
-                self._reply(rejection)
+            try:
+                rejection = core.check_incoming(msg, sign_key=sign_key, replay=replay, schema=schema)
+                if rejection is None:
+                    received.append(msg)
+                reply = rejection if rejection else core.respond(msg)
+            except Exception:
+                # No exception text, path, or traceback on the wire.
+                if log:
+                    sys.stderr.write("[second_impl] message handler failed\n")
+                self._reply(core.rejected(msg, core.REASON_INTERNAL), 500)
                 return
-            received.append(msg)
-            self._reply(core.respond(msg))
+            self._reply(reply)
 
         def _reply(self, payload: Dict[str, Any], status: int = 200) -> None:
             if sign_key:
@@ -184,8 +223,7 @@ def make_server(
             self.end_headers()
             self.wfile.write(data)
 
-    server = ThreadingHTTPServer((host, port), Handler)
-    server.daemon_threads = True
+    server = _Server((host, port), Handler)
     server.received = received  # type: ignore[attr-defined]
     return server
 
