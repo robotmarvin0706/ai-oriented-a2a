@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 import os
 import re
 import sys
@@ -55,7 +56,13 @@ REASON_SCHEMA = "schema_invalid"
 REASON_NEGOTIATION = "negotiation_unsupported"
 REASON_SIGNATURE = "signature verification failed"
 REASON_INVALID_JSON = "invalid json"
+REASON_INTERNAL = "internal_error: message handler failed"
+REASON_PAYLOAD_TOO_LARGE = "payload_too_large"
+REASON_INVALID_TIMESTAMP = REASON_REPLAY + ": invalid timestamp"
 ISOLATED_REASON = "isolated: no local regression available"
+
+# HTTP binding: request bodies above this many bytes get HTTP 413.
+MAX_BODY_BYTES = 1_048_576
 
 Message = Dict[str, Any]
 
@@ -148,11 +155,27 @@ def verify(msg: Message, key: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+def _non_finite_number(value: Any) -> bool:
+    """True for NaN / Infinity / -Infinity (json.loads accepts them) and
+    integers too large to be a float."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return not math.isfinite(float(value))
+    except OverflowError:
+        return True
+
+
 def parse_timestamp(value: Any) -> Optional[float]:
-    """Unix seconds (number) or ISO-8601 string (naive = UTC, ``Z`` ok)."""
+    """Unix seconds (number) or ISO-8601 string (naive = UTC, ``Z`` ok).
+
+    Non-finite numbers are not timestamps: returns None.
+    """
     if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
+        if _non_finite_number(value):
+            return None
         return float(value)
     if isinstance(value, str) and value.strip():
         text = value.strip()
@@ -189,6 +212,8 @@ class ReplayWindow:
             return f"{REASON_REPLAY}: nonce and timestamp required when replay window is enabled"
         if not _usable(nonce):
             return f"{REASON_REPLAY}: missing or empty nonce"
+        if _non_finite_number(msg.get("timestamp")):
+            return REASON_INVALID_TIMESTAMP
         ts = parse_timestamp(msg.get("timestamp"))
         if ts is None:
             return f"{REASON_REPLAY}: unparsable timestamp"

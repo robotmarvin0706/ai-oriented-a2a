@@ -9,3 +9,7 @@ HTTP-level tests that any AI-oriented A2A v0.3 receiver should pass. The `start_
 Until the two are merged, any change to one copy MUST be made to the other in the same PR, so they do not drift.
 
 Merge plan (tracked in [docs/KNOWN_GAPS.md](../../docs/KNOWN_GAPS.md)): remove the HTTP section from `test_optional_fields.py` and keep this parametrized copy, which already covers the reference implementation.
+
+## Robustness cases (not duplicated)
+
+`test_robustness.py` (since 0.3.3) has no copy elsewhere: non-finite timestamps, the 413 request-body limit, negotiation rejection, and 16 concurrent requests with distinct nonces. The first three use `start_receiver`. The concurrency case needs a `ThreadingHTTPServer`, and the `reference` receiver of `start_receiver` is `examples/network_dual_end.py` on a synchronous `HTTPServer`, so it uses its own fixture: `ai_oriented_a2a.transport.make_server` for `reference` and `second_impl.minimal_client.make_server` for `second_impl` (no `external` mode).

@@ -26,7 +26,10 @@ From [TRANSPORT.md](TRANSPORT.md#http-status-codes):
 - Signature and replay checks are off unless enabled. When enabled, failures give `signature verification failed` or a reason starting with `replay_or_stale:`. With a replay window on, both `nonce` and `timestamp` are required.
 - An unparseable body gives HTTP 400 with a valid Absorption Result (`packet_ref` = `unknown`, `reason` = `invalid json`).
 - A receiver whose own handler fails returns HTTP 500 with a valid rejected Absorption Result whose reason starts with `internal_error:` and contains no exception text, traceback, or path.
-- Reason strings use the reserved prefixes in [TRANSPORT.md](TRANSPORT.md#reserved-reason-prefixes): `unsupported_version:`, `replay_or_stale:`, `schema_invalid:`, `negotiation_unsupported:`, `internal_error:`, and the informative `isolated:`.
+- A missing, invalid, or too-large `Content-Length` (over 1048576 bytes for the in-repo implementations) returns HTTP 413 with a valid rejected Absorption Result whose reason starts with `payload_too_large:`, decided before the body is read.
+- With a replay window on, a non-finite numeric `timestamp` (`NaN`, `Infinity`, `-Infinity`) is rejected with `replay_or_stale: invalid timestamp`.
+- Concurrent requests to a threaded receiver all get a legal reply; the replay window is shared across request threads.
+- Reason strings use the reserved prefixes in [TRANSPORT.md](TRANSPORT.md#reserved-reason-prefixes): `unsupported_version:`, `replay_or_stale:`, `schema_invalid:`, `negotiation_unsupported:`, `payload_too_large:`, `internal_error:`, and the informative `isolated:`.
 - String `timestamp` values are ISO-8601 with a timezone, matching the schema pattern `YYYY-MM-DDTHH:MM:SS[.fff|.ffffff](Z|±HH:MM)`. Numeric strings and strings without a timezone are schema-invalid. With a replay window on, a nonce that was already accepted is rejected whatever its `timestamp`.
 - Signature: HMAC-SHA256 over the UTF-8 bytes of `json.dumps(body_without_signature, separators=(",", ":"), sort_keys=True, ensure_ascii=False)`, carried as `signature: {"alg": "hmac-sha256", "value": "<hex>"}`.
 
@@ -37,6 +40,7 @@ All paths are under `tests/`. "Wire" tests talk HTTP to a running receiver and a
 | Test file | Kind | What a second implementation must satisfy |
 | --- | --- | --- |
 | `conformance/test_http_conformance.py` | wire, **required** | The 12 HTTP cases: unknown version (incl. `v0.3`) → 200 + rejected; reserved `unknown` ref; signature failure; replay only when enabled; ISO-8601 timestamps; missing nonce/timestamp with the window on; sign and replay independent; omitted version; invalid JSON → JSON body; incoming hard-gate violation; never absorb under `unknown`. |
+| `conformance/test_robustness.py` | wire, **required** | Since 0.3.3: non-finite `timestamp` (`NaN`, `Infinity`, `-Infinity`) with the window on → 200 + `replay_or_stale: invalid timestamp`; missing / invalid / too-large `Content-Length` → 413 + `payload_too_large:` without reading the body; a body of exactly 1048576 bytes is accepted; negotiation → rejected `negotiation_unsupported:` (never a bare ack). The 16-thread concurrency case needs an in-process threaded server, so it runs only for `reference` (`ai_oriented_a2a.transport.make_server`) and `second_impl` (`second_impl.minimal_client.make_server`), not for `external`. |
 | `interop/test_schema_and_rules.py` | artifact | Examples validate; unsupported methods are rejectable; packet `id` required; `packet_ref` matches `id`. |
 | `interop/test_absorption_gate.py` | artifact + reference | The 11 schema/example cases (absorbed needs a non-empty `note`; rejected/isolated need `reason`; metrics may be booleans) apply to everyone. The last 3 test the reference experiment path (`minimal_dual_end`) and are not required of other implementations. |
 | `interop/test_boundary.py` | artifact | Nested packets carry their own `id`; `effect_summary` shape; rejected needs `reason`. |

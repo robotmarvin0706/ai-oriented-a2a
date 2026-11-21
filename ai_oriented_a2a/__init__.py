@@ -4,14 +4,17 @@ Required dependencies: none (Python standard library only). Schema
 validation is an optional extra: ``pip install 'ai-oriented-a2a[schema]'``.
 
 Signature verification and the replay window stay off unless the
-caller passes ``sign_key`` or ``replay_window``. There is no HTTP
-server and no central component in this package.
+caller passes ``sign_key`` or ``replay_window``. The HTTP binding (client,
+request handler, threaded server) lives in ``ai_oriented_a2a.transport``;
+a plain ``import ai_oriented_a2a`` does not load it. There is no central
+component in this package.
 """
 
 from .protocol import (
     RESERVED_PACKET_REF,
     SUPPORTED_MAJOR_MINOR,
     VERSION_PATTERN,
+    ReplayCache,
     canonical,
     check_incoming,
     check_replay,
@@ -26,13 +29,14 @@ from .protocol import (
 )
 from .validate import SchemaDependencyError, SCHEMA_KINDS, schema_dir, validate
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 __all__ = [
     "RESERVED_PACKET_REF",
     "SCHEMA_KINDS",
     "SUPPORTED_MAJOR_MINOR",
     "VERSION_PATTERN",
+    "ReplayCache",
     "SchemaDependencyError",
     "__version__",
     "canonical",

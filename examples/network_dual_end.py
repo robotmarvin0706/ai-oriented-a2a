@@ -62,7 +62,7 @@ import threading
 import time
 from http.server import HTTPServer
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set, Tuple, Union
 
 _EXAMPLES = Path(__file__).resolve().parent
 _REPO = _EXAMPLES.parent
@@ -76,6 +76,7 @@ from ai_oriented_a2a import (  # noqa: E402,F401
     RESERVED_PACKET_REF,
     SUPPORTED_MAJOR_MINOR,
     VERSION_PATTERN,
+    ReplayCache,
     canonical,
     check_incoming,
     check_replay,
@@ -92,6 +93,10 @@ from ai_oriented_a2a import transport  # noqa: E402
 from ai_oriented_a2a.transport import A2ARequestHandler, guard_result  # noqa: E402
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
+NEGOTIATION_UNSUPPORTED_REASON = (
+    "negotiation_unsupported: this demo receiver does not implement negotiation; "
+    "nested packets are not processed"
+)
 DEFAULT_REPLAY_WINDOW_SECONDS = 10 * 60  # 10 minutes, per SECURITY.md suggestion
 CLIENT_TIMEOUT_SECONDS = 30  # TRANSPORT.md: library SHOULD use >= 30s
 
@@ -127,6 +132,18 @@ def make_packet(method: str = "prompt_injection") -> Dict[str, Any]:
     }
 
 
+def negotiation_rejection(msg: Dict[str, Any]) -> Dict[str, Any]:
+    """Legal rejected Absorption Result for a negotiation message (SPEC §3.1).
+
+    ``packet_ref`` is ``offered_packet.id`` when usable, else ``"unknown"``.
+    """
+    offered = msg.get("offered_packet")
+    ref = offered.get("id") if isinstance(offered, dict) else None
+    if not (isinstance(ref, str) and ref.strip()):
+        ref = RESERVED_PACKET_REF
+    return {"packet_ref": ref, "status": "rejected", "reason": NEGOTIATION_UNSUPPORTED_REASON}
+
+
 def guard_reserved_ref(result: Dict[str, Any]) -> Dict[str, Any]:
     """Refuse to emit status=absorbed with the reserved packet_ref."""
     if result.get("status") == "absorbed" and result.get("packet_ref") == RESERVED_PACKET_REF:
@@ -152,8 +169,9 @@ class A2AHandler(A2ARequestHandler):
     replay_window: Optional[float] = None  # seconds; None = replay checks off
     received: list = []
     receiver: Receiver = Receiver(isolation_n=3, regression_drop_threshold=0.10)
-    # Process-level seen nonces for the demo (per-peer would key by identity/fingerprint).
-    seen_nonces: Set[Tuple[str, str]] = set()
+    # Process-level replay cache (set + lock) for the demo; per-peer would key
+    # by identity/fingerprint. A bare set assigned here is wrapped on first use.
+    seen_nonces: Union[ReplayCache, Set[Tuple[str, str]]] = ReplayCache()
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.role}] {self.address_string()} - {format % args}")
@@ -164,7 +182,12 @@ class A2AHandler(A2ARequestHandler):
 
         response: Dict[str, Any] = {"ack": True}
 
-        if "constraints" in msg:
+        if "proposal_id" in msg:
+            # Negotiation (propose / accept / reject / counter): not
+            # implemented here, so reject with a legal Absorption Result
+            # instead of a bare ack (KNOWN_GAPS fix in 0.3.3).
+            response = negotiation_rejection(msg)
+        elif "constraints" in msg:
             response["type"] = "profile_ack"
         elif "id" in msg and "absorption" in msg:
             method = msg.get("absorption", {}).get("method")
@@ -232,7 +255,7 @@ def run_server(
     A2AHandler.peer_url = peer_url
     A2AHandler.sign_key = sign_key
     A2AHandler.replay_window = replay_window
-    A2AHandler.seen_nonces = set()
+    A2AHandler.seen_nonces = ReplayCache()
     server = HTTPServer(("127.0.0.1", port), A2AHandler)
     window_desc = f"{replay_window}s" if replay_window is not None else "off"
     print(
