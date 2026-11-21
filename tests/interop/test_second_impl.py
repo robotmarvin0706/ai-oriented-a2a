@@ -80,7 +80,7 @@ def _assert_legal_rejection(result, reason_part, packet_ref=None):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("version", ["0.3", "0.3.0", "0.3.9"])
+@pytest.mark.parametrize("version", ["0.3", "0.3.0", "0.3.9", "0.4", "0.4.0", "0.4.7"])
 def test_supported_versions_pass(version):
     assert core.version_problem({"version": version}) is None
 
@@ -89,7 +89,9 @@ def test_omitted_version_is_current():
     assert core.version_problem({}) is None
 
 
-@pytest.mark.parametrize("version", ["v0.3", "0.4", "0.2", "1.0", "3", "", "0.3.x", 0.3, None, ["0.3"]])
+@pytest.mark.parametrize(
+    "version", ["v0.3", "v0.4", "0.5", "0.2", "1.0", "3", "", "0.3.x", 0.3, 0.4, None, ["0.3"]]
+)
 def test_unknown_versions_are_rejected(version):
     reason = core.version_problem({"version": version})
     assert reason is not None and reason.startswith("unsupported_version: received ")
@@ -104,7 +106,7 @@ def test_version_is_checked_before_everything():
 
 
 def test_unknown_version_without_id_uses_reserved_ref():
-    result = core.check_incoming({"version": "0.4", "constraints": []})
+    result = core.check_incoming({"version": "0.5", "constraints": []})
     _assert_legal_rejection(result, "unsupported_version", "unknown")
 
 

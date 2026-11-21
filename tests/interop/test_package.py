@@ -31,6 +31,8 @@ import network_dual_end  # noqa: E402
 
 
 EXPECTED_EXPORTS = {
+    "CURRENT_MAJOR_MINOR",
+    "PROTOCOL_VERSION",
     "RESERVED_PACKET_REF",
     "SCHEMA_KINDS",
     "SUPPORTED_MAJOR_MINOR",
@@ -41,16 +43,19 @@ EXPECTED_EXPORTS = {
     "canonical",
     "check_incoming",
     "check_replay",
+    "content_policy_rejection",
     "new_id",
     "packet_ref_of",
     "parse_timestamp",
     "reject_result",
+    "scan_directives",
     "schema_dir",
     "sign_message",
     "supported_version",
     "validate",
     "verify_message",
     "version_rejection",
+    "wrap_untrusted",
 }
 
 SHARED_FUNCTIONS = (
@@ -68,8 +73,8 @@ SHARED_FUNCTIONS = (
 
 
 def test_version_and_all():
-    assert __version__ == "0.3.3"
-    assert ai_oriented_a2a.__version__ == "0.3.3"
+    assert __version__ == "0.4.0"
+    assert ai_oriented_a2a.__version__ == "0.4.0"
     assert set(__all__) == EXPECTED_EXPORTS
     for name in __all__:
         assert hasattr(ai_oriented_a2a, name)
