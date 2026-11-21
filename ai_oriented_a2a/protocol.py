@@ -1,4 +1,4 @@
-"""Stdlib helpers for the AI-oriented A2A peer protocol (v0.3).
+"""Stdlib helpers for the AI-oriented A2A peer protocol (v0.4).
 
 No mandatory signature or replay checks and no central components (the
 HTTP binding lives in ``ai_oriented_a2a.transport``). Signature and replay stay off unless the caller
@@ -21,7 +21,11 @@ from typing import Any, ContextManager, Dict, Optional, Set, Tuple, Union
 
 RESERVED_PACKET_REF = "unknown"
 VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?$")
-SUPPORTED_MAJOR_MINOR = (0, 3)
+# Protocol v0.4 sends "0.4". A 0.4 receiver still accepts the 0.3 line
+# (docs/VERSIONING.md); 0.3 messages are processed under the 0.4 rules.
+PROTOCOL_VERSION = "0.4"
+CURRENT_MAJOR_MINOR = (0, 4)
+SUPPORTED_MAJOR_MINOR: Tuple[Tuple[int, int], ...] = ((0, 3), (0, 4))
 
 
 def new_id(prefix: str = "pkt") -> str:
@@ -116,19 +120,24 @@ def parse_timestamp(ts: Any) -> Optional[float]:
 
 
 def supported_version(value: str) -> bool:
-    """True if an on-wire version string is the current 0.3 minor line."""
+    """True if an on-wire version string is on a supported minor line.
+
+    Supported lines are ``SUPPORTED_MAJOR_MINOR``: 0.4 (current) and 0.3.
+    """
     if not VERSION_PATTERN.match(value):
         return False
     parts = value.split(".")
-    return (int(parts[0]), int(parts[1])) == SUPPORTED_MAJOR_MINOR
+    return (int(parts[0]), int(parts[1])) in SUPPORTED_MAJOR_MINOR
 
 
 def version_rejection(msg: Dict[str, Any]) -> Optional[str]:
     """Return an unsupported_version reason, or None if the message is fine.
 
-    Omitted version is treated as the current normative version (0.3).
-    A leading ``v`` or any other pattern failure, and any recognized-pattern
-    value that is not the 0.3 line, MUST be rejected.
+    Omitted version is treated as the current normative version (0.4).
+    ``"0.3"`` (and ``"0.3.x"``) is still accepted and processed under the
+    0.4 rules. A leading ``v`` or any other pattern failure, and any
+    recognized-pattern value that is not the 0.3 or 0.4 line, MUST be
+    rejected.
     """
     if "version" not in msg:
         return None
