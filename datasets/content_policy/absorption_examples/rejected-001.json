@@ -1,0 +1,5 @@
+{
+  "packet_ref": "pkt-synth-inject-001",
+  "status": "rejected",
+  "reason": "content_policy: directive pattern(s) in content: ignore_prior_instructions"
+}
