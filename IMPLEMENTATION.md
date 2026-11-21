@@ -132,6 +132,8 @@ Otherwise, stop investing in this direction and do not proceed to identity, subs
 ### Relation to Existing Code
 May be extended from `examples/minimal_dual_end.py`. A non-normative demonstration script `examples/net_delta_sr_experiment.py` is suggested. Full logs remain local by default.
 
+A fuller host for the same procedure lives in [`experiments/timeout_recovery/`](experiments/timeout_recovery/) (since 0.4.1): a tool-call loop against a simulated tool, absorption through the library's public interfaces, three fixed seeds with N=30 cases per arm, control packets, and fixed decision rules. Results are in [`experiments/timeout_recovery/RESULTS.md`](experiments/timeout_recovery/RESULTS.md) and the run data in `datasets/timeout_recovery/runs/`.
+
 ### Testing the Experiment
 1. Generate the case set with a fixed seed and confirm identical output on re-run.
 2. Execute Stage 1 (timeout only) under the token budgets above.
