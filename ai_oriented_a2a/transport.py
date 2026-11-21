@@ -15,9 +15,19 @@ handler does everything docs/TRANSPORT.md requires before your code runs:
 404 for other paths, HTTP 400 + a legal Absorption Result for invalid JSON,
 then ``check_incoming`` (version first, optional signature and replay
 window). Your callback only sees messages that passed. Its result is passed
-through the hard gate (``guard_result``) before it is sent. If the callback
-raises, the peer gets HTTP 500 and a legal rejected Absorption Result with
-the reason ``internal_error: message handler failed`` (no exception text).
+through the hard gate (``guard_result``) before it is sent. If
+``check_incoming`` or the callback raises, the peer gets HTTP 500 and a legal
+rejected Absorption Result with the reason
+``internal_error: message handler failed`` (no exception text).
+
+Request bodies are capped at ``MAX_BODY_BYTES``. A missing, invalid, or
+too-large ``Content-Length`` gets HTTP 413 and a rejected Absorption Result
+whose reason starts with ``payload_too_large:``; the body is not read.
+
+The replay window state is one ``ReplayCache`` (seen set + lock) per handler
+class, shared by every request thread of the server. ``make_handler`` injects
+a fresh one; it is never per request instance, because
+``BaseHTTPRequestHandler`` builds a new instance for each request.
 
 The package does not decide absorption: the host's callback does.
 """
@@ -26,14 +36,16 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
 
 from .protocol import (
     RESERVED_PACKET_REF,
+    ReplayCache,
     check_incoming,
     new_id,
     reject_result,
@@ -44,6 +56,13 @@ ENDPOINT = "/a2a/message"
 DEFAULT_TIMEOUT = 30.0  # docs/TRANSPORT.md: clients SHOULD use >= 30 s
 INTERNAL_ERROR_REASON = "internal_error: message handler failed"
 INVALID_JSON_REASON = "invalid json"
+MAX_BODY_BYTES = 1_048_576
+PAYLOAD_TOO_LARGE_REASON = f"payload_too_large: request body exceeds {MAX_BODY_BYTES} bytes"
+LENGTH_REQUIRED_REASON = "payload_too_large: missing or invalid Content-Length"
+LISTEN_BACKLOG = 128  # socketserver's default of 5 resets bursts of concurrent peers
+
+# Guards the lazy creation of a handler class's ReplayCache.
+_CACHE_INIT_LOCK = threading.Lock()
 
 Message = Dict[str, Any]
 MessageHandler = Callable[[Message], Message]
@@ -142,12 +161,17 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
     Configuration is read from class attributes so a subclass (or
     ``make_handler``) can set it: ``sign_key`` enables signature
     verification and signed replies, ``replay_window`` (seconds) enables the
-    replay window, and ``seen_nonces`` is the shared replay set.
+    replay window, and ``seen_nonces`` is the replay state shared by every
+    request on the server: a ``ReplayCache`` (set + lock). ``make_handler``
+    injects a fresh one. A subclass may also assign a bare set; it is wrapped
+    in a ``ReplayCache`` (same set object, one lock) on first use. When left
+    as ``None`` each handler class gets its own cache on first use; the base
+    class never hands one mutable set to every subclass.
     """
 
     sign_key: Optional[str] = None
     replay_window: Optional[float] = None
-    seen_nonces: Set[Tuple[str, str]] = set()
+    seen_nonces: Optional[Union[ReplayCache, Set[Tuple[str, str]]]] = None
 
     def handle_message(self, msg: Message) -> Message:
         """Return the reply for a message that passed ``check_incoming``."""
@@ -157,8 +181,17 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         if self.path != ENDPOINT:
             self.send_error(404)
             return
-        length = int(self.headers.get("Content-Length", 0) or 0)
+        length = _content_length(self.headers.get("Content-Length"))
+        if length is None:
+            self._reject_payload(LENGTH_REQUIRED_REASON)
+            return
+        if length > MAX_BODY_BYTES:
+            self._reject_payload(PAYLOAD_TOO_LARGE_REASON)
+            return
         body = self.rfile.read(length)
+        if len(body) > MAX_BODY_BYTES:  # defensive: never trust a short read
+            self._reject_payload(PAYLOAD_TOO_LARGE_REASON)
+            return
         try:
             msg = json.loads(body.decode())
             if not isinstance(msg, dict):
@@ -167,24 +200,39 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
             self._reply(reject_result(None, INVALID_JSON_REASON), status=400)
             return
 
-        rejected = check_incoming(
-            msg,
-            sign_key=self.sign_key,
-            replay_window=self.replay_window,
-            seen=self.seen_nonces,
-        )
-        if rejected:
-            self._reply(rejected)
-            return
-
         try:
-            reply = guard_result(self.handle_message(msg))
+            rejected = check_incoming(
+                msg,
+                sign_key=self.sign_key,
+                replay_window=self.replay_window,
+                seen=self._replay_cache() if self.replay_window is not None else None,
+            )
+            reply = rejected if rejected else guard_result(self.handle_message(msg))
         except Exception:
             # Log locally; never send exception text, paths, or tracebacks.
             log.exception("A2A message handler failed")
             self._reply(reject_result(msg, INTERNAL_ERROR_REASON), status=500)
             return
         self._reply(reply)
+
+    def _replay_cache(self) -> ReplayCache:
+        """Return this handler class's shared ReplayCache, creating it once."""
+        cls = type(self)
+        cache = cls.seen_nonces
+        if isinstance(cache, ReplayCache):
+            return cache
+        with _CACHE_INIT_LOCK:
+            cache = cls.seen_nonces
+            if not isinstance(cache, ReplayCache):
+                cache = ReplayCache(cache if isinstance(cache, set) else None)
+                cls.seen_nonces = cache
+            return cache
+
+    def _reject_payload(self, reason: str) -> None:
+        # The body was not read; close the connection so leftover bytes are
+        # never parsed as a new request.
+        self.close_connection = True
+        self._reply(reject_result(None, reason), status=413)
 
     def _reply(self, payload: Message, status: int = 200) -> None:
         if self.sign_key:
@@ -197,6 +245,19 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
+def _content_length(raw: Optional[str]) -> Optional[int]:
+    """Parse a Content-Length header; None if missing or not a non-negative int."""
+    if raw is None:
+        return None
+    text = raw.strip()
+    if not (text.isascii() and text.isdigit()):  # rejects "", "-1", "+1", "1.0", "0x10"
+        return None
+    try:
+        return int(text)
+    except ValueError:  # e.g. more digits than int() accepts
+        return None
+
+
 def make_handler(
     on_message: MessageHandler,
     *,
@@ -205,7 +266,8 @@ def make_handler(
 ) -> type:
     """Return an ``A2ARequestHandler`` subclass that calls ``on_message``.
 
-    Each returned class has its own replay set.
+    Each returned class has its own ``ReplayCache`` (replay set + lock),
+    shared by every request the server handles.
     """
     callback = on_message
 
@@ -218,8 +280,19 @@ def make_handler(
 
     _Handler.sign_key = sign_key
     _Handler.replay_window = replay_window
-    _Handler.seen_nonces = set()
+    _Handler.seen_nonces = ReplayCache()
     return _Handler
+
+
+class _ThreadingA2AServer(ThreadingHTTPServer):
+    """``ThreadingHTTPServer`` with a listen backlog that fits bursts.
+
+    ``socketserver`` defaults to a backlog of 5, so a burst of concurrent
+    peers can see connection resets before a request thread even starts.
+    """
+
+    daemon_threads = True
+    request_queue_size = LISTEN_BACKLOG
 
 
 def make_server(
@@ -233,12 +306,11 @@ def make_server(
     """Build (but do not start) a threaded server; ``port=0`` picks a free port.
 
     Start it with ``server.serve_forever()`` (for example in a thread) and
-    stop it with ``server.shutdown()`` and ``server.server_close()``.
+    stop it with ``server.shutdown()`` and ``server.server_close()``. The
+    listen backlog is ``LISTEN_BACKLOG`` (128) rather than socketserver's 5.
     """
     handler = make_handler(on_message, sign_key=sign_key, replay_window=replay_window)
-    server = ThreadingHTTPServer((host, port), handler)
-    server.daemon_threads = True
-    return server
+    return _ThreadingA2AServer((host, port), handler)
 
 
 def serve(
@@ -264,6 +336,8 @@ __all__ = [
     "DEFAULT_TIMEOUT",
     "ENDPOINT",
     "INTERNAL_ERROR_REASON",
+    "MAX_BODY_BYTES",
+    "ReplayCache",
     "TransportError",
     "guard_result",
     "make_handler",

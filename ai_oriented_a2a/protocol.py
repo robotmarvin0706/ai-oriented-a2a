@@ -1,7 +1,7 @@
 """Stdlib helpers for the AI-oriented A2A peer protocol (v0.3).
 
-No mandatory signature or replay checks, no HTTP server, and no
-central components. Signature and replay stay off unless the caller
+No mandatory signature or replay checks and no central components (the
+HTTP binding lives in ``ai_oriented_a2a.transport``). Signature and replay stay off unless the caller
 passes ``sign_key`` or ``replay_window``.
 """
 
@@ -10,11 +10,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 import re
+import threading
 import time
 import uuid
+from contextlib import nullcontext
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Any, ContextManager, Dict, Optional, Set, Tuple, Union
 
 RESERVED_PACKET_REF = "unknown"
 VERSION_PATTERN = re.compile(r"^\d+\.\d+(\.\d+)?$")
@@ -86,12 +89,18 @@ def parse_timestamp(ts: Any) -> Optional[float]:
     Naive (no timezone) strings are treated as UTC. This is compatibility
     behaviour only: the published schemas require a timezone, and strict
     receivers MAY reject such strings with ``schema_invalid:``. A trailing
-    ``Z`` is accepted. Returns None if the value cannot be parsed.
+    ``Z`` is accepted. Returns None if the value cannot be parsed, including
+    non-finite numbers (``NaN``, ``Infinity``, ``-Infinity``; ``json.loads``
+    accepts them) and integers too large for a float.
     """
     if isinstance(ts, bool):
         return None
     if isinstance(ts, (int, float)):
-        return float(ts)
+        try:
+            value = float(ts)
+        except OverflowError:
+            return None
+        return value if math.isfinite(value) else None
     if isinstance(ts, str) and ts.strip():
         text = ts.strip()
         if text.endswith("Z"):
@@ -136,6 +145,29 @@ def version_rejection(msg: Dict[str, Any]) -> Optional[str]:
 SEEN_MAX = 1000
 SEEN_TRIM_TO = 800
 
+INVALID_TIMESTAMP_REASON = "replay_or_stale: invalid timestamp"
+
+SeenSet = Set[Tuple[str, str]]
+
+
+class ReplayCache:
+    """A replay ``seen`` set bound to the ``threading.Lock`` that guards it.
+
+    Share one instance between every thread that checks messages for the same
+    receiver (for example all request threads of one ``ThreadingHTTPServer``).
+    The duplicate check, the insert, and the eviction all run under ``lock``.
+    ``seen`` may be an existing set; it is used as is, not copied.
+    """
+
+    __slots__ = ("seen", "lock")
+
+    def __init__(self, seen: Optional[SeenSet] = None) -> None:
+        self.seen: SeenSet = set() if seen is None else seen
+        self.lock = threading.Lock()
+
+    def __len__(self) -> int:
+        return len(self.seen)
+
 
 def _key_ts(key: Tuple[str, str]) -> float:
     try:
@@ -144,13 +176,13 @@ def _key_ts(key: Tuple[str, str]) -> float:
         return float("-inf")
 
 
-def _evict(seen: Set[Tuple[str, str]], now: float, window_seconds: float) -> None:
+def _evict(seen: SeenSet, now: float, window_seconds: float) -> None:
     """Trim ``seen`` to SEEN_TRIM_TO: expired keys first, then oldest timestamp.
 
     Expired keys can never be accepted again (the timestamp check runs
     first), so dropping them is free. Dropping a key that is still inside
     the window means that nonce could be replayed; keep the window short
-    if that matters (docs/SECURITY.md).
+    if that matters (docs/SECURITY.md). The caller holds the cache lock.
     """
     for key in [k for k in seen if abs(now - _key_ts(k)) > window_seconds]:
         seen.discard(key)
@@ -160,10 +192,28 @@ def _evict(seen: Set[Tuple[str, str]], now: float, window_seconds: float) -> Non
             seen.discard(key)
 
 
+def _is_non_finite_number(ts: Any) -> bool:
+    if isinstance(ts, bool) or not isinstance(ts, (int, float)):
+        return False
+    try:
+        return not math.isfinite(float(ts))
+    except OverflowError:
+        return True
+
+
+def _seen_and_guard(
+    seen: Union[SeenSet, ReplayCache], lock: Optional[Any]
+) -> Tuple[SeenSet, ContextManager[Any]]:
+    if isinstance(seen, ReplayCache):
+        return seen.seen, seen.lock
+    return seen, (lock if lock is not None else nullcontext())
+
+
 def check_replay(
     msg: Dict[str, Any],
-    seen: Set[Tuple[str, str]],
+    seen: Union[SeenSet, ReplayCache],
     window_seconds: float,
+    lock: Optional[Any] = None,
 ) -> Optional[str]:
     """Return reason string if replay/stale, else None. Mutates seen on accept.
 
@@ -172,9 +222,19 @@ def check_replay(
 
     A nonce is a duplicate if it is already in ``seen``, whatever its
     timestamp (the same nonce with a different timestamp is rejected).
-    ``seen`` is a plain set of ``(nonce, str(int(timestamp)))`` keys; when it
-    exceeds SEEN_MAX it is trimmed to SEEN_TRIM_TO by dropping expired keys
-    first and then the oldest timestamps.
+    ``seen`` is a plain set of ``(nonce, str(int(timestamp)))`` keys, or a
+    ``ReplayCache`` that bundles that set with its lock; when it exceeds
+    SEEN_MAX it is trimmed to SEEN_TRIM_TO by dropping expired keys first and
+    then the oldest timestamps.
+
+    Non-finite numeric timestamps (``NaN``, ``Infinity``, ``-Infinity``) are
+    rejected with ``replay_or_stale: invalid timestamp``.
+
+    Thread safety: the duplicate check, insert, and eviction run under one
+    lock. Pass a ``ReplayCache`` (its own lock is used), or a bare set plus
+    ``lock``. A bare set without ``lock`` is unguarded: that is fine for a
+    single thread, but threads sharing one set MUST share one lock too, or
+    concurrent requests can fail with ``Set changed size during iteration``.
     """
     nonce = msg.get("nonce")
     ts = msg.get("timestamp")
@@ -182,17 +242,21 @@ def check_replay(
         return "replay_or_stale: nonce and timestamp required when replay window is enabled"
     if not isinstance(nonce, str) or not nonce:
         return "replay_or_stale: missing or empty nonce"
+    if _is_non_finite_number(ts):
+        return INVALID_TIMESTAMP_REASON
     parsed = parse_timestamp(ts)
     if parsed is None:
         return "replay_or_stale: missing or unparsable timestamp"
     now = time.time()
     if abs(now - parsed) > window_seconds:
         return "replay_or_stale: timestamp outside window"
-    if any(key[0] == nonce for key in seen):
-        return "replay_or_stale: duplicate nonce"
-    seen.add((nonce, str(int(parsed))))
-    if len(seen) > SEEN_MAX:
-        _evict(seen, now, window_seconds)
+    keys, guard = _seen_and_guard(seen, lock)
+    with guard:
+        if any(key[0] == nonce for key in keys):
+            return "replay_or_stale: duplicate nonce"
+        keys.add((nonce, str(int(parsed))))
+        if len(keys) > SEEN_MAX:
+            _evict(keys, now, window_seconds)
     return None
 
 
@@ -200,7 +264,8 @@ def check_incoming(
     msg: Dict[str, Any],
     sign_key: Optional[str] = None,
     replay_window: Optional[float] = None,
-    seen: Optional[Set[Tuple[str, str]]] = None,
+    seen: Optional[Union[SeenSet, ReplayCache]] = None,
+    lock: Optional[Any] = None,
 ) -> Optional[Dict[str, Any]]:
     """Return a rejected Absorption Result if checks fail, else None.
 
@@ -212,10 +277,12 @@ def check_incoming(
     that have no usable id; it MUST NOT be used for a successful
     absorption.
 
-    ``seen`` is the sliding window of ``(nonce, timestamp)`` keys. The
-    caller MUST pass and reuse the same set across calls when replay
-    is on; if it is omitted, a fresh empty set is used for this call
-    only (duplicate detection will not persist).
+    ``seen`` is the sliding window of ``(nonce, timestamp)`` keys: a plain
+    set or a ``ReplayCache``. The caller MUST pass and reuse the same one
+    across calls when replay is on; if it is omitted, a fresh empty set is
+    used for this call only (duplicate detection will not persist). When
+    several threads share it, pass a ``ReplayCache`` (or a bare set plus one
+    shared ``lock``); see ``check_replay``.
     """
     version_reason = version_rejection(msg)
     if version_reason:
@@ -226,7 +293,7 @@ def check_incoming(
     if replay_window is not None:
         if seen is None:
             seen = set()
-        replay_reason = check_replay(msg, seen, replay_window)
+        replay_reason = check_replay(msg, seen, replay_window, lock=lock)
         if replay_reason:
             return reject_result(msg, replay_reason)
     return None
