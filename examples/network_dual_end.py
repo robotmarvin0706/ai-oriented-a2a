@@ -17,7 +17,12 @@ stricter than the wire hard gate). Unsupported methods are rejected
 explicitly. Packet content is untrusted data (SPEC §2.1): a packet, or a
 negotiation message whose offered_packet / conditional_packet, matches a
 forbidden directive pattern (docs/DATA_POLICY.md) is rejected with
-content_policy: before the method check, and is never absorbed. On the wire,
+content_policy: before the method check, and is never absorbed. Negotiation
+messages (SPEC §3) then pass the NegotiationGuard: more than 3 rounds for one
+negotiation_id (DEFAULT_MAX_NEGOTIATION_ROUNDS) get negotiation_limit:, and a
+propose/counter whose target_constraint is one of the receiver's
+core_constraints (--core-constraint, repeatable) gets immutable_constraint:.
+Everything else still gets negotiation_unsupported:. On the wire,
 effect_summary.note is MUST when status is absorbed (SPEC §3.1); full
 metrics remain OPTIONAL. The receiver converts a missing
 or non-compliant summary to rejected rather than emitting an invalid absorbed
@@ -93,7 +98,7 @@ from ai_oriented_a2a import (  # noqa: E402,F401
     verify_message,
     version_rejection,
 )
-from ai_oriented_a2a import content_policy_rejection, transport  # noqa: E402
+from ai_oriented_a2a import NegotiationGuard, content_policy_rejection, transport  # noqa: E402
 from ai_oriented_a2a.transport import A2ARequestHandler, guard_result  # noqa: E402
 from minimal_dual_end import MUST_METHODS, Receiver  # noqa: E402
 
@@ -106,7 +111,7 @@ CLIENT_TIMEOUT_SECONDS = 30  # TRANSPORT.md: library SHOULD use >= 30s
 
 
 def make_profile() -> Dict[str, Any]:
-    return {
+    profile: Dict[str, Any] = {
         "constraints": ["web_search allowed", "no parameter_delta"],
         "improvement_prefs": ["failure_mode", "tool_trajectory"],
         "shareable_types": ["failure_mode"],
@@ -114,6 +119,9 @@ def make_profile() -> Dict[str, Any]:
         "nonce": new_id("nonce"),
         "timestamp": int(time.time()),
     }
+    if A2AHandler.core_constraints:
+        profile["core_constraints"] = list(A2AHandler.core_constraints)
+    return profile
 
 
 def make_packet(method: str = "prompt_injection") -> Dict[str, Any]:
@@ -176,6 +184,12 @@ class A2AHandler(A2ARequestHandler):
     # Process-level replay cache (set + lock) for the demo; per-peer would key
     # by identity/fingerprint. A bare set assigned here is wrapped on first use.
     seen_nonces: Union[ReplayCache, Set[Tuple[str, str]]] = ReplayCache()
+    # SPEC §3: core constraints are set by the host only (never by a message).
+    core_constraints: list = []
+    # Round cap per negotiation_id (default 3) and optional per-peer rate
+    # limit (off here). Replace with NegotiationGuard(max_rounds=...,
+    # peer_rate_limit=...) to tune; run_server installs a fresh one.
+    negotiation_guard: NegotiationGuard = NegotiationGuard()
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"[{self.role}] {self.address_string()} - {format % args}")
@@ -191,14 +205,25 @@ class A2AHandler(A2ARequestHandler):
         policy = (
             content_policy_rejection(msg) if is_packet or "proposal_id" in msg else None
         )
+        # SPEC §3: every negotiation message counts as a round for its
+        # negotiation_id, even one rejected for content_policy below. The
+        # guard's own order is negotiation_limit, then immutable_constraint.
+        limited = (
+            self.negotiation_guard.check(msg, self.core_constraints, peer=self.client_address[0])
+            if "proposal_id" in msg
+            else None
+        )
 
         if policy is not None:
             response = guard_result(policy)
         elif "proposal_id" in msg:
-            # Negotiation (propose / accept / reject / counter): not
-            # implemented here, so reject with a legal Absorption Result
-            # instead of a bare ack (KNOWN_GAPS fix in 0.3.3).
-            response = negotiation_rejection(msg)
+            if limited is not None:
+                response = guard_result(limited)
+            else:
+                # Negotiation (propose / accept / reject / counter): not
+                # implemented here, so reject with a legal Absorption Result
+                # instead of a bare ack (KNOWN_GAPS fix in 0.3.3).
+                response = negotiation_rejection(msg)
         elif "constraints" in msg:
             response["type"] = "profile_ack"
         elif is_packet:
@@ -262,12 +287,15 @@ def run_server(
     peer_url: Optional[str],
     sign_key: Optional[str],
     replay_window: Optional[float] = None,
+    core_constraints: Optional[list] = None,
 ) -> None:
     A2AHandler.role = role
     A2AHandler.peer_url = peer_url
     A2AHandler.sign_key = sign_key
     A2AHandler.replay_window = replay_window
     A2AHandler.seen_nonces = ReplayCache()
+    A2AHandler.core_constraints = list(core_constraints or [])
+    A2AHandler.negotiation_guard = NegotiationGuard()
     server = HTTPServer(("127.0.0.1", port), A2AHandler)
     window_desc = f"{replay_window}s" if replay_window is not None else "off"
     print(
@@ -309,14 +337,24 @@ def main() -> None:
             "and timestamp on incoming messages (suggested 600 for a 10-minute window)"
         ),
     )
+    parser.add_argument(
+        "--core-constraint",
+        action="append",
+        default=[],
+        metavar="TEXT",
+        help=(
+            "a core constraint (SPEC §3, repeatable): a propose or counter whose "
+            "target_constraint equals it is rejected with immutable_constraint:"
+        ),
+    )
     args = parser.parse_args()
 
     if args.role == "receiver":
-        run_server(args.port, "receiver", args.peer, args.sign_key, args.replay_window)
+        run_server(args.port, "receiver", args.peer, args.sign_key, args.replay_window, args.core_constraint)
     else:
         threading.Thread(
             target=run_server,
-            args=(args.port, "sender", args.peer, args.sign_key, args.replay_window),
+            args=(args.port, "sender", args.peer, args.sign_key, args.replay_window, args.core_constraint),
             daemon=True,
         ).start()
         time.sleep(0.5)

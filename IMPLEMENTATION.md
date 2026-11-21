@@ -25,6 +25,18 @@ SPEC §2.1 (b) requires an implementation that absorbs with `prompt_injection` t
 
 Before wrapping, a receiver SHOULD call `ai_oriented_a2a.content_policy_rejection(msg)` (or `scan_directives(content)`) and reply with the returned rejection when there is one (SPEC §2.1 (c)). `examples/network_dual_end.py` does this for packets and for the nested packets of negotiation messages, and `examples/minimal_dual_end.py` injects `wrap_untrusted(packet)` instead of the sender's hint. Pattern matching is a baseline check, not a complete security guarantee; see [docs/DATA_POLICY.md](docs/DATA_POLICY.md#forbidden-directive-patterns-normative).
 
+## Negotiation guards (reference library)
+
+SPEC §3.0 (since 0.4.0). `ai_oriented_a2a.NegotiationGuard` holds the receiver-side state:
+
+- `DEFAULT_MAX_NEGOTIATION_ROUNDS = 3`. Override per receiver with `NegotiationGuard(max_rounds=N)`.
+- Every negotiation message with a `negotiation_id` counts one round, whatever the reply; the message after the cap gets `negotiation_limit: negotiation_id <id> exceeded <N> rounds`. Messages without `negotiation_id` are not counted.
+- Per-peer rate limit: off by default. `NegotiationGuard(peer_rate_limit=N, peer_rate_window=60.0)` allows N negotiation messages per peer key per window; the host picks the key (the demo uses the client address). Over the limit: `negotiation_limit: peer rate limit exceeded`.
+- At most 10000 `negotiation_id`s are tracked (`MAX_TRACKED_NEGOTIATIONS`); the oldest is dropped first.
+- `immutable_constraint_rejection(msg, core_constraints)` (also run by `guard.check`) rejects a propose, or a counter with `target_constraint`, whose target equals a core constraint.
+
+`examples/network_dual_end.py` calls `content_policy_rejection` first, then `negotiation_guard.check(msg, core_constraints, peer=client address)`, then falls back to `negotiation_unsupported:`. Set core constraints with `--core-constraint TEXT` (repeatable) or `A2AHandler.core_constraints`; the host changes them, never a peer message.
+
 ## Priority path
 
 Prefer a measurable absorption loop and fixed-budget comparison over expanding Schema or discovery first.

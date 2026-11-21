@@ -12,9 +12,19 @@ component in this package.
 SPEC §2.1 (untrusted content) helpers live in ``ai_oriented_a2a.content``
 and are re-exported here: ``scan_directives``, ``wrap_untrusted`` and
 ``content_policy_rejection`` (standard library only).
+
+SPEC §3 negotiation guards live in ``ai_oriented_a2a.negotiation`` and are
+re-exported here: ``NegotiationGuard`` (round cap per ``negotiation_id``,
+default ``DEFAULT_MAX_NEGOTIATION_ROUNDS`` = 3, optional per-peer rate
+limit) and ``immutable_constraint_rejection`` (core constraints).
 """
 
 from .content import content_policy_rejection, scan_directives, wrap_untrusted
+from .negotiation import (
+    DEFAULT_MAX_NEGOTIATION_ROUNDS,
+    NegotiationGuard,
+    immutable_constraint_rejection,
+)
 from .protocol import (
     CURRENT_MAJOR_MINOR,
     PROTOCOL_VERSION,
@@ -40,6 +50,8 @@ __version__ = "0.4.0"
 
 __all__ = [
     "CURRENT_MAJOR_MINOR",
+    "DEFAULT_MAX_NEGOTIATION_ROUNDS",
+    "NegotiationGuard",
     "PROTOCOL_VERSION",
     "RESERVED_PACKET_REF",
     "SCHEMA_KINDS",
@@ -52,6 +64,7 @@ __all__ = [
     "check_incoming",
     "check_replay",
     "content_policy_rejection",
+    "immutable_constraint_rejection",
     "new_id",
     "packet_ref_of",
     "parse_timestamp",
