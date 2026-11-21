@@ -151,6 +151,7 @@ def start_receiver(request):
 
         raise ValueError(f"unknown implementation {impl!r} in A2A_CONFORMANCE_IMPLS")
 
+    _start.impl = impl  # lets a test add implementation-specific checks
     yield _start
     for cleanup in reversed(cleanups):
         cleanup()
