@@ -2,7 +2,7 @@
 
 Minimal **peer** protocol for AI capability growth: Experience Packets + constraint negotiation.
 Not the Google A2A task/agent-card stack — this repo is about sharing compressed improvement signals between peers.
-- Spec: [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) (v0.3) · Last tagged release: [v0.3.2](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.2) · Changelog: [CHANGELOG.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CHANGELOG.md)
+- Spec: [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md) (v0.3) · Last tagged release: [v0.3.3](https://github.com/robotmarvin0706/ai-oriented-a2a/releases/tag/v0.3.3) · Changelog: [CHANGELOG.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CHANGELOG.md)
 - Library version on `main`: 0.3.3 (protocol v0.3).
 - Keywords: experience packet, absorption, proposal_id, peer negotiation, trajectory_replay
 

@@ -13,6 +13,9 @@ The protocol version remains **v0.3** (on-wire `"0.3"`). Library and release tag
 
 Library and documentation release. The protocol version is unchanged (v0.3, on-wire `"0.3"`).
 
+Published to PyPI on 2026-11-21, built from tag `v0.3.3`: https://pypi.org/project/ai-oriented-a2a/0.3.3/
+Also published to TestPyPI the same day: https://test.pypi.org/project/ai-oriented-a2a/0.3.3/
+
 ### Fixed
 
 - Non-finite numeric timestamps (`NaN`, `Infinity`, `-Infinity`): `parse_timestamp` and `check_replay` reject them with `replay_or_stale: invalid timestamp`. `second_impl` `ReplayWindow` does the same, so the two implementations agree. Previously `json.loads` accepted `NaN`, the window check passed (`abs(now - nan) > window` is never true), and the reference raised `ValueError` on `int(parsed)` while `second_impl` accepted the message. Integers too large for a float are rejected the same way.
