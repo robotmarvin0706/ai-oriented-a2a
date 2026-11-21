@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-way MCP -> A2A bridge (stdio).
 
-Exposes two MCP tools that let an MCP host act as an A2A v0.3 sender:
+Exposes two MCP tools that let an MCP host act as an A2A v0.4 sender:
 
 - ``send_packet(packet, peer_url=None)`` sends an Experience Packet and
   returns the peer's Absorption Result unchanged.
@@ -51,7 +51,7 @@ log = logging.getLogger("mcp_a2a")
 mcp = MCPServer(
     "ai-oriented-a2a",
     instructions=(
-        "Send AI-oriented A2A v0.3 Experience Packets to a configured peer and "
+        "Send AI-oriented A2A v0.4 Experience Packets to a configured peer and "
         "report Absorption Results back. Peers are limited to A2A_PEER_URL and "
         "A2A_ALLOWED_PEERS."
     ),
@@ -106,7 +106,7 @@ def _send(msg: dict[str, Any], peer_url: str | None) -> dict[str, Any]:
 
 @mcp.tool()
 def send_packet(packet: dict[str, Any], peer_url: str | None = None) -> dict[str, Any]:
-    """Send an A2A v0.3 Experience Packet to a peer and return its Absorption Result.
+    """Send an A2A v0.4 Experience Packet to a peer and return its Absorption Result.
 
     packet: the Experience Packet (id, type, content, absorption, ...). A fresh
     nonce and timestamp are attached, and it is signed if A2A_SIGN_KEY is set.
@@ -120,7 +120,7 @@ def send_packet(packet: dict[str, Any], peer_url: str | None = None) -> dict[str
 
 @mcp.tool()
 def report_absorption(result: dict[str, Any], peer_url: str | None = None) -> dict[str, Any]:
-    """Send an A2A v0.3 Absorption Result to a peer and return the peer's reply.
+    """Send an A2A v0.4 Absorption Result to a peer and return the peer's reply.
 
     result: the Absorption Result (packet_ref, status, reason / effect_summary).
     status=absorbed requires a non-empty effect_summary.note (SPEC §3.1 hard gate).

@@ -1,6 +1,6 @@
 # mcp_a2a: one-way MCP bridge
 
-An MCP server that lets any MCP host (Claude Desktop, IDE agents, ...) act as an AI-oriented A2A v0.3 **sender** without implementing the protocol. It is "one-way": it sends Experience Packets and Absorption Results to a peer; it does not receive packets.
+An MCP server that lets any MCP host (Claude Desktop, IDE agents, ...) act as an AI-oriented A2A v0.4 **sender** without implementing the protocol. It is "one-way": it sends Experience Packets and Absorption Results to a peer; it does not receive packets.
 
 The protocol logic comes from [`second_impl/`](../second_impl/README.md): local version / hard-gate / schema checks, a fresh `nonce` and `timestamp` on every message, optional HMAC-SHA256 signing, and validation of the peer's reply.
 
