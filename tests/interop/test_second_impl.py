@@ -474,3 +474,60 @@ def test_second_impl_runs_isolated_from_reference(tmp_path):
     )
     assert proc.returncode == 0, proc.stderr
     assert "ISOLATED_OK" in proc.stdout
+
+
+# ---------------------------------------------------------------------------
+# 0.3.3: non-finite timestamps, body limit, 500 on unexpected errors
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_replay_rejects_non_finite_timestamp(value):
+    window = core.ReplayWindow(600)
+    msg = _packet(nonce="nf", timestamp=value)
+    _assert_legal_rejection(core.check_incoming(msg, replay=window), "replay_or_stale: invalid timestamp", msg["id"])
+    assert window._expiry == {}  # the nonce was not consumed
+
+
+def test_receiver_413_for_bad_content_length():
+    import http.client
+
+    server, url = mc.start_in_thread()
+    try:
+        port = server.server_address[1]
+        for length in (str(core.MAX_BODY_BYTES + 1), None, "x"):
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            try:
+                conn.putrequest("POST", mc.ENDPOINT)
+                if length is not None:
+                    conn.putheader("Content-Length", length)
+                conn.endheaders()
+                resp = conn.getresponse()
+                body = json.loads(resp.read().decode())
+            finally:
+                conn.close()
+            assert resp.status == 413
+            _assert_legal_rejection(body, "payload_too_large:", "unknown")
+        assert server.received == []
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_receiver_unexpected_error_is_500_without_leak(monkeypatch):
+    secret = "secret-/etc/shadow-boom"
+
+    def boom(msg):
+        raise RuntimeError(secret)
+
+    monkeypatch.setattr(core, "respond", boom)
+    server, url = mc.start_in_thread()
+    try:
+        pkt = _packet()
+        status, body, _ = mc.post(url, pkt)
+        assert status == 500
+        assert body == {"packet_ref": pkt["id"], "status": "rejected", "reason": core.REASON_INTERNAL}
+        assert secret not in json.dumps(body)
+    finally:
+        server.shutdown()
+        server.server_close()
