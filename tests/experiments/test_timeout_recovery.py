@@ -29,7 +29,6 @@ from experiments.timeout_recovery.host import (  # noqa: E402
     Host,
     LLMStrategyModel,
     RuleStrategyModel,
-    apply_params,
     naive_policy,
 )
 from experiments.timeout_recovery.packets import (  # noqa: E402
@@ -37,7 +36,7 @@ from experiments.timeout_recovery.packets import (  # noqa: E402
     control_packets,
     distilled_packet,
 )
-from experiments.timeout_recovery.strategy import parse_recovery_params  # noqa: E402
+from ai_oriented_a2a.recovery import parse_recovery_params, policy_from_params  # noqa: E402
 
 pytest.importorskip("jsonschema")
 
@@ -153,7 +152,7 @@ def test_strategy_comes_from_content_not_from_hint():
 
 def test_distilled_content_sets_the_stated_policy():
     params, _ = parse_recovery_params(distilled_packet(42)["content"])
-    got = apply_params(naive_policy(), params)
+    got = policy_from_params(naive_policy(), params)
     assert (got.backoff, got.base_backoff_ms, got.max_attempts, got.drop_stale_partials) == (
         PEER_POLICY.backoff, PEER_POLICY.base_backoff_ms, PEER_POLICY.max_attempts, PEER_POLICY.drop_stale_partials,
     )
@@ -163,9 +162,12 @@ def test_seed_controls_and_judgement_are_reported_not_tuned():
     result = runner.run_all((42,), 30, RuleStrategyModel)
     r = result["per_seed"][42]
     assert all(r["controls"].values())
-    # The verdict is whatever the fixed rule says; here it is negative (cost cap).
-    assert r["judgement"]["checks"]["extra_tokens_within_cap"] is False
-    assert r["judgement"]["net_value"] is False
+    # The verdict is whatever the fixed rule says, under each token view.
+    assert r["judgement"] == runner.judge_seed(runner.token_view(r["arms"], "A"))
+    assert r["judgement_params_only"] == runner.judge_seed(runner.token_view(r["arms"], "B"))
+    # Thresholds are the pre-registered ones (WP1 must not move them).
+    assert (runner.DSR_THRESHOLD, runner.EXTRA_COST_CAP, runner.ISOLATION_N) == (0.05, 1.5, 3)
+    assert (runner.TOTAL_TOKEN_BUDGET, runner.ABSORB_TOKEN_BUDGET) == (3000, 800)
 
 
 # --- schema and data policy --------------------------------------------------
@@ -179,7 +181,9 @@ def _lines(seed: int, name: str):
 @pytest.mark.parametrize("seed", SEEDS)
 def test_run_packets_validate_and_carry_verification_claim(seed):
     packets = _lines(seed, "trajectories.jsonl") + _lines(seed, "controls.jsonl")
-    assert len(packets) == 8 * 30
+    n_arms = len(runner.ARMS + runner.EXTRA_ARMS + runner.CONTROLS + runner.WORKING_CONTROLS)
+    assert n_arms == 10
+    assert len(packets) == n_arms * 30
     ids = set()
     for pkt in packets:
         validate(pkt, "experience-packet")
@@ -193,7 +197,7 @@ def test_run_packets_validate_and_carry_verification_claim(seed):
         assert claim["repro"] == {"seed": seed, "model": MODEL_NAME, "n": 30}
         assert scan_directives(pkt["content"]) == []
     arms = {p["content"]["arm"] for p in packets}
-    assert arms == set(runner.ARMS) | set(runner.CONTROLS)
+    assert arms == set(runner.ARMS) | set(runner.EXTRA_ARMS) | set(runner.CONTROLS) | set(runner.WORKING_CONTROLS)
 
 
 def test_absorption_results_validate():

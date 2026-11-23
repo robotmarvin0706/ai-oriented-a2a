@@ -14,6 +14,7 @@
         0.6778
       ],
       "extra_tokens": 2025.1333,
+      "extra_tokens_b": 874.3333,
       "extra_tool_calls": 13.7333,
       "immediate_sr": 0.9,
       "isolation_dsr_mean": 0.5222,
@@ -39,6 +40,7 @@
         0.0
       ],
       "extra_tokens": 65.0,
+      "extra_tokens_b": 65.0,
       "extra_tool_calls": 0.0,
       "immediate_sr": 0.3889,
       "isolation_dsr_mean": null,
@@ -64,6 +66,7 @@
         0.0
       ],
       "extra_tokens": 0.0,
+      "extra_tokens_b": 0.0,
       "extra_tool_calls": 0.0,
       "immediate_sr": 0.3889,
       "isolation_dsr_mean": null,
@@ -89,6 +92,7 @@
         0.0
       ],
       "extra_tokens": 97.0,
+      "extra_tokens_b": 97.0,
       "extra_tool_calls": 0.0,
       "immediate_sr": 0.3889,
       "isolation_dsr_mean": null,
@@ -99,6 +103,32 @@
       "rollbacks": 0,
       "sr": 0.2833,
       "strategy_parsed": 0
+    },
+    "mediocre_packet": {
+      "acceptance_rate": 0.1667,
+      "accepted": 5,
+      "arm": "mediocre_packet",
+      "candidates": 30,
+      "content_policy_rejections": 0,
+      "delayed_minus_immediate": -0.2111,
+      "delayed_sr": 0.1889,
+      "delta_sr": 0.0111,
+      "delta_sr_ci95": [
+        0.0,
+        0.0278
+      ],
+      "extra_tokens": 1149.0,
+      "extra_tokens_b": 681.0,
+      "extra_tool_calls": 11.6,
+      "immediate_sr": 0.4,
+      "isolation_dsr_mean": 0.0667,
+      "model_calls": 30,
+      "n": 30,
+      "policy_unchanged": 25,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 25,
+      "sr": 0.2944,
+      "strategy_parsed": 30
     },
     "no_sharing": {
       "acceptance_rate": null,
@@ -114,6 +144,7 @@
         0.0
       ],
       "extra_tokens": 0.0,
+      "extra_tokens_b": 0.0,
       "extra_tool_calls": 0.0,
       "immediate_sr": 0.3889,
       "isolation_dsr_mean": null,
@@ -126,29 +157,30 @@
       "strategy_parsed": 0
     },
     "own_history": {
-      "acceptance_rate": 0.3333,
-      "accepted": 10,
+      "acceptance_rate": 0.3667,
+      "accepted": 11,
       "arm": "own_history",
-      "candidates": 25,
+      "candidates": 20,
       "content_policy_rejections": 0,
-      "delayed_minus_immediate": -0.1889,
-      "delayed_sr": 0.2333,
-      "delta_sr": 0.0444,
+      "delayed_minus_immediate": -0.1556,
+      "delayed_sr": 0.3667,
+      "delta_sr": 0.1611,
       "delta_sr_ci95": [
-        0.0111,
-        0.0889
+        0.0722,
+        0.2611
       ],
-      "extra_tokens": 716.4667,
-      "extra_tool_calls": 16.9667,
-      "immediate_sr": 0.4222,
-      "isolation_dsr_mean": 0.1733,
+      "extra_tokens": 2715.0333,
+      "extra_tokens_b": 2715.0333,
+      "extra_tool_calls": 66.4333,
+      "immediate_sr": 0.5222,
+      "isolation_dsr_mean": 0.3,
       "model_calls": 0,
       "n": 30,
-      "policy_unchanged": 20,
+      "policy_unchanged": 19,
       "rollback_success_rate": 1.0,
-      "rollbacks": 15,
-      "sr": 0.3278,
-      "strategy_parsed": 25
+      "rollbacks": 9,
+      "sr": 0.4444,
+      "strategy_parsed": 20
     },
     "raw_trajectory": {
       "acceptance_rate": 0.3333,
@@ -164,6 +196,7 @@
         0.1667
       ],
       "extra_tokens": 1756.8,
+      "extra_tokens_b": 631.2,
       "extra_tool_calls": 7.6667,
       "immediate_sr": 0.4444,
       "isolation_dsr_mean": 0.2121,
@@ -189,6 +222,7 @@
         0.0
       ],
       "extra_tokens": 1366.6667,
+      "extra_tokens_b": 1021.6667,
       "extra_tool_calls": 21.0667,
       "immediate_sr": 0.3889,
       "isolation_dsr_mean": 0.0,
@@ -215,11 +249,47 @@
     },
     "extra_cost_cap_vs_own_history": 1.5,
     "isolation_n": 3,
+    "mediocre_peer_policy": "backoff=exp50ms,max_attempts=3,drop_stale=False",
     "model": "deterministic-rule-host-v1",
     "n_cases": 30,
+    "own_history_search": {
+      "episodes_per_candidate": 3,
+      "order": [
+        "drop_stale_partials",
+        "backoff",
+        "max_attempts"
+      ],
+      "passes": 2,
+      "space": {
+        "backoff": [
+          false,
+          "exp100ms",
+          "exp200ms",
+          "exp400ms",
+          "exp800ms"
+        ],
+        "drop_stale_partials": [
+          false,
+          true
+        ],
+        "max_attempts": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "token_budget": 3000
+    },
     "peer_policy": "backoff=exp400ms,max_attempts=4,drop_stale=True",
     "scenario": "sim-v1",
-    "total_token_budget": 3000
+    "token_views": {
+      "A": "absorbed text in context on every episode (as in PR #51)",
+      "B": "parsed parameters only in context on every episode"
+    },
+    "total_token_budget": 3000,
+    "working_host_policy": "backoff=exp400ms,max_attempts=4,drop_stale=True"
   },
   "controls": {
     "empty_packet_policy_unchanged": true,
@@ -233,11 +303,93 @@
     "checks": {
       "distilled_delta_sr_ge_threshold": true,
       "distilled_not_below_own_history": true,
-      "extra_tokens_within_cap": false,
+      "extra_tokens_within_cap": true,
       "rollback_recovers": true
     },
-    "distilled_minus_own_history": 0.5334,
-    "net_value": false
+    "distilled_minus_own_history": 0.4167,
+    "net_value": true
   },
-  "seed": 42
+  "judgement_params_only": {
+    "checks": {
+      "distilled_delta_sr_ge_threshold": true,
+      "distilled_not_below_own_history": true,
+      "extra_tokens_within_cap": true,
+      "rollback_recovers": true
+    },
+    "distilled_minus_own_history": 0.4167,
+    "net_value": true
+  },
+  "mediocre_judgement": {
+    "A": {
+      "checks": {
+        "distilled_delta_sr_ge_threshold": false,
+        "distilled_not_below_own_history": false,
+        "extra_tokens_within_cap": true,
+        "rollback_recovers": true
+      },
+      "distilled_minus_own_history": -0.15,
+      "net_value": false
+    },
+    "B": {
+      "checks": {
+        "distilled_delta_sr_ge_threshold": false,
+        "distilled_not_below_own_history": false,
+        "extra_tokens_within_cap": true,
+        "rollback_recovers": true
+      },
+      "distilled_minus_own_history": -0.15,
+      "net_value": false
+    }
+  },
+  "seed": 42,
+  "wrong_by_host": {
+    "naive_host": {
+      "accepted": 0,
+      "gated_delta_sr": 0.0,
+      "gated_delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "host": "naive_host",
+      "host_policy": "backoff=none,max_attempts=3,drop_stale=False",
+      "host_sr": 0.2833,
+      "isolation_dsr_mean": 0.0,
+      "isolation_dsr_negative_cases": 0,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 30,
+      "ungated_delta_sr": 0.0,
+      "ungated_delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "ungated_effect": "no measurable effect",
+      "ungated_sr": 0.2833
+    },
+    "working_host": {
+      "accepted": 0,
+      "gated_delta_sr": 0.0,
+      "gated_delta_sr_ci95": [
+        0.0,
+        0.0
+      ],
+      "host": "working_host",
+      "host_policy": "backoff=exp400ms,max_attempts=4,drop_stale=True",
+      "host_sr": 0.9111,
+      "isolation_dsr_mean": -0.5222,
+      "isolation_dsr_negative_cases": 27,
+      "n": 30,
+      "policy_unchanged": 30,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 30,
+      "ungated_delta_sr": -0.6278,
+      "ungated_delta_sr_ci95": [
+        -0.7056,
+        -0.5389
+      ],
+      "ungated_effect": "harmful",
+      "ungated_sr": 0.2833
+    }
+  }
 }
