@@ -1,8 +1,10 @@
 """Tests for the one-way MCP bridge (mcp_a2a/server.py).
 
-Skipped unless the optional ``mcp`` extra is installed (Python >= 3.10).
-Uses the SDK's in-memory ``Client`` and receivers on 127.0.0.1 only; no
-external network and no stdio subprocess.
+Skipped unless the optional ``mcp`` extra is installed (Python >= 3.10) at
+``mcp>=2`` (pyproject: ``mcp>=2,<3``). A missing or older ``mcp`` is a module
+skip with the reason, never a collection error: the 1.x SDK has no ``Client``
+and no ``mcp.server.MCPServer``. Uses the SDK's in-memory ``Client`` and
+receivers on 127.0.0.1 only; no external network and no stdio subprocess.
 """
 
 from __future__ import annotations
@@ -16,12 +18,19 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("mcp")
+REPO = Path(__file__).resolve().parents[2]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+from mcp_a2a import MCP_REQUIREMENT, mcp_unavailable_reason  # noqa: E402
+
+_reason = mcp_unavailable_reason()
+if _reason is not None:
+    pytest.skip(f"{_reason}; install with: pip install 'ai-oriented-a2a[mcp]' ({MCP_REQUIREMENT})", allow_module_level=True)
 pytest.importorskip("jsonschema")
 
 from mcp import Client  # noqa: E402
 
-REPO = Path(__file__).resolve().parents[2]
 EXAMPLES = REPO / "examples"
 for _p in (str(REPO), str(EXAMPLES)):
     if _p not in sys.path:

@@ -15,7 +15,7 @@ declared_N, declared_threshold, rollback_triggered, rollback_action
 (legacy isolation_n / drop_threshold mirrored for convenience).
 
 Absorption (since 0.4.1): the receiver's new policy is parsed from packet
-content by experiments/timeout_recovery/strategy.py (backoff, max_attempts,
+content by ai_oriented_a2a.recovery (backoff, max_attempts,
 drop_stale_partials); content with no such parameter changes nothing and is
 rejected, and a change with no measured gain is rolled back.
 
@@ -61,7 +61,7 @@ if str(REPO_ROOT) not in sys.path:
 # before prompt injection).
 from ai_oriented_a2a.content import UNTRUSTED_NOTICE, scan_directives, wrap_untrusted  # noqa: E402
 # Strategy parameters are parsed from packet content (never from the hint).
-from experiments.timeout_recovery.strategy import parse_recovery_params  # noqa: E402
+from ai_oriented_a2a.recovery import parse_recovery_params, policy_from_params  # noqa: E402
 MUST_METHODS = frozenset({"prompt_injection", "retrieval"})
 ARM_NAMES = (
     "no_sharing",
@@ -214,24 +214,6 @@ def recovered_policy() -> Policy:
         drop_stale_partials=True,
         injected_tokens=48,
     )
-
-
-def policy_from_params(current: Policy, params: Dict[str, Any]) -> Policy:
-    """Return a copy of ``current`` with the parsed packet parameters applied.
-
-    Keys the packet does not state keep their current value. ``max_attempts``
-    of None (unbounded) is capped at UNBOUNDED_ATTEMPT_CAP for the loop.
-    """
-    new = deepcopy(current)
-    if "backoff" in params:
-        new.backoff = bool(params["backoff"])
-    if "max_attempts" in params:
-        value = params["max_attempts"]
-        new.max_attempts = UNBOUNDED_ATTEMPT_CAP if value is None else max(1, int(value))
-    if "drop_stale_partials" in params:
-        new.drop_stale_partials = bool(params["drop_stale_partials"])
-    new.injected_tokens = max(new.injected_tokens, INJECTED_STRATEGY_TOKENS)
-    return new
 
 
 def policy_label(policy: Policy) -> str:
@@ -896,7 +878,11 @@ class Receiver:
         packet: Dict[str, Any],
         params: Dict[str, Any],
     ) -> None:
-        self.state.policy = policy_from_params(self.state.policy, params)
+        # Shared parser/applier (ai_oriented_a2a.recovery); unbounded retries
+        # are capped for the loop, and carrying the strategy costs context.
+        policy = policy_from_params(self.state.policy, params, unbounded_attempts=UNBOUNDED_ATTEMPT_CAP)
+        policy.injected_tokens = max(policy.injected_tokens, INJECTED_STRATEGY_TOKENS)
+        self.state.policy = policy
         if method == "prompt_injection":
             # SPEC §2.1 (b): the injected text is the packet wrapped in the
             # library's untrusted markers, for a role below system/host

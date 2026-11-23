@@ -86,7 +86,7 @@ def test_network_demo_seed_is_stable_across_processes():
 
 
 def test_example_packet_parses_to_backoff_and_stale_drop():
-    from experiments.timeout_recovery.strategy import parse_recovery_params
+    from ai_oriented_a2a.recovery import parse_recovery_params
 
     content = json.loads((EXAMPLES / "experience-packet.json").read_text())["content"]
     params, _ = parse_recovery_params(content)

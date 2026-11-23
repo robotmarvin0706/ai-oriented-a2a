@@ -5,31 +5,49 @@ Non-normative. The tool is simulated (see `host.py`); the numbers are about this
 
 ## Run
 
-- Command: `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30`
-- Generated at commit: `2e67769` (the commit checked out when the file was written; the PR that adds this file generated it on top of that commit with its own changes in the work tree)
+- Command: `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30 --results --summary-dir --data-dir`
+- Generated at commit: `62579af` (the commit checked out when the file was written; the PR that changes this file generated it on top of that commit with its own changes in the work tree)
 - Environment: Python 3.13.5 (CPython), Linux x86_64; no third-party packages used by the run
 - Strategy model: `deterministic-rule-host-v1`
 - Budgets: total 3000 tokens per case and arm (absorption + isolation), absorption 800, ΔSR threshold 0.05, extra-token cap 1.5× own_history, isolation N=3
 - Cases: N=30 per arm per seed; each case is evaluated on 3 immediate + 3 delayed episodes (paired draws across arms)
 - ΔSR is per case against `no_sharing` on the same draws; 95% CI: paired bootstrap over cases, percentile 95% CI, B=2000
-- Extra tokens / tool calls: mean per case over `no_sharing`, including exploration, absorption and both isolation runs (before and after the change)
+- Extra tokens / tool calls: mean per case over `no_sharing`, including exploration or search, absorption and both isolation runs (before and after the change)
+- Token views (same run, two ways of counting; the decision rule is applied to each): **A** counts the absorbed block as context on every later episode (prompt_injection keeps it in the prompt; the accounting of PR #51); **B** counts only the parsed parameters as context on every episode. Both count the one-time read of the packet, the tool calls, and own_history's search. The gate's own token budget is always checked under A.
+- own_history: coordinate search over the parameter space a distilled packet states (drop_stale_partials [False, True], then backoff off or exponential from [100, 200, 400, 800] ms, then max_attempts [2, 3, 4, 5, 6]), 2 passes, 3 paired exploration episodes per candidate, stopping at 3000 tool-call tokens; the pick then goes through the same isolation gate as a packet. The peer's policy (`backoff=exp400ms,max_attempts=4,drop_stale=True`) is inside this space
+- mediocre_packet: a distilled packet from a peer running `backoff=exp50ms,max_attempts=3,drop_stale=False`, only slightly better than the naive receiver; judged by the same rule for information only (the verdict is about distilled_packet)
+- Wrong packet: sent to the naive receiver and to a working receiver (`backoff=exp400ms,max_attempts=4,drop_stale=True`, configured locally). "Ungated" applies its parameters with no gate, to show what the advice does; "gated" is what the host keeps
 
 ## Seed 42
 
-| arm | SR | ΔSR | 95% CI | extra tokens | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
-| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| no_sharing | 0.283 | +0.000 | [+0.000, +0.000] | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.389 | 0.178 | -0.211 |
-| own_history | 0.328 | +0.044 | [+0.011, +0.089] | 716.5 | 16.97 | 0.333 | 1.000 (15) | 0.422 | 0.233 | -0.189 |
-| raw_trajectory | 0.378 | +0.094 | [+0.033, +0.167] | 1756.8 | 7.67 | 0.333 | 1.000 (12) | 0.444 | 0.311 | -0.133 |
-| distilled_packet | 0.861 | +0.578 | [+0.467, +0.678] | 2025.1 | 13.73 | 0.900 | 1.000 (3) | 0.900 | 0.822 | -0.078 |
+| arm | SR | ΔSR | 95% CI | extra tokens A | extra tokens B | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| no_sharing | 0.283 | +0.000 | [+0.000, +0.000] | 0.0 | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.389 | 0.178 | -0.211 |
+| own_history | 0.444 | +0.161 | [+0.072, +0.261] | 2715.0 | 2715.0 | 66.43 | 0.367 | 1.000 (9) | 0.522 | 0.367 | -0.156 |
+| raw_trajectory | 0.378 | +0.094 | [+0.033, +0.167] | 1756.8 | 631.2 | 7.67 | 0.333 | 1.000 (12) | 0.444 | 0.311 | -0.133 |
+| distilled_packet | 0.861 | +0.578 | [+0.467, +0.678] | 2025.1 | 874.3 | 13.73 | 0.900 | 1.000 (3) | 0.900 | 0.822 | -0.078 |
+| mediocre_packet | 0.294 | +0.011 | [+0.000, +0.028] | 1149.0 | 681.0 | 11.60 | 0.167 | 1.000 (25) | 0.400 | 0.189 | -0.211 |
 
-Decision checks (fixed in `run.py`):
+Decision checks (fixed in `run.py`), token view A:
 
 - distilled_delta_sr_ge_threshold: pass
 - distilled_not_below_own_history: pass
-- extra_tokens_within_cap: FAIL
+- extra_tokens_within_cap: pass
 - rollback_recovers: pass
-- net value on this seed: no
+- net value on this seed: yes
+
+Decision checks, token view B:
+
+- distilled_delta_sr_ge_threshold: pass
+- distilled_not_below_own_history: pass
+- extra_tokens_within_cap: pass
+- rollback_recovers: pass
+- net value on this seed: yes
+
+mediocre_packet in the distilled_packet slot (information only, not part of the verdict):
+
+- view A: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
+- view B: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
 
 Controls:
 
@@ -46,23 +64,44 @@ Controls:
 - empty_packet_policy_unchanged: pass
 - irrelevant_packet_policy_unchanged: pass
 - injection_packet_rejected_by_content_policy: pass
+
+Wrong packet by host (ΔSR against the same host without the packet):
+
+| host | host policy | host SR | ungated ΔSR (no gate) | 95% CI | effect of the advice | isolation ΔSR (gate view) | negative isolation cases | gated final ΔSR | accepted | rollbacks (success) |
+| --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |
+| naive_host | `backoff=none,max_attempts=3,drop_stale=False` | 0.283 | +0.000 | [+0.000, +0.000] | no measurable effect | +0.000 | 0/30 | +0.000 | 0/30 | 30 (1.000) |
+| working_host | `backoff=exp400ms,max_attempts=4,drop_stale=True` | 0.911 | -0.628 | [-0.706, -0.539] | harmful | -0.522 | 27/30 | +0.000 | 0/30 | 30 (1.000) |
 
 ## Seed 7
 
-| arm | SR | ΔSR | 95% CI | extra tokens | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
-| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| no_sharing | 0.367 | +0.000 | [+0.000, +0.000] | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.433 | 0.300 | -0.133 |
-| own_history | 0.467 | +0.100 | [+0.039, +0.172] | 746.5 | 17.50 | 0.433 | 1.000 (14) | 0.556 | 0.378 | -0.178 |
-| raw_trajectory | 0.489 | +0.122 | [+0.050, +0.211] | 1809.3 | 8.27 | 0.333 | 1.000 (12) | 0.556 | 0.422 | -0.133 |
-| distilled_packet | 0.883 | +0.517 | [+0.428, +0.600] | 1959.2 | 13.10 | 0.867 | 1.000 (4) | 0.911 | 0.856 | -0.056 |
+| arm | SR | ΔSR | 95% CI | extra tokens A | extra tokens B | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| no_sharing | 0.367 | +0.000 | [+0.000, +0.000] | 0.0 | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.433 | 0.300 | -0.133 |
+| own_history | 0.561 | +0.194 | [+0.094, +0.300] | 2873.5 | 2873.5 | 70.37 | 0.400 | 1.000 (9) | 0.589 | 0.533 | -0.056 |
+| raw_trajectory | 0.489 | +0.122 | [+0.050, +0.211] | 1809.3 | 646.0 | 8.27 | 0.333 | 1.000 (12) | 0.556 | 0.422 | -0.133 |
+| distilled_packet | 0.883 | +0.517 | [+0.428, +0.600] | 1959.2 | 844.0 | 13.10 | 0.867 | 1.000 (4) | 0.911 | 0.856 | -0.056 |
+| mediocre_packet | 0.367 | +0.000 | [+0.000, +0.000] | 1073.6 | 656.0 | 11.20 | 0.100 | 1.000 (27) | 0.433 | 0.300 | -0.133 |
 
-Decision checks (fixed in `run.py`):
+Decision checks (fixed in `run.py`), token view A:
 
 - distilled_delta_sr_ge_threshold: pass
 - distilled_not_below_own_history: pass
-- extra_tokens_within_cap: FAIL
+- extra_tokens_within_cap: pass
 - rollback_recovers: pass
-- net value on this seed: no
+- net value on this seed: yes
+
+Decision checks, token view B:
+
+- distilled_delta_sr_ge_threshold: pass
+- distilled_not_below_own_history: pass
+- extra_tokens_within_cap: pass
+- rollback_recovers: pass
+- net value on this seed: yes
+
+mediocre_packet in the distilled_packet slot (information only, not part of the verdict):
+
+- view A: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
+- view B: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
 
 Controls:
 
@@ -79,23 +118,44 @@ Controls:
 - empty_packet_policy_unchanged: pass
 - irrelevant_packet_policy_unchanged: pass
 - injection_packet_rejected_by_content_policy: pass
+
+Wrong packet by host (ΔSR against the same host without the packet):
+
+| host | host policy | host SR | ungated ΔSR (no gate) | 95% CI | effect of the advice | isolation ΔSR (gate view) | negative isolation cases | gated final ΔSR | accepted | rollbacks (success) |
+| --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |
+| naive_host | `backoff=none,max_attempts=3,drop_stale=False` | 0.367 | +0.000 | [+0.000, +0.000] | no measurable effect | +0.000 | 0/30 | +0.000 | 0/30 | 30 (1.000) |
+| working_host | `backoff=exp400ms,max_attempts=4,drop_stale=True` | 0.944 | -0.578 | [-0.628, -0.522] | harmful | -0.567 | 26/30 | +0.000 | 0/30 | 30 (1.000) |
 
 ## Seed 2026
 
-| arm | SR | ΔSR | 95% CI | extra tokens | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
-| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| no_sharing | 0.383 | +0.000 | [+0.000, +0.000] | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.489 | 0.278 | -0.211 |
-| own_history | 0.494 | +0.111 | [+0.044, +0.189] | 716.7 | 16.67 | 0.367 | 1.000 (14) | 0.611 | 0.378 | -0.233 |
-| raw_trajectory | 0.483 | +0.100 | [+0.033, +0.183] | 1482.7 | 6.63 | 0.233 | 1.000 (13) | 0.578 | 0.389 | -0.189 |
-| distilled_packet | 0.906 | +0.522 | [+0.422, +0.622] | 1997.2 | 12.80 | 0.900 | 1.000 (3) | 0.933 | 0.878 | -0.056 |
+| arm | SR | ΔSR | 95% CI | extra tokens A | extra tokens B | extra tool calls | acceptance | rollback success | immediate SR | delayed SR | delayed − immediate |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| no_sharing | 0.383 | +0.000 | [+0.000, +0.000] | 0.0 | 0.0 | 0.00 | n/a | n/a (0 rollbacks) | 0.489 | 0.278 | -0.211 |
+| own_history | 0.567 | +0.183 | [+0.083, +0.289] | 3033.1 | 3033.1 | 74.23 | 0.400 | 1.000 (14) | 0.667 | 0.467 | -0.200 |
+| raw_trajectory | 0.483 | +0.100 | [+0.033, +0.183] | 1482.7 | 573.1 | 6.63 | 0.233 | 1.000 (13) | 0.578 | 0.389 | -0.189 |
+| distilled_packet | 0.906 | +0.522 | [+0.422, +0.622] | 1997.2 | 838.0 | 12.80 | 0.900 | 1.000 (3) | 0.933 | 0.878 | -0.056 |
+| mediocre_packet | 0.383 | +0.000 | [+0.000, +0.000] | 1020.9 | 643.3 | 11.03 | 0.033 | 1.000 (29) | 0.489 | 0.278 | -0.211 |
 
-Decision checks (fixed in `run.py`):
+Decision checks (fixed in `run.py`), token view A:
 
 - distilled_delta_sr_ge_threshold: pass
 - distilled_not_below_own_history: pass
-- extra_tokens_within_cap: FAIL
+- extra_tokens_within_cap: pass
 - rollback_recovers: pass
-- net value on this seed: no
+- net value on this seed: yes
+
+Decision checks, token view B:
+
+- distilled_delta_sr_ge_threshold: pass
+- distilled_not_below_own_history: pass
+- extra_tokens_within_cap: pass
+- rollback_recovers: pass
+- net value on this seed: yes
+
+mediocre_packet in the distilled_packet slot (information only, not part of the verdict):
+
+- view A: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
+- view B: net value no (failed: `distilled_delta_sr_ge_threshold`, `distilled_not_below_own_history`)
 
 Controls:
 
@@ -113,24 +173,106 @@ Controls:
 - irrelevant_packet_policy_unchanged: pass
 - injection_packet_rejected_by_content_policy: pass
 
+Wrong packet by host (ΔSR against the same host without the packet):
+
+| host | host policy | host SR | ungated ΔSR (no gate) | 95% CI | effect of the advice | isolation ΔSR (gate view) | negative isolation cases | gated final ΔSR | accepted | rollbacks (success) |
+| --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | --- |
+| naive_host | `backoff=none,max_attempts=3,drop_stale=False` | 0.383 | +0.000 | [+0.000, +0.000] | no measurable effect | +0.000 | 0/30 | +0.000 | 0/30 | 30 (1.000) |
+| working_host | `backoff=exp400ms,max_attempts=4,drop_stale=True` | 0.939 | -0.556 | [-0.633, -0.472] | harmful | -0.522 | 27/30 | +0.000 | 0/30 | 30 (1.000) |
+
 ## distilled_packet vs own_history
 
-| seed | distilled ΔSR | own_history ΔSR | difference | distilled extra tokens | own_history extra tokens | token ratio (cap 1.5) |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 42 | +0.578 | +0.044 | +0.533 | 2025.1 | 716.5 | 2.83 |
-| 7 | +0.517 | +0.100 | +0.417 | 1959.2 | 746.5 | 2.62 |
-| 2026 | +0.522 | +0.111 | +0.411 | 1997.2 | 716.7 | 2.79 |
+| seed | distilled_packet ΔSR | own_history ΔSR | difference | distilled_packet extra tokens A | own_history extra tokens A | ratio A (cap 1.5) | distilled_packet extra tokens B | own_history extra tokens B | ratio B (cap 1.5) | net value A | net value B |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 42 | +0.578 | +0.161 | +0.417 | 2025.1 | 2715.0 | 0.75 | 874.3 | 2715.0 | 0.32 | yes | yes |
+| 7 | +0.517 | +0.194 | +0.322 | 1959.2 | 2873.5 | 0.68 | 844.0 | 2873.5 | 0.29 | yes | yes |
+| 2026 | +0.522 | +0.183 | +0.339 | 1997.2 | 3033.1 | 0.66 | 838.0 | 3033.1 | 0.28 | yes | yes |
 
-- Direction consistent across seeds: yes (distilled_packet > own_history)
-- Net value on every seed: no
-- All controls pass: yes
+## mediocre_packet vs own_history (information only)
+
+| seed | mediocre_packet ΔSR | own_history ΔSR | difference | mediocre_packet extra tokens A | own_history extra tokens A | ratio A (cap 1.5) | mediocre_packet extra tokens B | own_history extra tokens B | ratio B (cap 1.5) | net value A | net value B |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 42 | +0.011 | +0.161 | -0.150 | 1149.0 | 2715.0 | 0.42 | 681.0 | 2715.0 | 0.25 | no | no |
+| 7 | +0.000 | +0.194 | -0.194 | 1073.6 | 2873.5 | 0.37 | 656.0 | 2873.5 | 0.23 | no | no |
+| 2026 | +0.000 | +0.183 | -0.183 | 1020.9 | 3033.1 | 0.34 | 643.3 | 3033.1 | 0.21 | no | no |
+
+## Amortization sensitivity (information only, not part of the verdict)
+
+Extra tokens per case = one-time cost + evaluation-episode extra. One-time: own_history's search and isolation; a packet's absorption and isolation. Evaluation extra: the evaluation episodes over no_sharing (resident context plus tool-call differences). Amortized = one-time / N (N=30) + evaluation extra, i.e. one search or one absorption reused by every case. Ratios are against own_history amortized the same way; cap 1.5. The fixed rule above uses the unamortized numbers.
+
+| seed | arm | one-time A | eval extra A | amortized A | ratio A | one-time B | eval extra B | amortized B | ratio B |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 42 | own_history | 2680.3 | 34.7 | 124.1 | 1.00 | 2680.3 | 34.7 | 124.1 | 1.00 |
+| 42 | raw_trajectory | 1188.4 | 568.4 | 608.0 | 4.90 | 615.2 | 16.0 | 36.5 | 0.29 |
+| 42 | distilled_packet | 1124.0 | 901.1 | 938.6 | 7.56 | 713.0 | 161.3 | 185.1 | 1.49 |
+| 42 | mediocre_packet | 1014.7 | 134.3 | 168.2 | 1.36 | 663.7 | 17.3 | 39.5 | 0.32 |
+| 7 | own_history | 2841.1 | 32.4 | 127.1 | 1.00 | 2841.1 | 32.4 | 127.1 | 1.00 |
+| 7 | raw_trajectory | 1180.8 | 628.5 | 667.9 | 5.25 | 612.9 | 33.1 | 53.6 | 0.42 |
+| 7 | distilled_packet | 1094.7 | 864.5 | 901.0 | 7.09 | 686.7 | 157.3 | 180.2 | 1.42 |
+| 7 | mediocre_packet | 992.0 | 81.6 | 114.7 | 0.90 | 644.0 | 12.0 | 33.5 | 0.26 |
+| 2026 | own_history | 2995.9 | 37.2 | 137.1 | 1.00 | 2995.9 | 37.2 | 137.1 | 1.00 |
+| 2026 | raw_trajectory | 1097.5 | 385.3 | 421.8 | 3.08 | 555.9 | 17.3 | 35.8 | 0.26 |
+| 2026 | distilled_packet | 1102.7 | 894.5 | 931.3 | 6.79 | 688.7 | 149.3 | 172.3 | 1.26 |
+| 2026 | mediocre_packet | 993.3 | 27.6 | 60.7 | 0.44 | 639.3 | 4.0 | 25.3 | 0.18 |
+
+## own_history search picks (information only)
+
+Policy the search picked per case (before the gate), and how often it is the peer's policy `backoff=exp400ms,max_attempts=4,drop_stale=True`. "Peer vs pick on explore" replays the peer policy on the same 3 explore episodes (counterfactual, not counted in any token column): tie = the episodes cannot tell them apart; pick better = the pick scored more on those draws; peer better = the coordinate search missed a policy that scored more.
+
+| seed | picked policy | cases (picked) | cases (kept after gate) |
+| ---: | --- | ---: | ---: |
+| 42 | `backoff=none,max_attempts=3,drop_stale=False` | 10 | 19 |
+| 42 | `backoff=exp400ms,max_attempts=3,drop_stale=True` | 3 | 3 |
+| 42 | `backoff=exp800ms,max_attempts=3,drop_stale=True` | 3 | 3 |
+| 42 | `backoff=none,max_attempts=3,drop_stale=True` | 3 | 1 |
+| 42 | `backoff=exp100ms,max_attempts=3,drop_stale=True` | 2 | 2 |
+| 42 | `backoff=exp200ms,max_attempts=3,drop_stale=False` | 2 | 0 |
+| 42 | `backoff=exp200ms,max_attempts=3,drop_stale=True` | 2 | 2 |
+| 42 | `backoff=exp800ms,max_attempts=3,drop_stale=False` | 2 | 0 |
+| 42 | `backoff=exp200ms,max_attempts=2,drop_stale=False` | 1 | 0 |
+| 42 | `backoff=exp400ms,max_attempts=3,drop_stale=False` | 1 | 0 |
+| 42 | `backoff=none,max_attempts=2,drop_stale=False` | 1 | 0 |
+| 7 | `backoff=none,max_attempts=3,drop_stale=False` | 9 | 18 |
+| 7 | `backoff=exp800ms,max_attempts=3,drop_stale=True` | 7 | 6 |
+| 7 | `backoff=exp100ms,max_attempts=3,drop_stale=False` | 3 | 1 |
+| 7 | `backoff=exp400ms,max_attempts=3,drop_stale=False` | 3 | 1 |
+| 7 | `backoff=exp200ms,max_attempts=3,drop_stale=True` | 2 | 1 |
+| 7 | `backoff=exp400ms,max_attempts=3,drop_stale=True` | 2 | 1 |
+| 7 | `backoff=exp800ms,max_attempts=3,drop_stale=False` | 2 | 0 |
+| 7 | `backoff=exp200ms,max_attempts=3,drop_stale=False` | 1 | 1 |
+| 7 | `backoff=none,max_attempts=3,drop_stale=True` | 1 | 1 |
+| 2026 | `backoff=exp800ms,max_attempts=3,drop_stale=True` | 6 | 4 |
+| 2026 | `backoff=exp400ms,max_attempts=3,drop_stale=True` | 4 | 3 |
+| 2026 | `backoff=none,max_attempts=3,drop_stale=False` | 4 | 18 |
+| 2026 | `backoff=none,max_attempts=3,drop_stale=True` | 4 | 1 |
+| 2026 | `backoff=exp800ms,max_attempts=3,drop_stale=False` | 3 | 2 |
+| 2026 | `backoff=exp400ms,max_attempts=3,drop_stale=False` | 2 | 0 |
+| 2026 | `backoff=none,max_attempts=2,drop_stale=False` | 2 | 0 |
+| 2026 | `backoff=exp100ms,max_attempts=3,drop_stale=True` | 1 | 0 |
+| 2026 | `backoff=exp200ms,max_attempts=3,drop_stale=False` | 1 | 0 |
+| 2026 | `backoff=exp200ms,max_attempts=3,drop_stale=True` | 1 | 1 |
+| 2026 | `backoff=exp800ms,max_attempts=2,drop_stale=False` | 1 | 1 |
+| 2026 | `backoff=none,max_attempts=2,drop_stale=True` | 1 | 0 |
+
+| seed | picked the peer policy | kept the peer policy | peer vs pick on explore: tie | pick better | peer better |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 42 | 0 | 0 | 20 | 0 | 10 |
+| 7 | 0 | 0 | 18 | 1 | 11 |
+| 2026 | 0 | 0 | 22 | 2 | 6 |
+
+- View A: direction consistent across seeds: yes (distilled_packet > own_history); net value on every seed: yes; all controls pass: yes
+- View B: direction consistent across seeds: yes (distilled_packet > own_history); net value on every seed: yes; all controls pass: yes
 
 ## Conclusion
 
-Overall verdict (fixed rule): **no net value**.
+Overall verdict (fixed rule), token view A: **net value**.
 
-Checks that failed on at least one seed: `extra_tokens_within_cap`.
+Overall verdict (fixed rule), token view B: **net value**.
 
-How to read it: ΔSR, acceptance and rollback are judged on the success rate; the extra-token check counts the absorbed block as context on every later episode (prompt_injection keeps it in the prompt), plus the absorption and both isolation runs. A failed check is reported as a failure; thresholds are not adjusted.
+The verdict is sensitive to amortization: it holds when every case pays its own one-time cost (the fixed rule); if one-time costs are shared across the N cases, distilled_packet's extra-token ratio is 6.79–7.56 under view A, 1.26–1.49 under view B (cap 1.5; over the cap under: A). Whether one-time costs can be reused across cases is an assumption, so both are reported; the amortized numbers are information only and do not enter the verdict.
 
-Limits: one simulated tool, and the peer policy was written for this simulator, so a large distilled gain is partly by construction; the default strategy model is a rule parser, not an LLM; own_history uses a fixed local rule with no tuned backoff base. Reproducibility of the whole run (byte-identical output for the same seed) is checked by `tests/experiments/test_timeout_recovery.py`.
+own_history's search picked the peer policy in 0/30, 0/30, 0/30 cases (seeds 42, 7, 2026); on its 3 explore episodes the peer policy tied the pick in 20, 18, 22 cases and scored more than the pick in 10, 11, 6 cases. Ties are a sample-size limit of the 3 explore episodes; "peer better" cases are a search miss. Information only.
+
+How to read it: ΔSR, acceptance and rollback are judged on the success rate; the extra-token check compares distilled_packet with own_history under each token view. own_history now pays for its search (exploration tool calls), so its extra tokens are larger than in PR #51 and the ratio can fall even when the packet side is unchanged; read own_history's ΔSR and extra tool calls next to the ratio. A failed check is reported as a failure; thresholds are not adjusted.
+
+Limits: one simulated tool, and the peer policy was written for this simulator, so a large distilled gain is partly by construction; own_history searches the same space but only on its own few exploration episodes, so it can overfit them; the default strategy model is a rule parser, not an LLM. Reproducibility of the whole run (byte-identical output for the same seed) is checked by `tests/experiments/test_timeout_recovery.py`.

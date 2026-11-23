@@ -4,17 +4,35 @@ The peer runs PEER_POLICY (tuned before the first run, not after). The
 distilled packet states that policy; the raw packet is the peer's full log of
 one episode on the receiver's case, and the receiver has to extract the
 recovery decision from it. Control packets check that content matters.
+
+MEDIOCRE_POLICY (WP1) is a peer that is only slightly better than the naive
+receiver: on calibration seed 1 (not a reported seed) its SR gain over the
+naive policy is +0.044, the closest to the 0.05 ΔSR threshold among six small
+variants tried. Its distilled packet has the same shape as the good peer's,
+so the mediocre arm asks whether absorbing still pays when the gain is small.
+
+WORKING_POLICY is the policy of a receiver that already recovers (locally
+configured, not absorbed); the wrong packet is also sent to such a host to
+separate "no effect" (naive host) from "harmful" (working host).
 """
 
 from __future__ import annotations
 
 import random
+from copy import deepcopy
 from typing import Any, Dict
 
 from .host import Case, Policy, run_episode, stable_int
 
 PEER_POLICY = Policy(backoff=True, base_backoff_ms=400, max_attempts=4, drop_stale_partials=True)
+MEDIOCRE_POLICY = Policy(backoff=True, base_backoff_ms=50, max_attempts=3, drop_stale_partials=False)
+WORKING_POLICY = PEER_POLICY
 SCENARIO = "tool_call_timeout on web_search"
+
+
+def working_policy() -> Policy:
+    """Fresh copy of the working receiver's locally configured policy."""
+    return deepcopy(WORKING_POLICY)
 
 
 def _packet(pid: str, ptype: str, content: Dict[str, Any]) -> Dict[str, Any]:
@@ -41,6 +59,25 @@ def distilled_packet(seed: int) -> Dict[str, Any]:
                 "drop_stale_partials": True,
             },
             "compressed_signal": "exponential backoff from 400 ms, at most 4 attempts, drop late partial results",
+        },
+    )
+
+
+def mediocre_packet(seed: int) -> Dict[str, Any]:
+    """Distilled packet from a peer whose policy is only slightly better than naive."""
+    return _packet(
+        f"pkt-tr-s{seed}-mediocre",
+        "failure_mode",
+        {
+            "trigger": SCENARIO,
+            "observed": "immediate retries timed out again",
+            "recovery_policy": {
+                "backoff": "exponential",
+                "base_backoff_ms": MEDIOCRE_POLICY.base_backoff_ms,
+                "max_attempts": MEDIOCRE_POLICY.max_attempts,
+                "drop_stale_partials": MEDIOCRE_POLICY.drop_stale_partials,
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 3 attempts",
         },
     )
 

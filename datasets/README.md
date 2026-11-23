@@ -51,16 +51,16 @@ Packet coverage in `content_policy/packets/` (since v0.4). Both are counter-exam
 
 ## Experiment runs (`timeout_recovery/runs/`)
 
-Output of `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30` (since 0.4.1). The summary table and the verdict are in [`experiments/timeout_recovery/RESULTS.md`](../experiments/timeout_recovery/RESULTS.md).
+Output of `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30 --results --summary-dir --data-dir` (since 0.4.1; without the last three flags the command only prints). The summary table and the verdict are in [`experiments/timeout_recovery/RESULTS.md`](../experiments/timeout_recovery/RESULTS.md).
 
 - What it is: a real execution of the experiment host's tool-call loop against a **simulated** `web_search` tool (timeouts, latency, throttling and late partial results drawn from a seeded stream). It is not data from a real service. Every packet says so with `content.simulated_tool: true`.
 - Seeds 42, 7 and 2026; 30 cases per arm per seed. Rerunning the command gives byte-identical files (no wall-clock time is written; ids and draws come from sha256). `tests/experiments/` checks this and checks that the committed files match a fresh run.
-- `trajectories.jsonl`: one v0.4 Experience Packet per line, one per arm (`no_sharing`, `own_history`, `raw_trajectory`, `distilled_packet`) and case. `content.episodes` lists the evaluation episodes (window, success, failure reason, tool calls, tokens, and a compact trace: `T` timeout, `O` ok, `R` throttled, `D` stale partial dropped, `A` stale partial accepted, with the backoff wait in ms before a step).
-- `controls.jsonl`: the same for the four control packets (`wrong_packet`, `empty_packet`, `irrelevant_packet`, `injection_packet`).
+- `trajectories.jsonl`: one v0.4 Experience Packet per line, one per arm (`no_sharing`, `own_history`, `raw_trajectory`, `distilled_packet`, and the mediocre-peer arm `mediocre_packet`) and case. `content.episodes` lists the evaluation episodes (window, success, failure reason, tool calls, tokens under both token views (`tokens`, `tokens_params_only`), and a compact trace: `T` timeout, `O` ok, `R` throttled, `D` stale partial dropped, `A` stale partial accepted, with the backoff wait in ms before a step).
+- `controls.jsonl`: the same for the four control packets (`wrong_packet`, `empty_packet`, `irrelevant_packet`, `injection_packet`) and for the wrong packet sent to a host that already recovers (`wrong_packet_working_host`).
 - Per-seed aggregates (per-arm metrics, the fixed decision checks, the control checks) are in `experiments/timeout_recovery/summaries/seed-<seed>.json`, not here: every `*.json` file under `datasets/` is checked as a protocol message.
 - Provenance: `provenance.source_ref` is `local_run:tr-sim-v1-s<seed>` (an opaque run id, no timestamp or key material). These packets carry a measured `verification_claim.value` (the case's recovery success rate) with `scenario_ref`, `metric` (`recovery_sr`) and `repro` (`seed`, `model` = `deterministic-rule-host-v1`, `n`), so they are not marked `synthetic:`. The value describes the simulator, not a real tool.
 - Format: JSON Lines, so the per-file checks in `tests/interop/test_datasets.py` (which read `*.json` and `packets/`) do not apply to them; `tests/experiments/test_timeout_recovery.py` validates every line against `schema/experience-packet.schema.json`, checks the provenance prefix and `verification_claim` fields, and checks that no content matches a forbidden directive pattern.
-- Size: about 1.25 MB for all three seeds (limit 2 MB).
+- Size: about 1.7 MB for all three seeds (limit 2 MB).
 
 ## License
 

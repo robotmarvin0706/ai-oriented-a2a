@@ -1,6 +1,9 @@
-"""Parse timeout-recovery strategy parameters out of Experience Packet content.
+"""Timeout-recovery strategy parameters from Experience Packet content.
 
-Non-normative, host-side. The parser reads *data* from a packet's ``content``
+Non-normative, host-side helpers (no wire format, no new fields): the parser
+and ``policy_from_params`` are shared by ``examples/minimal_dual_end.py`` and
+``experiments/timeout_recovery/`` so neither imports the other (moved here
+from ``experiments/timeout_recovery/strategy.py``). Standard library only. The parser reads *data* from a packet's ``content``
 and returns policy parameters; it never treats the text as an instruction and
 never reads ``absorption.hint`` (sender text that SPEC §2.1 keeps out of the
 injected block). Content that does not state any parameter yields ``{}``, and
@@ -25,6 +28,7 @@ Returned keys (all optional): ``backoff`` (bool), ``base_backoff_ms`` (int),
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 PARAM_KEYS = ("backoff", "base_backoff_ms", "max_attempts", "drop_stale_partials", "stale_after_s")
@@ -217,4 +221,27 @@ def parse_recovery_params(content: Any) -> Tuple[Dict[str, Any], List[str]]:
     return out, evidence
 
 
-__all__ = ["PARAM_KEYS", "parse_recovery_params"]
+def policy_from_params(current: Any, params: Dict[str, Any], *, unbounded_attempts: Optional[int] = None) -> Any:
+    """Return a copy of ``current`` with the parsed ``params`` applied.
+
+    ``current`` is any host policy object with ``backoff``, ``max_attempts``
+    and ``drop_stale_partials`` attributes; ``base_backoff_ms`` is set only if
+    the object has it. Keys the packet does not state keep their current
+    value. ``max_attempts`` of None (unbounded) becomes ``unbounded_attempts``
+    (None keeps it unbounded; a host loop may pass a cap). ``current`` is not
+    modified.
+    """
+    new = deepcopy(current)
+    if "backoff" in params:
+        new.backoff = bool(params["backoff"])
+    if "base_backoff_ms" in params and hasattr(new, "base_backoff_ms"):
+        new.base_backoff_ms = int(params["base_backoff_ms"])
+    if "max_attempts" in params:
+        value = params["max_attempts"]
+        new.max_attempts = unbounded_attempts if value is None else max(1, int(value))
+    if "drop_stale_partials" in params:
+        new.drop_stale_partials = bool(params["drop_stale_partials"])
+    return new
+
+
+__all__ = ["PARAM_KEYS", "parse_recovery_params", "policy_from_params"]
