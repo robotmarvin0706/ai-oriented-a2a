@@ -40,6 +40,12 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+from mcp_a2a import mcp_unavailable_reason  # noqa: E402
+
+_MCP_REASON = mcp_unavailable_reason()
+if _MCP_REASON is not None:
+    raise ImportError(f"mcp_a2a.server: {_MCP_REASON}; pip install 'ai-oriented-a2a[mcp]'")
+
 from mcp.server import MCPServer  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
