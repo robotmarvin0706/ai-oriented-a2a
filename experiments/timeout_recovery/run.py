@@ -121,6 +121,7 @@ class ArmCase:
     model_calls: int = 0
     reply: Optional[Dict[str, Any]] = None
     overhead_tokens_b: int = 0  # view B of overhead_tokens (parameters only in context)
+    searched_policy: str = ""  # own_history only: the search's pick, before the gate
 
     @property
     def successes(self) -> List[bool]:
@@ -189,6 +190,7 @@ def run_case(case: Case, model_factory: Callable[[], Any]) -> Dict[str, ArmCase]
     explore_tokens = sum(e.tokens for e in search.episodes)
     explore_tokens_b = sum(e.tokens_b for e in search.episodes)
     explore_calls = sum(e.tool_calls for e in search.episodes)
+    picked = policy_from_params(host.policy, search.params).label()
     if search.params:
         note_tokens = approx_tokens(search.params)  # the learned parameters kept in context
         rec = host.gate("own_history", search.params, search.evidence, 0, context_tokens=note_tokens)
@@ -197,12 +199,13 @@ def run_case(case: Case, model_factory: Callable[[], Any]) -> Dict[str, ArmCase]
             explore_tokens + rec.isolation_tokens, explore_calls + rec.isolation_tool_calls,
             rec.status, rec.reason, host.policy.label(), rec.rollback_triggered, rec.rollback_ok,
             rec.isolation_dsr, True, overhead_tokens_b=explore_tokens_b + rec.isolation_tokens_b,
+            searched_policy=picked,
         )
     else:
         out["own_history"] = ArmCase(
             "own_history", case, _evaluate(host), explore_tokens, explore_calls, None,
             "no change suggested by own history", host.policy.label(), strategy_parsed=False,
-            overhead_tokens_b=explore_tokens_b,
+            overhead_tokens_b=explore_tokens_b, searched_policy=picked,
         )
 
     out["raw_trajectory"] = _from_packet("raw_trajectory", case, raw_trajectory_packet(case), model_factory)
@@ -271,6 +274,16 @@ def summarize_arm(seed: int, arm: str, rows: List[ArmCase], base: List[ArmCase])
         "delta_sr_ci95": [r4(lo), r4(hi)],
         "extra_tokens": r4(mean([a.tokens - b.tokens for a, b in zip(rows, base)])),
         "extra_tokens_b": r4(mean([a.tokens_b - b.tokens_b for a, b in zip(rows, base)])),
+        # Split of extra tokens (information only; extra = one_time + eval_extra,
+        # no_sharing has no one-time cost): one-time = exploration/search,
+        # absorption and both isolation runs; eval_extra = evaluation episodes
+        # over no_sharing (resident context + tool-call differences).
+        "one_time_tokens": r4(mean([a.overhead_tokens - b.overhead_tokens for a, b in zip(rows, base)])),
+        "one_time_tokens_b": r4(mean([a.overhead_tokens_b - b.overhead_tokens_b for a, b in zip(rows, base)])),
+        "eval_extra_tokens": r4(mean([
+            sum(e.tokens for e in a.eval_episodes) - sum(e.tokens for e in b.eval_episodes) for a, b in zip(rows, base)])),
+        "eval_extra_tokens_b": r4(mean([
+            sum(e.tokens_b for e in a.eval_episodes) - sum(e.tokens_b for e in b.eval_episodes) for a, b in zip(rows, base)])),
         "extra_tool_calls": r4(mean([a.tool_calls - b.tool_calls for a, b in zip(rows, base)])),
         "candidates": len(candidates),
         "accepted": len(absorbed),
@@ -321,6 +334,79 @@ def token_view(arms: Dict[str, Dict[str, Any]], view: str, distilled: str = "dis
 
 def judge_views(arms: Dict[str, Dict[str, Any]], distilled: str = "distilled_packet") -> Dict[str, Dict[str, Any]]:
     return {view: judge_seed(token_view(arms, view, distilled)) for view in TOKEN_VIEWS}
+
+
+AMORTIZE_ARMS = ("own_history", "raw_trajectory", "distilled_packet", "mediocre_packet")
+
+
+def amortization(arms: Dict[str, Dict[str, Any]], n: int) -> Dict[str, Any]:
+    """Information only, never used by ``judge_seed`` / ``judge_overall``.
+
+    Assumes the one-time cost (own_history's search + isolation; a packet's
+    absorption + isolation) is paid once and reused by all ``n`` cases, so a
+    case carries ``one_time / n`` plus its own evaluation-episode tokens. Ratios
+    are against own_history amortized the same way, per token view.
+    """
+    out: Dict[str, Any] = {}
+    for view, (_, _desc) in TOKEN_VIEWS.items():
+        suffix = "" if view == "A" else "_b"
+        rows = {}
+        for name in AMORTIZE_ARMS:
+            a = arms[name]
+            one, ev = a[f"one_time_tokens{suffix}"], a[f"eval_extra_tokens{suffix}"]
+            rows[name] = {"one_time": one, "eval_extra": ev, "amortized_extra": r4(one / n + ev)}
+        own = rows["own_history"]["amortized_extra"]
+        for name, row in rows.items():
+            row["ratio_vs_own_history"] = r4(row["amortized_extra"] / own) if own > 0 else None
+            row["within_cap"] = row["ratio_vs_own_history"] is not None and row["ratio_vs_own_history"] <= EXTRA_COST_CAP
+        out[view] = rows
+    return out
+
+
+def own_history_picks(per_case: List[Dict[str, ArmCase]]) -> Dict[str, Any]:
+    """Information only: what the own_history search picked, and why it missed the peer.
+
+    ``peer_vs_pick_on_explore`` replays PEER_POLICY on the same explore draws
+    (a counterfactual, not counted in any token column) and compares its
+    successes with the pick's: "tie" means the 3 explore episodes could not
+    tell them apart, "pick_better" means the pick scored more on those draws,
+    "peer_better" means the coordinate search missed a policy that scored more.
+    """
+    picked: Dict[str, int] = {}
+    final: Dict[str, int] = {}
+    cmp = {"picked_peer": 0, "tie": 0, "pick_better": 0, "peer_better": 0}
+    peer_label = PEER_POLICY.label()
+    for c in per_case:
+        row = c["own_history"]
+        picked[row.searched_policy] = picked.get(row.searched_policy, 0) + 1
+        final[row.policy] = final.get(row.policy, 0) + 1
+        if row.searched_policy == peer_label:
+            cmp["picked_peer"] += 1
+            continue
+        case = row.case
+        peer = sum(1 for e in run_window(PEER_POLICY, case, "explore") if e.success)
+        pick = sum(1 for e in run_window(policy_from_params(naive_policy(), _params_from_label(row.searched_policy)),
+                                         case, "explore") if e.success)
+        cmp["tie" if peer == pick else ("pick_better" if pick > peer else "peer_better")] += 1
+    order = lambda d: dict(sorted(d.items(), key=lambda kv: (-kv[1], kv[0])))  # noqa: E731
+    return {
+        "picked": order(picked),
+        "final_after_gate": order(final),
+        "picked_peer_policy": picked.get(peer_label, 0),
+        "final_peer_policy": final.get(peer_label, 0),
+        "peer_vs_pick_on_explore": cmp,
+    }
+
+
+def _params_from_label(label: str) -> Dict[str, Any]:
+    """Inverse of ``Policy.label()`` for the policies the search can pick."""
+    parts = dict(item.split("=", 1) for item in label.split(","))
+    backoff = parts["backoff"]
+    params: Dict[str, Any] = {"backoff": backoff != "none", "drop_stale_partials": parts["drop_stale"] == "True"}
+    if backoff != "none":
+        params["base_backoff_ms"] = int(backoff[len("exp"):-len("ms")])
+    params["max_attempts"] = None if parts["max_attempts"] == "unbounded" else int(parts["max_attempts"])
+    return params
 
 
 def summarize_wrong_host(seed: int, host: str, gated: List[ArmCase], ungated: List[ArmCase],
@@ -459,6 +545,8 @@ def run_seed(seed: int, n: int, model_factory: Callable[[], Any]) -> Dict[str, A
         "mediocre_judgement": judge_views(arms, "mediocre_packet"),
         "controls": judge_controls(arms, per_case),
         "wrong_by_host": wrong_by_host,
+        "amortization": amortization(arms, n),
+        "own_history_picks": own_history_picks(per_case),
         "per_case": per_case,
     }
 
@@ -515,6 +603,8 @@ def seed_files(seed_result: Dict[str, Any], model_name: str) -> Dict[str, str]:
         "mediocre_judgement": seed_result["mediocre_judgement"],
         "controls": seed_result["controls"],
         "wrong_by_host": seed_result["wrong_by_host"],
+        "amortization": seed_result["amortization"],
+        "own_history_picks": seed_result["own_history_picks"],
     }
     return {
         "trajectories.jsonl": "\n".join(traj) + "\n",
@@ -623,6 +713,60 @@ def _vs_own_table(per_seed: Dict[int, Dict[str, Any]], seeds: Sequence[int], arm
     return out
 
 
+def amortization_section(per_seed: Dict[int, Dict[str, Any]], seeds: Sequence[int], n: int) -> List[str]:
+    out = [
+        "## Amortization sensitivity (information only, not part of the verdict)",
+        "",
+        "Extra tokens per case = one-time cost + evaluation-episode extra. One-time: own_history's search and isolation; "
+        "a packet's absorption and isolation. Evaluation extra: the evaluation episodes over no_sharing (resident "
+        f"context plus tool-call differences). Amortized = one-time / N (N={n}) + evaluation extra, i.e. one search or "
+        "one absorption reused by every case. Ratios are against own_history amortized the same way; "
+        f"cap {EXTRA_COST_CAP}. The fixed rule above uses the unamortized numbers.",
+        "",
+        "| seed | arm | one-time A | eval extra A | amortized A | ratio A | one-time B | eval extra B | amortized B | ratio B |",
+        "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for s in seeds:
+        am = per_seed[s]["amortization"]
+        for name in AMORTIZE_ARMS:
+            a, b = am["A"][name], am["B"][name]
+            out.append(
+                f"| {s} | {name} | {_fmt(a['one_time'], digits=1)} | {_fmt(a['eval_extra'], digits=1)} | "
+                f"{_fmt(a['amortized_extra'], digits=1)} | {_fmt(a['ratio_vs_own_history'], digits=2)} | "
+                f"{_fmt(b['one_time'], digits=1)} | {_fmt(b['eval_extra'], digits=1)} | "
+                f"{_fmt(b['amortized_extra'], digits=1)} | {_fmt(b['ratio_vs_own_history'], digits=2)} |"
+            )
+    return out + [""]
+
+
+def own_history_picks_section(per_seed: Dict[int, Dict[str, Any]], seeds: Sequence[int]) -> List[str]:
+    out = [
+        "## own_history search picks (information only)",
+        "",
+        f"Policy the search picked per case (before the gate), and how often it is the peer's policy `{PEER_POLICY.label()}`. "
+        "\"Peer vs pick on explore\" replays the peer policy on the same 3 explore episodes (counterfactual, not counted in "
+        "any token column): tie = the episodes cannot tell them apart; pick better = the pick scored more on those draws; "
+        "peer better = the coordinate search missed a policy that scored more.",
+        "",
+        "| seed | picked policy | cases (picked) | cases (kept after gate) |",
+        "| ---: | --- | ---: | ---: |",
+    ]
+    for s in seeds:
+        p = per_seed[s]["own_history_picks"]
+        for label in sorted(set(p["picked"]) | set(p["final_after_gate"]), key=lambda k: (-p["picked"].get(k, 0), k)):
+            out.append(f"| {s} | `{label}` | {p['picked'].get(label, 0)} | {p['final_after_gate'].get(label, 0)} |")
+    out += [
+        "",
+        "| seed | picked the peer policy | kept the peer policy | peer vs pick on explore: tie | pick better | peer better |",
+        "| ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for s in seeds:
+        p = per_seed[s]["own_history_picks"]
+        c = p["peer_vs_pick_on_explore"]
+        out.append(f"| {s} | {p['picked_peer_policy']} | {p['final_peer_policy']} | {c['tie']} | {c['pick_better']} | {c['peer_better']} |")
+    return out + [""]
+
+
 def results_markdown(result: Dict[str, Any], seeds: Sequence[int], n: int, model_name: str, commit: str) -> str:
     per_seed = result["per_seed"]
     overall = {"A": result["overall"], "B": result["overall_params_only"]}
@@ -689,6 +833,8 @@ def results_markdown(result: Dict[str, Any], seeds: Sequence[int], n: int, model
     out += ["", "## mediocre_packet vs own_history (information only)", ""]
     out += _vs_own_table(per_seed, seeds, "mediocre_packet", "mediocre")
     out += [""]
+    out += amortization_section(per_seed, seeds, n)
+    out += own_history_picks_section(per_seed, seeds)
     for view in TOKEN_VIEWS:
         o = overall[view]
         out += [
@@ -704,6 +850,29 @@ def results_markdown(result: Dict[str, Any], seeds: Sequence[int], n: int, model
         if failed:
             out.append(f"Checks that failed on at least one seed under view {view}: " + ", ".join(f"`{k}`" for k in failed) + ".")
         out.append("")
+    amort_fail = sorted({f"{v}" for s in seeds for v in TOKEN_VIEWS
+                         if not per_seed[s]["amortization"][v]["distilled_packet"]["within_cap"]})
+    out += [
+        "The verdict is sensitive to amortization: it holds when every case pays its own one-time cost (the fixed rule); "
+        "if one-time costs are shared across the N cases, distilled_packet's extra-token ratio is "
+        + ", ".join(
+            f"{_fmt(min(per_seed[s]['amortization'][v]['distilled_packet']['ratio_vs_own_history'] for s in seeds), digits=2)}–"
+            f"{_fmt(max(per_seed[s]['amortization'][v]['distilled_packet']['ratio_vs_own_history'] for s in seeds), digits=2)} "
+            f"under view {v}" for v in TOKEN_VIEWS)
+        + f" (cap {EXTRA_COST_CAP}; over the cap under: {', '.join(amort_fail) if amort_fail else 'none'}). "
+        "Whether one-time costs can be reused across cases is an assumption, so both are reported; the amortized "
+        "numbers are information only and do not enter the verdict.",
+        "",
+        "own_history's search picked the peer policy in "
+        + ", ".join(f"{per_seed[s]['own_history_picks']['picked_peer_policy']}/{n}" for s in seeds)
+        + " cases (seeds " + ", ".join(map(str, seeds)) + "); on its 3 explore episodes the peer policy tied the pick in "
+        + ", ".join(str(per_seed[s]["own_history_picks"]["peer_vs_pick_on_explore"]["tie"]) for s in seeds)
+        + " cases and scored more than the pick in "
+        + ", ".join(str(per_seed[s]["own_history_picks"]["peer_vs_pick_on_explore"]["peer_better"]) for s in seeds)
+        + " cases. Ties are a sample-size limit of the 3 explore episodes; \"peer better\" cases are a search miss. "
+        "Information only.",
+        "",
+    ]
     out += [
         "How to read it: ΔSR, acceptance and rollback are judged on the success rate; the extra-token check compares "
         "distilled_packet with own_history under each token view. own_history now pays for its search (exploration "
