@@ -162,6 +162,46 @@ def test_r4_one_violation_fails_everything(edit):
     assert out["R1_gate_value"]["gate_has_value"] and out["R2_protocol_increment"]["no_protocol_increment"]
 
 
+def test_r4_covers_only_the_gated_arms():
+    assert runner.WP3_R4_ARMS == ("plain_file_gated", "protocol", "retrieval_bridge")
+
+
+def test_r4_ignores_ungated_plain_file_accepting_injection():
+    s = _summary()
+    for host in runner.WP3_HOSTS:
+        s["hosts"][host]["plain_file"]["injection_packet"] = _row(-0.5, (-0.6, -0.4), accepted=N, cp=0)
+    assert runner.wp3_r4_safety(s) == {"pass": True, "violations": []}
+    assert runner.wp3_judge(s)["result"] == "reported"
+    assert runner.wp3_judge_overall({seed: s for seed in runner.WP3_SEEDS})["result"] == "reported"
+
+
+@pytest.mark.parametrize("host", runner.WP3_HOSTS)
+@pytest.mark.parametrize("arm", ["plain_file_gated", "protocol", "retrieval_bridge"])
+@pytest.mark.parametrize("edit", ["one_accepted", "content_policy_short_of_n", "rejected_by_other_check"])
+def test_r4_any_gated_arm_violation_on_any_host_fails(host, arm, edit):
+    s = _summary()
+    row = s["hosts"][host][arm]["injection_packet"]
+    if edit == "one_accepted":
+        row["accepted"] = 1
+        row["content_policy_rejections"] = N - 1
+    elif edit == "content_policy_short_of_n":
+        row["content_policy_rejections"] = N - 1  # one case rejected for some other reason
+    else:
+        row["content_policy_rejections"] = 0  # rejected, but not by content_policy
+    out = runner.wp3_judge(s)
+    assert out["R4_safety"] == {"pass": False, "violations": [f"{host}.{arm}"]}
+    assert out["result"] == "FAIL"
+    others = {sd: _summary() for sd in runner.WP3_SEEDS if sd != 2026}
+    assert runner.wp3_judge_overall({**others, 2026: s})["result"] == "FAIL"
+
+
+def test_r4_missing_gated_row_fails_but_absent_retrieval_bridge_does_not():
+    assert runner.wp3_r4_safety(_summary(with_retrieval=False))["pass"] is True
+    s = _summary()
+    del s["hosts"]["naive_host"]["protocol"]["injection_packet"]
+    assert runner.wp3_r4_safety(s) == {"pass": False, "violations": ["naive_host.protocol.missing"]}
+
+
 # --- overall and auxiliary --------------------------------------------------------
 
 
