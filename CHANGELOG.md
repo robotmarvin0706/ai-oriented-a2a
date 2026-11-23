@@ -13,6 +13,9 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 Library patch release, built from tag `v0.4.1`. The protocol version is unchanged (v0.4, on-wire `"0.4"`). Experiment, example fixes, a non-normative helper module (`ai_oriented_a2a.recovery`), tests and data only: no wire-protocol change, no new fields, SPEC.md unchanged. Collects #51, #52 and #53.
 
+Published to PyPI on 2026-11-23, built from tag `v0.4.1`: https://pypi.org/project/ai-oriented-a2a/0.4.1/
+Also published to TestPyPI the same day: https://test.pypi.org/project/ai-oriented-a2a/0.4.1/
+
 ### Fixed
 
 - `examples/minimal_dual_end.py`: absorption no longer sets a hard-coded `recovered_policy()` whatever the packet says. The receiver parses `backoff`, `max_attempts` and `drop_stale_partials` from packet `content` (structured `recovery_policy`, a raw trajectory, or the recommendation text; never `absorption.hint`). Content with no such parameter leaves the policy unchanged and is rejected with `strategy_parsed: false` in the metrics. A change with no measured gain over regression + isolation (pooled) is now rolled back instead of absorbed. The simulated tool throttles a caller after 3 consecutive immediate retries, so unbounded retries without backoff cannot add successes. The default four-arm table is unchanged; `net_delta_sr_experiment.py` and `gossip_sim.py`, which reuse this receiver, now give different numbers (for example seed 42 Stage 1: distilled ΔSR +0.356 instead of +0.402).
