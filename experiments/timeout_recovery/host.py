@@ -43,9 +43,9 @@ from ai_oriented_a2a import (
     wrap_untrusted,
 )
 from ai_oriented_a2a.content import UNTRUSTED_BEGIN, UNTRUSTED_END
+from ai_oriented_a2a.protocol import packet_ref_of
+from ai_oriented_a2a.recovery import parse_recovery_params, policy_from_params
 from ai_oriented_a2a.transport import guard_result, make_server
-
-from .strategy import parse_recovery_params
 
 # ---------------------------------------------------------------------------
 # Budgets and thresholds (IMPLEMENTATION.md, Local Net ΔSR Experiment Guide)
@@ -84,7 +84,21 @@ WINDOW_EPISODES = {
 }
 
 MODEL_NAME = "deterministic-rule-host-v1"
-LOCAL_DEFAULT_BACKOFF_MS = 200  # what the receiver uses when it invents backoff itself
+LOCAL_DEFAULT_BACKOFF_MS = 200  # default base of a Policy() with backoff turned on
+
+# own_history search (WP1): the receiver tunes its own policy in the same
+# parameter space a distilled packet states (backoff on/off, base_backoff_ms,
+# max_attempts, drop_stale_partials). The grid contains the peer's values
+# (400 ms, 4 attempts, drop) so the peer policy is reachable without a packet.
+# Order, passes and episodes per candidate were picked on calibration seed 1
+# (not a reported seed) as the best mean SR among 20 configurations whose mean
+# search cost stays under the budget: drop_stale -> backoff -> max_attempts,
+# 2 passes, the 3-episode explore window. Fixed before the reported run.
+SEARCH_DROP_STALE = (False, True)
+SEARCH_BASE_BACKOFF_MS = (100, 200, 400, 800)
+SEARCH_MAX_ATTEMPTS = (2, 3, 4, 5, 6)
+SEARCH_PASSES = 2
+OWN_SEARCH_TOKEN_BUDGET = TOTAL_TOKEN_BUDGET  # tool-call tokens spent on search, per case
 
 
 def stable_int(*parts: Any) -> int:
@@ -113,7 +127,11 @@ class Policy:
     base_backoff_ms: int = LOCAL_DEFAULT_BACKOFF_MS
     max_attempts: Optional[int] = 3
     drop_stale_partials: bool = False
-    context_tokens: int = 0  # strategy text carried in context on every episode
+    # Token accounting, two views of the same run (WP1):
+    # A: the absorbed strategy text carried in context on every episode;
+    # B: only the parsed parameters carried on every episode.
+    context_tokens: int = 0
+    param_tokens: int = 0
 
     def label(self) -> str:
         attempts = "unbounded" if self.max_attempts is None else str(self.max_attempts)
@@ -123,21 +141,6 @@ class Policy:
 
 def naive_policy() -> Policy:
     return Policy()
-
-
-def apply_params(current: Policy, params: Dict[str, Any]) -> Policy:
-    """Copy of ``current`` with the stated parameters; unstated keys stay."""
-    new = deepcopy(current)
-    if "backoff" in params:
-        new.backoff = bool(params["backoff"])
-    if "base_backoff_ms" in params:
-        new.base_backoff_ms = int(params["base_backoff_ms"])
-    if "max_attempts" in params:
-        value = params["max_attempts"]
-        new.max_attempts = None if value is None else max(1, int(value))
-    if "drop_stale_partials" in params:
-        new.drop_stale_partials = bool(params["drop_stale_partials"])
-    return new
 
 
 @dataclass(frozen=True)
@@ -167,9 +170,10 @@ class Episode:
     success: bool
     reason: str
     tool_calls: int
-    tokens: int
+    tokens: int  # view A: tool calls + strategy text in context
     elapsed_ms: int
     steps: List[Dict[str, Any]] = field(default_factory=list)
+    tokens_b: int = 0  # view B: tool calls + parsed parameters only
 
     def compact(self) -> Dict[str, Any]:
         codes = {"timeout": "T", "ok": "O", "throttled": "R", "stale_discarded": "D", "stale_accepted": "A"}
@@ -183,6 +187,7 @@ class Episode:
             "reason": self.reason,
             "tool_calls": self.tool_calls,
             "tokens": self.tokens,
+            "tokens_params_only": self.tokens_b,
             "elapsed_ms": self.elapsed_ms,
             "trace": trace,
         }
@@ -262,7 +267,8 @@ def run_episode(policy: Policy, case: Case, window: str, episode: int) -> Episod
     if not success and reason == "max_attempts" and t >= DEADLINE_MS:
         reason = "deadline"
     tokens = calls * CALL_TOKENS + policy.context_tokens
-    return Episode(window, episode, success, reason, calls, tokens, t, steps)
+    tokens_b = calls * CALL_TOKENS + policy.param_tokens
+    return Episode(window, episode, success, reason, calls, tokens, t, steps, tokens_b)
 
 
 def run_window(policy: Policy, case: Case, window: str) -> List[Episode]:
@@ -379,31 +385,95 @@ class LLMStrategyModel:
 # ---------------------------------------------------------------------------
 
 
-def learn_from_own_history(episodes: List[Episode]) -> Tuple[Dict[str, Any], List[str]]:
-    """Rule the receiver applies to its own exploration episodes.
+@dataclass
+class SearchResult:
+    """What the own_history search tried and picked (host-local)."""
 
-    - A timeout followed by another failed immediate retry in at least two
-      episodes: turn on backoff with the receiver's own default base.
-    - Any episode that failed because a stale partial was accepted: drop stale
-      partials. ``max_attempts`` is left as is (no evidence about it).
+    params: Dict[str, Any]
+    evidence: List[str]
+    episodes: List[Episode]  # every exploration episode it ran, all candidates
+    candidates: int
+    best_successes: int
+    start_successes: int
+    budget_stopped: bool
+
+
+def _params_of(policy: Policy) -> Dict[str, Any]:
+    return {
+        "backoff": policy.backoff,
+        "base_backoff_ms": policy.base_backoff_ms,
+        "max_attempts": policy.max_attempts,
+        "drop_stale_partials": policy.drop_stale_partials,
+    }
+
+
+def search_own_policy(case: Case, start: Optional[Policy] = None, budget: int = OWN_SEARCH_TOKEN_BUDGET) -> SearchResult:
+    """own_history: tune the local policy on the receiver's own exploration runs.
+
+    Coordinate search, ``SEARCH_PASSES`` passes, in a fixed order: (1)
+    ``SEARCH_DROP_STALE``; (2) backoff off, or on with each
+    ``SEARCH_BASE_BACKOFF_MS``; (3) ``SEARCH_MAX_ATTEMPTS``. Every candidate runs the same ``explore`` draws
+    (paired), so the comparison is not noise from different streams. A
+    candidate replaces the incumbent only with strictly more successes, or
+    equal successes and fewer tool-call tokens; ties keep the incumbent. The
+    search stops before a new candidate once ``budget`` tool-call tokens are
+    spent (so it can overshoot by at most one candidate's episodes). The
+    first candidate is the start policy, whose runs are the old exploration.
+    Returns only the keys that differ from ``start``; ``{}`` means no change.
     """
-    params: Dict[str, Any] = {}
-    evidence: List[str] = []
-    storm = 0
-    for ep in episodes:
-        events = [s["event"] for s in ep.steps]
-        for a, b in zip(events, events[1:]):
-            if a == "timeout" and b in ("timeout", "throttled"):
-                storm += 1
+    start = deepcopy(start or naive_policy())
+    episodes: List[Episode] = []
+    spent = 0
+    tried = 0
+    stopped = False
+
+    def score(policy: Policy) -> Tuple[int, int]:
+        nonlocal spent, tried
+        eps = run_window(policy, case, "explore")
+        episodes.extend(eps)
+        spent += sum(e.tool_calls * CALL_TOKENS for e in eps)
+        tried += 1
+        return sum(1 for e in eps if e.success), sum(e.tool_calls for e in eps)
+
+    best = start
+    best_score = score(best)
+    start_successes = best_score[0]
+    axes: List[List[Dict[str, Any]]] = [
+        [{"drop_stale_partials": d} for d in SEARCH_DROP_STALE],
+        [{"backoff": False}] + [{"backoff": True, "base_backoff_ms": ms} for ms in SEARCH_BASE_BACKOFF_MS],
+        [{"max_attempts": n} for n in SEARCH_MAX_ATTEMPTS],
+    ]
+    seen = {best.label()}
+    for _ in range(SEARCH_PASSES):
+        for axis in axes:
+            incumbent = best
+            for change in axis:
+                cand = policy_from_params(incumbent, change)
+                if cand.label() in seen:
+                    continue
+                if spent >= budget:
+                    stopped = True
+                    break
+                seen.add(cand.label())
+                sc = score(cand)
+                if sc[0] > best_score[0] or (sc[0] == best_score[0] and sc[1] < best_score[1]):
+                    best, best_score = cand, sc
+            if stopped:
                 break
-    if storm >= 2:
-        params["backoff"] = True
-        params["base_backoff_ms"] = LOCAL_DEFAULT_BACKOFF_MS
-        evidence.append(f"own_history.repeated_timeouts={storm}")
-    if any(ep.reason == "stale_result_accepted" for ep in episodes):
-        params["drop_stale_partials"] = True
-        evidence.append("own_history.stale_result_accepted")
-    return params, evidence
+        if stopped:
+            break
+    chosen = _params_of(best)
+    base = _params_of(start)
+    params = {k: v for k, v in chosen.items() if v != base[k]}
+    if best.backoff and ("backoff" in params or "base_backoff_ms" in params):
+        params.update(backoff=True, base_backoff_ms=best.base_backoff_ms)
+    evidence = [
+        f"own_history.search candidates={tried} explore_successes {start_successes}->{best_score[0]}"
+        f" of {WINDOW_EPISODES['explore']} (picked {best.label()})"
+    ]
+    if stopped:
+        evidence.append(f"own_history.search stopped at the {budget}-token budget")
+    return SearchResult(params, evidence, episodes, tried, best_score[0], start_successes, stopped)
 
 
 # ---------------------------------------------------------------------------
@@ -434,6 +504,7 @@ class GateRecord:
     rollback_triggered: bool
     rollback_ok: Optional[bool]
     model_calls: int
+    isolation_tokens_b: int = 0  # view B (parameters only) of isolation_tokens
 
 
 class Host:
@@ -467,7 +538,28 @@ class Host:
             return guard_result(policy_reject)
         if "id" in msg and "absorption" in msg:
             return guard_result(self.absorb(msg))
-        return {"ack": True}
+        return guard_result(self.not_absorbable(msg))
+
+    @staticmethod
+    def not_absorbable(msg: Dict[str, Any]) -> Dict[str, Any]:
+        """Rejected Absorption Result for anything that is not a packet or a
+        negotiation message (was a bare ``{"ack": True}``). Nothing changes.
+
+        A profile or a pushed Absorption Result is well formed but this host
+        does not process them; anything else is not a message it can read.
+        """
+        if "constraints" in msg or "packet_ref" in msg:
+            kind = "Agent Profile" if "constraints" in msg else "Absorption Result"
+            reason = (
+                f"unsupported_message: this experiment host only absorbs Experience Packets; "
+                f"{kind} not processed, local policy unchanged"
+            )
+        else:
+            reason = (
+                "schema_invalid: not an Experience Packet (needs id and absorption) "
+                "or a negotiation message (needs proposal_id); local policy unchanged"
+            )
+        return reject_result({"id": packet_ref_of(msg)}, reason)
 
     def serve(self, port: int = 0):
         """HTTP server (``POST /a2a/message``) backed by ``handle_message``."""
@@ -537,13 +629,15 @@ class Host:
         snapshot = deepcopy(self.policy)
         pristine = (deepcopy(self.policy), list(self.prompt_blocks), dict(self.retrieval_store))
         before = run_window(snapshot, self.case, "isolation")
-        candidate = apply_params(snapshot, params)
+        candidate = policy_from_params(snapshot, params)
         candidate.context_tokens = snapshot.context_tokens + context_tokens
+        candidate.param_tokens = snapshot.param_tokens + approx_tokens(params)
         self.policy = candidate
         if install:
             install()
         after = run_window(candidate, self.case, "isolation")
         iso_tokens = sum(e.tokens for e in before) + sum(e.tokens for e in after)
+        iso_tokens_b = sum(e.tokens_b for e in before) + sum(e.tokens_b for e in after)
         iso_calls = sum(e.tool_calls for e in before) + sum(e.tool_calls for e in after)
         sr_before, sr_after = sr(before), sr(after)
         dsr = round(sr_after - sr_before, 4)
@@ -575,6 +669,7 @@ class Host:
             isolation_tokens=iso_tokens, isolation_tool_calls=iso_calls,
             isolation_sr_before=round(sr_before, 4), isolation_sr_after=round(sr_after, 4), isolation_dsr=dsr,
             rollback_triggered=status != "absorbed", rollback_ok=rollback_ok, model_calls=0,
+            isolation_tokens_b=iso_tokens_b,
         )
         self.log.append(record)
         return record
@@ -638,10 +733,13 @@ __all__ = [
     "RuleStrategyModel",
     "StrategyModel",
     "TOTAL_TOKEN_BUDGET",
-    "apply_params",
-    "learn_from_own_history",
+    "OWN_SEARCH_TOKEN_BUDGET",
+    "SEARCH_PASSES",
+    "SearchResult",
     "naive_policy",
+    "policy_from_params",
     "run_episode",
     "run_window",
+    "search_own_policy",
     "sr",
 ]
