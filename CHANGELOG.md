@@ -9,7 +9,9 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
-Targeting 0.4.1. Experiment, example fixes, a non-normative helper module (`ai_oriented_a2a.recovery`), tests and data only: no wire-protocol change, no new fields, SPEC.md unchanged.
+## [0.4.1] - 2026-11-23
+
+Library patch release, built from tag `v0.4.1`. The protocol version is unchanged (v0.4, on-wire `"0.4"`). Experiment, example fixes, a non-normative helper module (`ai_oriented_a2a.recovery`), tests and data only: no wire-protocol change, no new fields, SPEC.md unchanged. Collects #51, #52 and #53.
 
 ### Fixed
 
@@ -20,6 +22,8 @@ Targeting 0.4.1. Experiment, example fixes, a non-normative helper module (`ai_o
 
 - `experiments/timeout_recovery/run.py`: a plain run writes nothing and prints the tables to stdout. Files are written only with `--results [PATH]`, `--summary-dir [DIR]` or `--data-dir [DIR]` (a bare flag uses the committed path), so a trial run can no longer overwrite `RESULTS.md`, the summaries or the datasets and break the data tests. `--no-write` is gone (it is now the default). Regenerate the committed files with `--results --summary-dir --data-dir`.
 - MCP bridge: the requirement is `mcp>=2,<3` (`mcp_a2a.MCP_REQUIREMENT`, same as the `mcp` extra). `tests/mcp_bridge/test_bridge.py` is skipped at module level with the reason when `mcp` is missing, older than 2 (1.x has no `Client` / `MCPServer`), or Python < 3.10, instead of failing at collection; `import mcp_a2a.server` raises a clear `ImportError` in that case.
+
+- CI: the `docs-and-examples` job in `.github/workflows/validate.yml` now also runs `tests/experiments/` (#52).
 
 ### Added
 
@@ -180,6 +184,7 @@ Protocol v0.3.
 - New docs: [docs/VERSIONING.md](docs/VERSIONING.md), [docs/TRANSPORT.md](docs/TRANSPORT.md).
 - Reference `examples/network_dual_end.py`: HMAC verification and replay window are each opt-in (`--sign-key`, `--replay-window`); canonical JSON signing; 30s client timeout.
 
+[0.4.1]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/robotmarvin0706/ai-oriented-a2a/compare/v0.3.1...v0.3.2
