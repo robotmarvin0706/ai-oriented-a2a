@@ -112,7 +112,7 @@ jobs:
         run: |
           pip install -e ".[schema]" pytest -q
           python3 -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"
-          pytest tests/interop/ tests/conformance/ -q
+          pytest tests/interop/ tests/conformance/ tests/experiments/ -q
 
   # Optional MCP bridge tests (mcp_a2a/). Not a required status check.
   mcp-bridge:
