@@ -1,4 +1,66 @@
 {
+  "amortization": {
+    "A": {
+      "distilled_packet": {
+        "amortized_extra": 938.6,
+        "eval_extra": 901.1333,
+        "one_time": 1124.0,
+        "ratio_vs_own_history": 7.5647,
+        "within_cap": false
+      },
+      "mediocre_packet": {
+        "amortized_extra": 168.1555,
+        "eval_extra": 134.3333,
+        "one_time": 1014.6667,
+        "ratio_vs_own_history": 1.3553,
+        "within_cap": true
+      },
+      "own_history": {
+        "amortized_extra": 124.0766,
+        "eval_extra": 34.7333,
+        "one_time": 2680.3,
+        "ratio_vs_own_history": 1.0,
+        "within_cap": true
+      },
+      "raw_trajectory": {
+        "amortized_extra": 608.0133,
+        "eval_extra": 568.4,
+        "one_time": 1188.4,
+        "ratio_vs_own_history": 4.9003,
+        "within_cap": false
+      }
+    },
+    "B": {
+      "distilled_packet": {
+        "amortized_extra": 185.1,
+        "eval_extra": 161.3333,
+        "one_time": 713.0,
+        "ratio_vs_own_history": 1.4918,
+        "within_cap": true
+      },
+      "mediocre_packet": {
+        "amortized_extra": 39.4555,
+        "eval_extra": 17.3333,
+        "one_time": 663.6667,
+        "ratio_vs_own_history": 0.318,
+        "within_cap": true
+      },
+      "own_history": {
+        "amortized_extra": 124.0766,
+        "eval_extra": 34.7333,
+        "one_time": 2680.3,
+        "ratio_vs_own_history": 1.0,
+        "within_cap": true
+      },
+      "raw_trajectory": {
+        "amortized_extra": 36.5067,
+        "eval_extra": 16.0,
+        "one_time": 615.2,
+        "ratio_vs_own_history": 0.2942,
+        "within_cap": true
+      }
+    }
+  },
   "arms": {
     "distilled_packet": {
       "acceptance_rate": 0.9,
@@ -13,6 +75,8 @@
         0.4667,
         0.6778
       ],
+      "eval_extra_tokens": 901.1333,
+      "eval_extra_tokens_b": 161.3333,
       "extra_tokens": 2025.1333,
       "extra_tokens_b": 874.3333,
       "extra_tool_calls": 13.7333,
@@ -20,6 +84,8 @@
       "isolation_dsr_mean": 0.5222,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 1124.0,
+      "one_time_tokens_b": 713.0,
       "policy_unchanged": 3,
       "rollback_success_rate": 1.0,
       "rollbacks": 3,
@@ -39,6 +105,8 @@
         0.0,
         0.0
       ],
+      "eval_extra_tokens": 0.0,
+      "eval_extra_tokens_b": 0.0,
       "extra_tokens": 65.0,
       "extra_tokens_b": 65.0,
       "extra_tool_calls": 0.0,
@@ -46,6 +114,8 @@
       "isolation_dsr_mean": null,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 65.0,
+      "one_time_tokens_b": 65.0,
       "policy_unchanged": 30,
       "rollback_success_rate": null,
       "rollbacks": 0,
@@ -65,6 +135,8 @@
         0.0,
         0.0
       ],
+      "eval_extra_tokens": 0.0,
+      "eval_extra_tokens_b": 0.0,
       "extra_tokens": 0.0,
       "extra_tokens_b": 0.0,
       "extra_tool_calls": 0.0,
@@ -72,6 +144,8 @@
       "isolation_dsr_mean": null,
       "model_calls": 0,
       "n": 30,
+      "one_time_tokens": 0.0,
+      "one_time_tokens_b": 0.0,
       "policy_unchanged": 30,
       "rollback_success_rate": null,
       "rollbacks": 0,
@@ -91,6 +165,8 @@
         0.0,
         0.0
       ],
+      "eval_extra_tokens": 0.0,
+      "eval_extra_tokens_b": 0.0,
       "extra_tokens": 97.0,
       "extra_tokens_b": 97.0,
       "extra_tool_calls": 0.0,
@@ -98,6 +174,8 @@
       "isolation_dsr_mean": null,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 97.0,
+      "one_time_tokens_b": 97.0,
       "policy_unchanged": 30,
       "rollback_success_rate": null,
       "rollbacks": 0,
@@ -117,6 +195,8 @@
         0.0,
         0.0278
       ],
+      "eval_extra_tokens": 134.3333,
+      "eval_extra_tokens_b": 17.3333,
       "extra_tokens": 1149.0,
       "extra_tokens_b": 681.0,
       "extra_tool_calls": 11.6,
@@ -124,6 +204,8 @@
       "isolation_dsr_mean": 0.0667,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 1014.6667,
+      "one_time_tokens_b": 663.6667,
       "policy_unchanged": 25,
       "rollback_success_rate": 1.0,
       "rollbacks": 25,
@@ -143,6 +225,8 @@
         0.0,
         0.0
       ],
+      "eval_extra_tokens": 0.0,
+      "eval_extra_tokens_b": 0.0,
       "extra_tokens": 0.0,
       "extra_tokens_b": 0.0,
       "extra_tool_calls": 0.0,
@@ -150,6 +234,8 @@
       "isolation_dsr_mean": null,
       "model_calls": 0,
       "n": 30,
+      "one_time_tokens": 0.0,
+      "one_time_tokens_b": 0.0,
       "policy_unchanged": 30,
       "rollback_success_rate": null,
       "rollbacks": 0,
@@ -169,6 +255,8 @@
         0.0722,
         0.2611
       ],
+      "eval_extra_tokens": 34.7333,
+      "eval_extra_tokens_b": 34.7333,
       "extra_tokens": 2715.0333,
       "extra_tokens_b": 2715.0333,
       "extra_tool_calls": 66.4333,
@@ -176,6 +264,8 @@
       "isolation_dsr_mean": 0.3,
       "model_calls": 0,
       "n": 30,
+      "one_time_tokens": 2680.3,
+      "one_time_tokens_b": 2680.3,
       "policy_unchanged": 19,
       "rollback_success_rate": 1.0,
       "rollbacks": 9,
@@ -195,6 +285,8 @@
         0.0333,
         0.1667
       ],
+      "eval_extra_tokens": 568.4,
+      "eval_extra_tokens_b": 16.0,
       "extra_tokens": 1756.8,
       "extra_tokens_b": 631.2,
       "extra_tool_calls": 7.6667,
@@ -202,6 +294,8 @@
       "isolation_dsr_mean": 0.2121,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 1188.4,
+      "one_time_tokens_b": 615.2,
       "policy_unchanged": 20,
       "rollback_success_rate": 1.0,
       "rollbacks": 12,
@@ -221,6 +315,8 @@
         0.0,
         0.0
       ],
+      "eval_extra_tokens": 0.0,
+      "eval_extra_tokens_b": 0.0,
       "extra_tokens": 1366.6667,
       "extra_tokens_b": 1021.6667,
       "extra_tool_calls": 21.0667,
@@ -228,6 +324,8 @@
       "isolation_dsr_mean": 0.0,
       "model_calls": 30,
       "n": 30,
+      "one_time_tokens": 1366.6667,
+      "one_time_tokens_b": 1021.6667,
       "policy_unchanged": 30,
       "rollback_success_rate": 1.0,
       "rollbacks": 30,
@@ -340,6 +438,37 @@
       "distilled_minus_own_history": -0.15,
       "net_value": false
     }
+  },
+  "own_history_picks": {
+    "final_after_gate": {
+      "backoff=exp100ms,max_attempts=3,drop_stale=True": 2,
+      "backoff=exp200ms,max_attempts=3,drop_stale=True": 2,
+      "backoff=exp400ms,max_attempts=3,drop_stale=True": 3,
+      "backoff=exp800ms,max_attempts=3,drop_stale=True": 3,
+      "backoff=none,max_attempts=3,drop_stale=False": 19,
+      "backoff=none,max_attempts=3,drop_stale=True": 1
+    },
+    "final_peer_policy": 0,
+    "peer_vs_pick_on_explore": {
+      "peer_better": 10,
+      "pick_better": 0,
+      "picked_peer": 0,
+      "tie": 20
+    },
+    "picked": {
+      "backoff=exp100ms,max_attempts=3,drop_stale=True": 2,
+      "backoff=exp200ms,max_attempts=2,drop_stale=False": 1,
+      "backoff=exp200ms,max_attempts=3,drop_stale=False": 2,
+      "backoff=exp200ms,max_attempts=3,drop_stale=True": 2,
+      "backoff=exp400ms,max_attempts=3,drop_stale=False": 1,
+      "backoff=exp400ms,max_attempts=3,drop_stale=True": 3,
+      "backoff=exp800ms,max_attempts=3,drop_stale=False": 2,
+      "backoff=exp800ms,max_attempts=3,drop_stale=True": 3,
+      "backoff=none,max_attempts=2,drop_stale=False": 1,
+      "backoff=none,max_attempts=3,drop_stale=False": 10,
+      "backoff=none,max_attempts=3,drop_stale=True": 3
+    },
+    "picked_peer_policy": 0
   },
   "seed": 42,
   "wrong_by_host": {
