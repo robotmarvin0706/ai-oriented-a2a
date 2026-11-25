@@ -9,6 +9,10 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+### Changed
+
+- `experiments/timeout_recovery/run.py`: WP3 rule R2 is an equivalence test (TOST) with the fixed margin `WP3_R2_EQ_MARGIN = 0.05`, not "the paired CI contains 0". A paired `protocol − plain_file_gated` ΔSR CI entirely inside ±0.05 is evidence of no protocol increment; a CI that merely contains 0 is reported as `undetermined`, and a CI outside the margin as `increment` (with `positive` / `negative` per host). `protocol_increment` (`none` / `increment` / `undetermined`) is reported per seed and overall, and `no_protocol_increment` is true only for `none`. Revised 2026-11-25, still before any WP3 run, so the pre-registration stays ahead of the data.
+
 ## [0.4.1] - 2026-11-23
 
 Library patch release, built from tag `v0.4.1`. The protocol version is unchanged (v0.4, on-wire `"0.4"`). Experiment, example fixes, a non-normative helper module (`ai_oriented_a2a.recovery`), tests and data only: no wire-protocol change, no new fields, SPEC.md unchanged. Collects #51, #52 and #53.
