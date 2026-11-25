@@ -46,7 +46,7 @@ from .protocol import (
 )
 from .validate import SchemaDependencyError, SCHEMA_KINDS, schema_dir, validate
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 __all__ = [
     "CURRENT_MAJOR_MINOR",
