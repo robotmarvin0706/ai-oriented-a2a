@@ -380,3 +380,26 @@ def test_demo_rejects_negotiation_instead_of_ack():
     assert network_dual_end.negotiation_rejection(bare)["packet_ref"] == "unknown"
     blank = dict(bare, offered_packet={"id": "  "})
     assert network_dual_end.negotiation_rejection(blank)["packet_ref"] == "unknown"
+
+
+@pytest.mark.parametrize("bad", [None, ["x"], "string", {"status": "bogus"}, {"ack": False}])
+def test_callback_returning_a_non_result_is_a_500(server_url, bad):
+    """TRANSPORT promises 500 + internal_error for a handler that returns
+    something other than an Absorption Result or an ack (audit P1-11)."""
+    url = server_url(on_message=lambda msg, value=bad: value)
+    status, raw = _post_raw(url, json.dumps({"id": "p", "type": "failure_mode",
+                                             "content": {"a": 1},
+                                             "absorption": {"method": "retrieval"}}).encode())
+    assert status == 500, raw
+    body = json.loads(raw)
+    assert body["status"] == "rejected"
+    assert body["reason"].startswith("internal_error:")
+    assert body["packet_ref"] == "p"
+
+
+def test_a_legal_ack_still_goes_through(server_url):
+    url = server_url(on_message=lambda msg: {"ack": True})
+    status, raw = _post_raw(url, json.dumps({"id": "p", "type": "failure_mode",
+                                             "content": {"a": 1},
+                                             "absorption": {"method": "retrieval"}}).encode())
+    assert status == 200 and json.loads(raw)["ack"] is True
