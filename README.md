@@ -65,6 +65,7 @@ v0.4 does not add message types or required fields. It tightens what a receiver 
 | [mcp_a2a/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/mcp_a2a) | MCP bridge: hosts send packets, report results to A2A peers, and look up experience in a local corpus (optional `[mcp]` extra, Python ≥ 3.10) |
 | [docs/COMPLIANCE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/COMPLIANCE.md) | What an implementation must pass, and how to run the conformance suite against another implementation |
 | [docs/KNOWN_GAPS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
+| [docs/LLM_RECEIVER_OBSERVATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/LLM_RECEIVER_OBSERVATION.md) | One-off LLM-receiver run (not byte-reproducible): every arm reproduces except `raw_trajectory` |
 
 ## Status
 

@@ -6,8 +6,8 @@ Non-normative. The tool is simulated (see `host.py`); the numbers are about this
 ## Run
 
 - Command: `python -m experiments.timeout_recovery.run --seeds 42 7 2026 --n 30 --results --summary-dir --data-dir`
-- Generated at commit: `62579af` (the commit checked out when the file was written; the PR that changes this file generated it on top of that commit with its own changes in the work tree)
-- Environment: Python 3.13.5 (CPython), Linux x86_64; no third-party packages used by the run
+- Generated at commit: `546fbb8` (the commit checked out when the file was written; the PR that changes this file generated it on top of that commit with its own changes in the work tree)
+- Environment: Python 3.12.7 (CPython), Darwin arm64; no third-party packages used by the run
 - Strategy model: `deterministic-rule-host-v1`
 - Budgets: total 3000 tokens per case and arm (absorption + isolation), absorption 800, ΔSR threshold 0.05, extra-token cap 1.5× own_history, isolation N=3
 - Cases: N=30 per arm per seed; each case is evaluated on 3 immediate + 3 delayed episodes (paired draws across arms)
@@ -275,4 +275,4 @@ own_history's search picked the peer policy in 0/30, 0/30, 0/30 cases (seeds 42,
 
 How to read it: ΔSR, acceptance and rollback are judged on the success rate; the extra-token check compares distilled_packet with own_history under each token view. own_history now pays for its search (exploration tool calls), so its extra tokens are larger than in PR #51 and the ratio can fall even when the packet side is unchanged; read own_history's ΔSR and extra tool calls next to the ratio. A failed check is reported as a failure; thresholds are not adjusted.
 
-Limits: one simulated tool, and the peer policy was written for this simulator, so a large distilled gain is partly by construction; own_history searches the same space but only on its own few exploration episodes, so it can overfit them; the default strategy model is a rule parser, not an LLM. Reproducibility of the whole run (byte-identical output for the same seed) is checked by `tests/experiments/test_timeout_recovery.py`.
+Limits: one simulated tool, and the peer policy was written for this simulator, so a large distilled gain is partly by construction; own_history searches the same space but only on its own few exploration episodes, so it can overfit them; the default strategy model is a rule parser, not an LLM (a one-off LLM-receiver run, which is not byte-reproducible, is reported in [LLM_RECEIVER_OBSERVATION.md](../../docs/LLM_RECEIVER_OBSERVATION.md): it reproduces every arm except `raw_trajectory`, which rises to +0.206 to +0.306 and overtakes `own_history`). Reproducibility of the whole run (byte-identical output for the same seed) is checked by `tests/experiments/test_timeout_recovery.py`.

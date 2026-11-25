@@ -881,8 +881,12 @@ def results_markdown(result: Dict[str, Any], seeds: Sequence[int], n: int, model
         "",
         "Limits: one simulated tool, and the peer policy was written for this simulator, so a large distilled gain is "
         "partly by construction; own_history searches the same space but only on its own few exploration episodes, so "
-        "it can overfit them; the default strategy model is a rule parser, not an LLM. Reproducibility of the whole run "
-        "(byte-identical output for the same seed) is checked by `tests/experiments/test_timeout_recovery.py`.",
+        "it can overfit them; the default strategy model is a rule parser, not an LLM (a one-off LLM-receiver run, "
+        "which is not byte-reproducible, is reported in "
+        "[LLM_RECEIVER_OBSERVATION.md](../../docs/LLM_RECEIVER_OBSERVATION.md): it reproduces every arm except "
+        "`raw_trajectory`, which rises to +0.206 to +0.306 and overtakes `own_history`). Reproducibility of the "
+        "whole run (byte-identical output for the same seed) is checked by "
+        "`tests/experiments/test_timeout_recovery.py`.",
         "",
     ]
     return "\n".join(out)
