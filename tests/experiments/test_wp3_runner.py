@@ -118,3 +118,12 @@ def test_markdown_reports_verdicts():
     assert "## Verdicts" in text and "R2 protocol increment" in text
     assert "protocol_increment" in text and "safety_pass" in text
     assert "deadbee" in text
+
+
+def test_committed_results_match_a_fresh_run():
+    committed = (REPO / "experiments" / "timeout_recovery" / "WP3_RESULTS.md").read_text(encoding="utf-8")
+    result = wp3.run_all(runner.WP3_SEEDS, 30, RuleStrategyModel)
+    fresh = wp3.results_markdown(result, runner.WP3_SEEDS, 30, "x")
+    # Everything after the environment block is data; it must not drift.
+    tail = lambda text: text.split("## Seed 42", 1)[1]  # noqa: E731
+    assert tail(committed) == tail(fresh)
