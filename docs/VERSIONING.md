@@ -42,7 +42,10 @@ Each message type (Agent Profile, Experience Packet, negotiation, Absorption Res
 
 The intended compatibility rule is:
 
-- The receiver MUST ignore unrecognized OPTIONAL fields and continue processing known parts.
+- A receiver that does **not** schema-validate incoming messages MUST ignore unrecognized
+  OPTIONAL fields and continue processing known parts. A receiver that does schema-validate
+  rejects them today (the published schemas set `additionalProperties: false`); that is a
+  schema choice, not a protocol requirement, and the two behaviours are both conformant.
 - If an unknown field would change the meaning of a MUST field, or the receiver cannot interpret a MUST field because of it, the receiver MUST reject the entire packet and return an explicit `reason`.
 
 Caveat for published schemas: current JSON Schemas in `schema/` set `"additionalProperties": false`. The OPTIONAL `version`, `nonce`, `timestamp`, `signature`, and (on Agent Profile) `identity` fields are declared in those schemas so strict validation can pass. Other unrecognized fields are still schema-rejected until a later, non-breaking schema relaxation. Peers that do not schema-reject unknown OPTIONAL fields MUST still ignore them (MUST NOT treat unknown fields as absorbed-side effects).

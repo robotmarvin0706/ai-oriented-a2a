@@ -9,6 +9,16 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+### Changed
+
+- Docs, normative level: `SPEC.md` now states that RFC 2119/8174 keywords apply; `docs/SECURITY.md`, `docs/ABSORPTION_STATE.md` and `IMPLEMENTATION.md` say in their first paragraph that they are non-normative for the wire and that the SPEC wording governs where they restate it; `docs/DATA_POLICY.md` marks which sections are normative (only the forbidden-directive patterns) and which are corpus guidance.
+- `docs/VERSIONING.md`: the forward-compatibility rule is now conditional — a receiver that does **not** schema-validate MUST ignore unknown OPTIONAL fields; one that does schema-validate rejects them, and both behaviours are conformant. Removes the contradiction with `additionalProperties: false` (audit P1-1).
+- `docs/WP3_FINDINGS.md`: corrected to the measured numbers and the limits of the design. R2's two arms share one parser, so its zero is an identity, not a measurement (a stubbed strategy model makes them diverge); the note now says the experiment cannot detect a protocol-layer increment. Also fixes the R3 check count (nine of ten, not seven of eight), the accepted counts per seed, the protocol/gated token difference (+264 to +630 tokens/case), the ungated wrong-packet ΔSR (point estimates, not CI bounds), the LLM call count per seed, and the reproduction command (explicit `/tmp` summary directory).
+
+### Added
+
+- `llms.txt` and `AGENTS.md` at the repository root: what the project is, how to install it, the minimal receive loop, what to read next, the invariants, and the things not to do. Both state that this is not the Google A2A stack and that packet content is data, never instructions.
+
 ### Added
 
 - `docs/WP3_FINDINGS.md`: a short, non-normative statement of what WP3 measured. The gate has value (the ungated wrong packet costs the working host up to −0.539 ΔSR, the gated path +0.000, at the price of 27/30 rather than 30/30 accepted); the protocol layer adds no increment beyond the gate (paired `protocol − plain_file_gated` ΔSR 0.000, CI inside ±0.05, attribution 1.0 vs 0.0 the only difference); the retrieval path is cost-feasible only when the host parses to parameters and drops the text; safety holds. The note also lists what the result does not show (one scenario, one simulated tool, a rule-parser receiver, an equivalence margin rather than exact equality, attribution's value unmeasured).

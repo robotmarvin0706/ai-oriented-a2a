@@ -1,5 +1,9 @@
 # Implementation guidance (non-normative)
 
+**Normative level:** non-normative for the wire. Where this file restates a requirement from
+`SPEC.md`, the SPEC wording governs; the other MUST/SHOULD statements below describe the
+reference implementation and are guidance, not new wire requirements.
+
 This document does not add wire fields beyond `SPEC.md`. The wire hard gate (`effect_summary.note` MUST when `status=absorbed`, since v0.3) is normative in SPEC §3.1. The fuller metric practice below remains host-side experiment-path guidance.
 
 The first-edition minimal library boundary (HTTP binding, hard gate, legal error responses, optional HMAC and replay window; no redaction or provenance implementation) is recorded in [docs/TRANSPORT.md](docs/TRANSPORT.md).

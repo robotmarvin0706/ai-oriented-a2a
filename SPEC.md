@@ -2,6 +2,13 @@
 
 Keywords: experience packet, absorption, proposal_id, constraint set, improvement_prefs, peer negotiation, provenance, trajectory_replay, conditional_packet, effect_summary.
 
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and
+[RFC 8174](https://www.rfc-editor.org/rfc/rfc8174). `docs/` files that are marked
+non-normative describe one implementation and do not create wire requirements; where a
+`docs/` file restates a SPEC requirement, this document governs.
+
 ## Changes from v0.3
 
 This is a minor tightening during 0.x (0.3 → 0.4), per [docs/VERSIONING.md](docs/VERSIONING.md): it adds receiver MUSTs, so receivers that were compliant with v0.3 may no longer be. Message shapes do not change, and every v0.3 message stays valid.

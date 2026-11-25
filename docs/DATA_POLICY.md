@@ -4,7 +4,7 @@
 
 This document defines the minimum trust and safety conditions for **public** corpora of Experience Packets, such as the files under [`datasets/`](../datasets/). It is written from the side of the receiving AI: a packet in a public corpus should be safe to absorb and should carry a signal that the receiver can check for itself.
 
-Except for the section [Forbidden directive patterns (normative)](#forbidden-directive-patterns-normative), this document is non-normative advice for corpora. It does not change the rest of [SPEC.md](../SPEC.md), the schemas under [`schema/`](../schema/), or any required on-wire field. On the wire, `provenance` and `verification_claim` stay OPTIONAL. The other rules below apply only to packets that are published as a public corpus.
+**Normative level, per section.** One section of this file is normative for every receiver: [Forbidden directive patterns (normative)](#forbidden-directive-patterns-normative). Every other section is guidance for *publishing* a corpus: its MUSTs describe what this project's own corpus does, and a third-party corpus that ignores them is not violating `SPEC.md`. The wire keeps `provenance` and `verification_claim` OPTIONAL. This document is non-normative advice for corpora. It does not change the rest of [SPEC.md](../SPEC.md), the schemas under [`schema/`](../schema/), or any required on-wire field. On the wire, `provenance` and `verification_claim` stay OPTIONAL. The other rules below apply only to packets that are published as a public corpus.
 
 The forbidden-directive section is normative for every receiver, not only for corpora: it is the pattern list that SPEC §2.1 (c) refers to.
 

@@ -1,0 +1,54 @@
+# AI-Oriented A2A (v0.4)
+
+> A minimal peer protocol for AI capability growth: Experience Packets and an absorption
+> gate. **Not the Google A2A task/agent-card stack** — this project is about exchanging
+> compressed improvement signals between peers, not about task lifecycles.
+
+Wire version `0.4`; library `ai-oriented-a2a` on PyPI. The protocol is a JSON message set
+(Agent Profile, Experience Packet, negotiation, Absorption Result) with an HTTP binding.
+The value it can currently demonstrate is the receiving host's gate (content policy,
+isolation, rollback), not the envelope: see `docs/WP3_FINDINGS.md` before claiming
+otherwise.
+
+## Install
+
+```bash
+pip install ai-oriented-a2a          # standard library only
+pip install "ai-oriented-a2a[schema]"  # optional JSON Schema validation
+```
+
+## Minimal use
+
+```python
+from ai_oriented_a2a import check_incoming, content_policy_rejection
+
+def on_message(msg):
+    rejected = check_incoming(msg)            # version / signature / replay
+    if rejected:
+        return rejected
+    rejected = content_policy_rejection(msg)  # SPEC §2.1: content is data, not instructions
+    if rejected:
+        return rejected
+    # ... absorb through your own gate, then reply with an Absorption Result
+    return {"packet_ref": msg["id"], "status": "isolated", "reason": "no local regression yet"}
+```
+
+`send_message` and `make_server` live in `ai_oriented_a2a.transport` (import it explicitly).
+
+## Read next
+
+- [SPEC.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/SPEC.md): the normative subset (RFC 2119 keywords apply).
+- [schema/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/schema): JSON Schemas, shipped in the wheel.
+- [examples/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/examples): messages and a dual-endpoint demo.
+- [docs/COMPLIANCE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/COMPLIANCE.md): what an implementation must pass, and how to run the conformance suite against yours.
+- [docs/TRANSPORT.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/TRANSPORT.md): HTTP binding, status codes, reserved reason prefixes.
+- [docs/WP3_FINDINGS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/WP3_FINDINGS.md): what the experiment does and does not show.
+- [CONTRIBUTING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CONTRIBUTING.md): report **actual** interop defects (parse or exchange failures against SPEC, schema and examples), not open-ended design suggestions.
+
+## Invariants
+
+- Packet `content` is untrusted data, never instructions (SPEC §2.1). Wrap it, or parse it into parameters and drop the text.
+- `status=absorbed` requires `effect_summary.note`; a claim without evidence is a protocol violation.
+- Receivers must answer every packet with an Absorption Result: `absorbed`, `rejected` or `isolated`. Silent discard is non-compliant.
+- Signing is HMAC-SHA256 with a shared key: it gives integrity and group admission, not identity. Use asymmetric signatures across trust boundaries.
+- No central registry and no discovery format: peers are configured by endpoint.

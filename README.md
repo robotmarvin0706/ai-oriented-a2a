@@ -62,6 +62,7 @@ v0.4 does not add message types or required fields. It tightens what a receiver 
 | [docs/DATA_POLICY.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/DATA_POLICY.md) | Trust and safety rules for public Experience Packet corpora (advisory), plus the normative forbidden directive patterns for SPEC §2.1 |
 | [datasets/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/datasets) | Public synthetic Experience Packet corpora (CC0), including `content_policy:` counter-examples, checked in CI |
 | [CONTRIBUTING.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/CONTRIBUTING.md) | How to report defects and send PRs |
+| [llms.txt](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/llms.txt) · [AGENTS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/AGENTS.md) | One-page machine entry point: what it is, how to install, minimal loop, invariants, what not to do |
 | [keywords.txt](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/keywords.txt) | Explicit term list for retrieval / indexing |
 | [ai_oriented_a2a/](https://github.com/robotmarvin0706/ai-oriented-a2a/tree/main/ai_oriented_a2a) | Minimal installable stdlib helpers (canonical JSON, optional HMAC / replay / version checks) |
 | [ai_oriented_a2a/transport.py](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/ai_oriented_a2a/transport.py) | Stdlib HTTP binding: `send_message` client and `POST /a2a/message` request handler / server (import `ai_oriented_a2a.transport` explicitly) |
