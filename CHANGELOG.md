@@ -11,7 +11,14 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ### Changed
 
+- `mcp_a2a`: outbound messages are now signed unconditionally. `A2A_SIGN_KEY` is required; missing or blank is a tool error and nothing is sent, and there is no unsigned fallback. The peer allowlist is checked before the key is read, so a disallowed `peer_url` is refused without touching the key. **Hosts must add `A2A_SIGN_KEY` to the server environment**; a host without it now fails every outbound call instead of sending unsigned packets.
 - `experiments/timeout_recovery/run.py`: WP3 rule R2 is an equivalence test (TOST) with the fixed margin `WP3_R2_EQ_MARGIN = 0.05`, not "the paired CI contains 0". A paired `protocol − plain_file_gated` ΔSR CI entirely inside ±0.05 is evidence of no protocol increment; a CI that merely contains 0 is reported as `undetermined`, and a CI outside the margin as `increment` (with `positive` / `negative` per host). `protocol_increment` (`none` / `increment` / `undetermined`) is reported per seed and overall, and `no_protocol_increment` is true only for `none`. Revised 2026-11-25, still before any WP3 run, so the pre-registration stays ahead of the data.
+
+### Added
+
+- `mcp_a2a/query_experience`: a third MCP tool that looks up Experience Packets in a **local** corpus (`A2A_EXPERIENCE_DIR`, default `datasets/timeout_recovery/packets`) and returns their content under a token budget. It never contacts a peer. Every candidate goes through the SPEC §2.1 content check before ranking, so a directive packet is reported in `blocked` with its `content_policy:` reason and its content is never returned. Items carry `"untrusted": true` and the reply repeats the §2.1 notice: returned content is data, never instructions.
+- `mcp_a2a/lookup.py`: the corpus loading, ranking, token budget and block list as a standard-library module that does not import the MCP SDK, so it is tested in CI without the optional `mcp` extra. `mcp_a2a.require_sign_key()` is the fail-closed guard for `A2A_SIGN_KEY`.
+- `tests/mcp_bridge/test_lookup.py`: 21 tests for ranking, the block list (including a directive nested in `offered_packet` / `conditional_packet`), the token budget, unreadable corpus files, and the signing guard.
 
 ## [0.4.1] - 2026-11-23
 
