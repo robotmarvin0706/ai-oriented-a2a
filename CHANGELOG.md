@@ -11,6 +11,11 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [0.4.2] - 2026-11-25
 
+Library patch release, built from tag `v0.4.2`. The protocol version is unchanged (v0.4, on-wire `"0.4"`) and the wire format does not change: `schema/` is identical to 0.4.1 and `SPEC.md` gains only the RFC 2119/8174 boilerplate. Security fixes and documentation corrections: unattributable packets are rejected, redirects are refused, MCP output is sanitized, an over-long version segment and a non-result callback no longer produce a 500-shaped reply. Collects #61, #63 and #64.
+
+Published to PyPI on 2026-11-25, built from tag `v0.4.2`: https://pypi.org/project/ai-oriented-a2a/0.4.2/
+Also published to TestPyPI the same day: https://test.pypi.org/project/ai-oriented-a2a/0.4.2/
+
 ### Changed
 
 - `ai_oriented_a2a.transport` and `second_impl` client: redirects are refused. urllib follows a 303 by re-issuing the request as a GET and returning the new body, so a peer could point the client at an internal URL and hand its body back as the "reply", bypassing any allowlist. A 3xx now raises `TransportError` and only `http`/`https` URLs are accepted (audit P1-7).
