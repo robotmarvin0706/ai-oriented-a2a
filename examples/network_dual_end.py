@@ -91,6 +91,7 @@ from ai_oriented_a2a import (  # noqa: E402,F401
     check_incoming,
     check_replay,
     new_id,
+    RESERVED_PACKET_REF,
     packet_ref_of,
     parse_timestamp,
     reject_result,
@@ -210,7 +211,10 @@ class A2AHandler(A2ARequestHandler):
         self.received.append(msg)
 
         response: Dict[str, Any] = {"ack": True}
-        is_packet = "id" in msg and "absorption" in msg
+        # A packet is recognised by ``absorption`` alone: requiring ``id``
+        # here let a packet with a blank or missing id skip the content
+        # check entirely and answer with a bare ack (audit P0-3).
+        is_packet = "absorption" in msg
         # SPEC §2.1 (c): directive-like content in a packet or in a nested
         # packet of a negotiation message is rejected, never absorbed.
         policy = (
@@ -238,12 +242,21 @@ class A2AHandler(A2ARequestHandler):
         elif "constraints" in msg:
             response["type"] = "profile_ack"
         elif is_packet:
+            ref = packet_ref_of(msg)
             method = msg.get("absorption", {}).get("method")
-            if method not in MUST_METHODS and method not in ("local_adapter_hint", "trajectory_replay"):
+            if ref == RESERVED_PACKET_REF:
+                # SPEC: "unknown" MUST NOT be the packet_ref of a successful
+                # absorption, so an unattributable packet is rejected, not
+                # absorbed and not acked.
+                result = reject_result(
+                    msg, "missing_id: a packet with no usable id cannot be absorbed or attributed"
+                )
+            elif method not in MUST_METHODS and method not in ("local_adapter_hint", "trajectory_replay"):
                 result = reject_result(msg, f"unsupported method: {method}")
             else:
-                rng = random.Random(stable_seed(msg["id"]))
-                result = self.receiver.absorb(msg, rng)
+                packet = dict(msg, id=ref)
+                rng = random.Random(stable_seed(ref))
+                result = self.receiver.absorb(packet, rng)
             response = guard_result(guard_reserved_ref(result))
             if self.role == "receiver" and self.peer_url:
                 threading.Thread(target=self._post_to_peer, args=(response,), daemon=True).start()

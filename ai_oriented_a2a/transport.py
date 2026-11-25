@@ -158,6 +158,22 @@ def guard_result(result: Message) -> Message:
     return result
 
 
+def _is_legal_reply(reply: Message) -> bool:
+    """True when a handler's return value may be sent as a peer reply.
+
+    SPEC §3.1 requires an Absorption Result after a packet, and TRANSPORT
+    promises HTTP 500 with ``internal_error:`` for a handler that returns
+    something else. Without this check a callback returning ``None``, a list
+    or a bare dict would reach the wire with HTTP 200.
+    """
+    if not isinstance(reply, dict):
+        return False
+    if "status" in reply:
+        ref = reply.get("packet_ref")
+        return reply["status"] in ("absorbed", "rejected", "isolated") and isinstance(ref, str) and bool(ref.strip())
+    return reply.get("ack") is True
+
+
 class A2ARequestHandler(BaseHTTPRequestHandler):
     """``POST /a2a/message`` handler. Override ``handle_message``.
 
@@ -211,6 +227,13 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
                 seen=self._replay_cache() if self.replay_window is not None else None,
             )
             reply = rejected if rejected else guard_result(self.handle_message(msg))
+            if not _is_legal_reply(reply):
+                log.error(
+                    "A2A message handler returned %s, not an Absorption Result or ack; replying 500",
+                    type(reply).__name__,
+                )
+                self._reply(reject_result(msg, INTERNAL_ERROR_REASON), status=500)
+                return
         except Exception:
             # Log locally; never send exception text, paths, or tracebacks.
             log.exception("A2A message handler failed")

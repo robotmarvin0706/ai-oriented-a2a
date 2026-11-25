@@ -212,6 +212,19 @@ def make_server(
                 self._reply(core.rejected(None, core.REASON_INVALID_JSON), 400)
                 return
             try:
+                # SPEC §2.1: untrusted content is screened before any other
+                # decision, so a directive packet with a malformed id gets
+                # content_policy: here and not schema_invalid.
+                problem = (
+                    core.content_problem(msg)
+                    if core.kind_of(msg) in ("experience-packet", "negotiation")
+                    else None
+                )
+                if problem is not None:
+                    received.append(msg)
+                    reply = {"packet_ref": problem[0], "status": "rejected", "reason": problem[1]}
+                    self._reply(reply)
+                    return
                 rejection = core.check_incoming(msg, sign_key=sign_key, replay=replay, schema=schema)
                 if rejection is None:
                     received.append(msg)

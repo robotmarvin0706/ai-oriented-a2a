@@ -137,10 +137,12 @@ def version_problem(msg: Message) -> Optional[str]:
     value = msg["version"]
     if isinstance(value, str) and WIRE_VERSION_RE.match(value):
         major, minor = value.split(".")[:2]
-        if (int(major), int(minor)) in SUPPORTED_MAJOR_MINOR:
+        # Guard the int() conversion: a very long segment would raise past
+        # CPython's 4300-digit limit instead of returning a version problem.
+        if len(major) <= 9 and len(minor) <= 9 and (int(major), int(minor)) in SUPPORTED_MAJOR_MINOR:
             return None
     shown = value if isinstance(value, str) else json.dumps(value)
-    return f"{REASON_UNSUPPORTED_VERSION}: received {shown}"
+    return f"{REASON_UNSUPPORTED_VERSION}: received {shown[:60]}"
 
 
 # ---------------------------------------------------------------------------

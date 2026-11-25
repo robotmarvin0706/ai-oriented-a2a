@@ -124,9 +124,14 @@ def supported_version(value: str) -> bool:
 
     Supported lines are ``SUPPORTED_MAJOR_MINOR``: 0.4 (current) and 0.3.
     """
-    if not VERSION_PATTERN.match(value):
+    if not isinstance(value, str) or not VERSION_PATTERN.match(value):
         return False
     parts = value.split(".")
+    # A segment this long is not a version anyone implements, and int() would
+    # raise ValueError past CPython's 4300-digit limit (a 500 instead of the
+    # 200 + unsupported_version that TRANSPORT promises).
+    if any(len(part) > 9 for part in parts):
+        return False
     return (int(parts[0]), int(parts[1])) in SUPPORTED_MAJOR_MINOR
 
 
@@ -144,7 +149,7 @@ def version_rejection(msg: Dict[str, Any]) -> Optional[str]:
     raw = msg["version"]
     display = raw if isinstance(raw, str) else repr(raw)
     if not isinstance(raw, str) or not supported_version(raw):
-        return f"unsupported_version: received {display}"
+        return f"unsupported_version: received {display[:60]}"
     return None
 
 
