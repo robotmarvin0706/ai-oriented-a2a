@@ -9,6 +9,10 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+### Added
+
+- `docs/WP3_FINDINGS.md`: a short, non-normative statement of what WP3 measured. The gate has value (the ungated wrong packet costs the working host up to −0.539 ΔSR, the gated path +0.000, at the price of 27/30 rather than 30/30 accepted); the protocol layer adds no increment beyond the gate (paired `protocol − plain_file_gated` ΔSR 0.000, CI inside ±0.05, attribution 1.0 vs 0.0 the only difference); the retrieval path is cost-feasible only when the host parses to parameters and drops the text; safety holds. The note also lists what the result does not show (one scenario, one simulated tool, a rule-parser receiver, an equivalence margin rather than exact equality, attribution's value unmeasured).
+
 ### Changed
 
 - `experiments/timeout_recovery/run.py` and `wp3.py`: the CLI now prints `strategy model: <name>` as the first line of stdout, before the run. A smoke run's output file states which strategy model produced it (`deterministic-rule-host-v1` or `llm:<model>`), instead of leaving the reader to infer it from the tables.

@@ -66,6 +66,7 @@ v0.4 does not add message types or required fields. It tightens what a receiver 
 | [docs/COMPLIANCE.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/COMPLIANCE.md) | What an implementation must pass, and how to run the conformance suite against another implementation |
 | [docs/KNOWN_GAPS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
 | [docs/LLM_RECEIVER_OBSERVATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/LLM_RECEIVER_OBSERVATION.md) | One-off LLM-receiver run (not byte-reproducible): every arm reproduces except `raw_trajectory` |
+| [docs/WP3_FINDINGS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/WP3_FINDINGS.md) | What WP3 measured: the gate carries the value, the protocol layer adds no measurable increment |
 
 ## Status
 
