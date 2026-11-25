@@ -124,15 +124,15 @@ Use a fresh virtual environment. `--extra-index-url` lets pip fetch `jsonschema`
 
 ```bash
 python -m venv /tmp/a2a-check && . /tmp/a2a-check/bin/activate
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ai-oriented-a2a==0.3.2
-python -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"   # expect 0.3.2
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ai-oriented-a2a==0.4.2
+python -c "import ai_oriented_a2a; print(ai_oriented_a2a.__version__)"   # expect 0.4.2
 
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ai-oriented-a2a[schema]==0.3.2"
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "ai-oriented-a2a[schema]==0.4.2"
 python -c "import jsonschema, ai_oriented_a2a; print('schema extra ok')"
 deactivate
 ```
 
-After the PyPI upload, repeat the check with plain `pip install ai-oriented-a2a==0.3.2`.
+After the PyPI upload, repeat the check with plain `pip install ai-oriented-a2a==0.4.2`.
 
 ## After publishing
 
