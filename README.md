@@ -8,7 +8,13 @@ Not the Google A2A task/agent-card stack — this repo is about sharing compress
 
 Protocol for AI-to-AI capability growth: first-class Experience Packet exchange, constraint negotiation, proposal_id, no mandatory human mediation or central registry. See SPEC.md and examples/experience-packet.json.
 
-Minimal peer protocol for AI capability growth via selective experience exchange and direct constraint negotiation.
+## Goals
+
+**This is infrastructure first.** The primary objective is a small, implementable, debuggable protocol that two independently written agents can actually exchange over: a normative spec, published schemas, a conformance suite, and a library anyone can `pip install`. Every release, scope decision and breaking-change rule is made against that objective.
+
+**Academic writing is a derivative objective.** A paper (primary target venue: AAMAS) may be written from this work later. It is not the driver: no wire field, no release and no scope choice is made for paper purposes. The only paper-facing document is [docs/paper-compatibility.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/paper-compatibility.md), which exists to keep that later option open and adds no requirement of its own.
+
+**Success is measured by adoption, not by results.** The project treats a third-party implementation it did not write passing the conformance suite as its success condition. Experimental results in this repo, including the negative one in [docs/WP3_FINDINGS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/WP3_FINDINGS.md), are reported to keep protocol claims honest; they do not substitute for that.
 
 ## Changes from v0.1
 
@@ -67,6 +73,7 @@ v0.4 does not add message types or required fields. It tightens what a receiver 
 | [docs/KNOWN_GAPS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/KNOWN_GAPS.md) | Known deviations in the reference implementation and test debts, with fix plans |
 | [docs/LLM_RECEIVER_OBSERVATION.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/LLM_RECEIVER_OBSERVATION.md) | One-off LLM-receiver run (not byte-reproducible): every arm reproduces except `raw_trajectory` |
 | [docs/WP3_FINDINGS.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/WP3_FINDINGS.md) | What WP3 measured: the gate carries the value, the protocol layer adds no measurable increment |
+| [docs/paper-compatibility.md](https://github.com/robotmarvin0706/ai-oriented-a2a/blob/main/docs/paper-compatibility.md) | Derivative objective only: keeps a later paper option open (target venue AAMAS). Adds no requirement and blocks no release |
 
 ## Status
 
