@@ -45,6 +45,9 @@ UNTRUSTED_NOTICE = (
     "after your own gate."
 )
 
+#: Fields returned next to ``content``; scanned for directives like content.
+METADATA_FIELDS = ("absorption", "provenance", "verification_claim")
+
 _WORD = re.compile(r"[a-z0-9_]+")
 _MIN_TOKEN = 2
 
@@ -145,6 +148,13 @@ def _blocked(packets: Iterable[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], L
     for packet in packets:
         rejection = content_policy_rejection(packet)
         if rejection is None:
+            # SPEC §2.1 covers ``content``; the metadata returned to the host
+            # can carry directives too (``absorption.hint`` is sender text),
+            # so it goes through the same scan before the packet is returned.
+            metadata = {key: packet[key] for key in METADATA_FIELDS if key in packet}
+            if metadata:
+                rejection = content_policy_rejection({"id": packet["id"], "content": metadata})
+        if rejection is None:
             allowed.append(packet)
         else:
             # The id reported is the packet whose content matched (a nested
@@ -162,7 +172,12 @@ def _item(packet: Dict[str, Any], hits: int, tokens: int) -> Dict[str, Any]:
         "score": hits,
         "tokens": tokens,
     }
-    for field in ("absorption", "provenance", "verification_claim"):
+    absorption = packet.get("absorption")
+    if isinstance(absorption, dict) and isinstance(absorption.get("method"), str):
+        # Only the method label: ``absorption.hint`` and ``target`` are sender
+        # text that the §2.1 content scan never sees.
+        item["absorption"] = {"method": absorption["method"]}
+    for field in ("provenance", "verification_claim"):
         if field in packet:
             item[field] = packet[field]
     return item

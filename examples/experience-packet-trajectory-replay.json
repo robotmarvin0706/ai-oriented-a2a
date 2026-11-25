@@ -7,7 +7,8 @@
       "on timeout apply exponential backoff",
       "drop results older than 30s before synthesis"
     ],
-    "compressed_signal": "replay truncated search trajectory with backoff gates"
+    "compressed_signal": "replay truncated search trajectory with backoff gates",
+    "example_note": "trajectory_replay is OPTIONAL (SPEC §2). The reference receiver does not implement it and rejects this packet with an explicit reason; this file shows the message shape, not a successful absorption."
   },
   "absorption": {
     "method": "trajectory_replay",

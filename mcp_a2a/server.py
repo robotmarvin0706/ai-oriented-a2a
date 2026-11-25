@@ -118,13 +118,19 @@ def _send(msg: dict[str, Any], peer_url: str | None) -> dict[str, Any]:
         raise A2AToolError(f"signing required: {exc}") from exc
     schema = os.environ.get("A2A_NO_SCHEMA", "") not in ("1", "true", "yes")
     try:
-        return client.send(target, msg, sign_key=sign_key, with_nonce=True, schema=schema)
+        reply = client.send(target, msg, sign_key=sign_key, with_nonce=True, schema=schema)
     except client.LocalMessageError as exc:
         raise A2AToolError(f"local message invalid: {exc}") from exc
     except client.TransportError as exc:
         raise A2AToolError(f"transport failure: {exc}") from exc
     except client.ReplyProtocolError as exc:
         raise A2AToolError(f"peer reply violates the protocol: {exc}") from exc
+    if isinstance(reply, dict):
+        # A peer's reply is data from a peer: ``reason`` and the other strings
+        # are peer-controlled. Mark it so the host does not read them as
+        # instructions (SPEC §2.1 is about content, not about authorship).
+        reply = dict(reply, untrusted=True)
+    return reply
 
 
 @mcp.tool()
