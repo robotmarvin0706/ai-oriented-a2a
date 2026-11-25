@@ -1,4 +1,4 @@
-"""Tests for the one-way MCP bridge (mcp_a2a/server.py).
+"""Tests for the MCP bridge (mcp_a2a/server.py): outbound tools and the local lookup.
 
 Skipped unless the optional ``mcp`` extra is installed (Python >= 3.10) at
 ``mcp>=2`` (pyproject: ``mcp>=2,<3``). A missing or older ``mcp`` is a module
@@ -46,7 +46,7 @@ ABSORBED = json.loads((EXAMPLES / "absorption-result-absorbed.json").read_text()
 
 @pytest.fixture
 def peer(monkeypatch):
-    for name in ("A2A_PEER_URL", "A2A_ALLOWED_PEERS", "A2A_SIGN_KEY", "A2A_NO_SCHEMA"):
+    for name in ("A2A_PEER_URL", "A2A_ALLOWED_PEERS", "A2A_SIGN_KEY", "A2A_NO_SCHEMA", "A2A_EXPERIENCE_DIR"):
         monkeypatch.delenv(name, raising=False)
     servers = []
 
@@ -80,7 +80,7 @@ def test_tools_are_listed():
             return await client.list_tools()
 
     names = {tool.name for tool in asyncio.run(run()).tools}
-    assert names == {"send_packet", "report_absorption"}
+    assert names == {"send_packet", "report_absorption", "query_experience"}
 
 
 def test_send_packet_returns_bare_absorption_result(peer, monkeypatch):
@@ -100,6 +100,7 @@ def test_send_packet_returns_bare_absorption_result(peer, monkeypatch):
 def test_peer_rejection_is_returned_not_raised(peer, monkeypatch):
     _, url = peer()
     monkeypatch.setenv("A2A_PEER_URL", url)
+    monkeypatch.setenv("A2A_SIGN_KEY", "k")
     body = _call("send_packet", {"packet": dict(PACKET, absorption={"method": "parameter_delta"})}).structured_content
     assert body["status"] == "rejected" and body["reason"] == "unsupported method: parameter_delta"
 
@@ -107,6 +108,7 @@ def test_peer_rejection_is_returned_not_raised(peer, monkeypatch):
 def test_report_absorption_returns_peer_ack(peer, monkeypatch):
     _, url = peer()
     monkeypatch.setenv("A2A_ALLOWED_PEERS", url + "/")
+    monkeypatch.setenv("A2A_SIGN_KEY", "k")
     result = _call("report_absorption", {"result": ABSORBED, "peer_url": url})
     assert result.structured_content == {"ack": True, "type": "result_ack"}
 
@@ -136,6 +138,7 @@ def test_report_absorption_to_reference_receiver(monkeypatch, peer):
 def test_hard_gate_violation_is_a_tool_error(peer, monkeypatch):
     _, url = peer()
     monkeypatch.setenv("A2A_PEER_URL", url)
+    monkeypatch.setenv("A2A_SIGN_KEY", "k")
     text = _error_text(_call("report_absorption", {"result": {"packet_ref": "p", "status": "absorbed"}}))
     assert "hard-gate violation" in text
 
@@ -158,6 +161,7 @@ def test_peer_allowlist(peer, monkeypatch):
 def test_transport_failure_is_a_tool_error(peer, monkeypatch):
     _, url = peer()
     monkeypatch.setenv("A2A_PEER_URL", url)
+    monkeypatch.setenv("A2A_SIGN_KEY", "k")
     dead = "http://127.0.0.1:9"
     monkeypatch.setenv("A2A_ALLOWED_PEERS", dead)
     assert "transport failure" in _error_text(_call("send_packet", {"packet": PACKET, "peer_url": dead}))
@@ -178,3 +182,46 @@ def test_sign_key_is_not_a_tool_argument():
 
     for tool in asyncio.run(run()).tools:
         assert "sign_key" not in json.dumps(tool.input_schema)
+
+def test_send_without_sign_key_is_a_tool_error_and_sends_nothing(peer, monkeypatch):
+    server, url = peer()
+    monkeypatch.setenv("A2A_PEER_URL", url)
+    text = _error_text(_call("send_packet", {"packet": PACKET}))
+    assert "signing required" in text and "A2A_SIGN_KEY" in text
+    assert server.received == []
+
+
+def test_disallowed_peer_is_refused_before_the_key_is_read(peer, monkeypatch):
+    _, url = peer()
+    monkeypatch.setenv("A2A_PEER_URL", url)
+    # no A2A_SIGN_KEY: the allowlist must be what refuses this call
+    text = _error_text(_call("send_packet", {"packet": PACKET, "peer_url": "http://169.254.169.254"}))
+    assert "not in A2A_PEER_URL" in text and "signing required" not in text
+
+
+def test_query_experience_is_local_and_needs_no_peer(peer, monkeypatch):
+    monkeypatch.setenv("A2A_EXPERIENCE_DIR", str(REPO / "datasets" / "timeout_recovery" / "packets"))
+    result = _call("query_experience", {"query": "tool call timeout retry backoff"})
+    assert not result.is_error
+    body = result.structured_content
+    assert body["items"] and body["corpus"]["packets"] == 8
+    assert all(item["untrusted"] is True for item in body["items"])
+    assert "SPEC §2.1" in body["notice"]
+
+
+def test_query_experience_blocks_directive_packets(monkeypatch):
+    monkeypatch.setenv("A2A_EXPERIENCE_DIR", str(REPO / "datasets" / "content_policy" / "packets"))
+    body = _call("query_experience", {"query": "timeout retry"}).structured_content
+    assert body["items"] == []
+    assert {b["id"] for b in body["blocked"]} == {"pkt-synth-inject-001", "pkt-synth-inject-002"}
+
+
+def test_query_experience_refuses_an_empty_query(monkeypatch):
+    monkeypatch.setenv("A2A_EXPERIENCE_DIR", str(REPO / "datasets" / "timeout_recovery" / "packets"))
+    assert "non-empty query" in _error_text(_call("query_experience", {"query": "   "}))
+
+
+def test_query_experience_without_a_corpus_is_a_tool_error(monkeypatch, tmp_path):
+    monkeypatch.setenv("A2A_EXPERIENCE_DIR", str(tmp_path / "missing"))
+    text = _error_text(_call("query_experience", {"query": "timeout"}))
+    assert "experience corpus unavailable" in text
