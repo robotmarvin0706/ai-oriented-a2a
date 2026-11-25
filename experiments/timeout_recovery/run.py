@@ -1170,6 +1170,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = ap.parse_args(argv)
 
     factory, model_name = build_model_factory(args.model)
+    # Print before the run: a smoke test must say which strategy model produced
+    # the tables below, even if the run is interrupted.
+    print(f"strategy model: {model_name}")
     result = run_all(args.seeds, args.n, factory)
     if args.results is not None or args.summary_dir is not None or args.data_dir is not None:
         commit = args.commit or git_commit()

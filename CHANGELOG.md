@@ -11,6 +11,16 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ### Changed
 
+- `experiments/timeout_recovery/run.py` and `wp3.py`: the CLI now prints `strategy model: <name>` as the first line of stdout, before the run. A smoke run's output file states which strategy model produced it (`deterministic-rule-host-v1` or `llm:<model>`), instead of leaving the reader to infer it from the tables.
+
+### Added
+
+- `experiments/timeout_recovery/wp3.py`: the WP3 runner (non-normative) that produces the per-seed summary the pre-registered R1–R4 rules in `run.py` read. Arms `own_history`, `plain_file` (ungated counterfactual), `plain_file_gated`, `protocol`, `retrieval_bridge`; both hosts (`naive_host`, `working_host`); the five packets; seeds 42, 7, 2026, 31337 at N=30. `retrieval_bridge` uses `mcp_a2a.lookup` over a one-packet local corpus per row, so it measures the retrieval path's cost, not ranking quality. `protocol` runs in-process (the HTTP binding is covered by the transport and conformance tests) and `plain_file_gated` is charged the same resident-context cost as `protocol`, so the arms differ only in packet id and Absorption Result. No wire change: `SPEC.md`, `schema/` and `docs/` are untouched.
+- `experiments/timeout_recovery/WP3_RESULTS.md` and `wp3_summaries/`: the four-seed run and its verdicts. On every seed: **R1 pass** (the gate has value: the ungated wrong packet costs the working host up to -0.539 ΔSR, the gated path +0.000), **R2 `none`** (no increment from the protocol layer beyond the host gate; the paired CI is inside ±0.05), **R3 `false`** (one of the eight feasibility checks fails on every seed, `naive_host.a_amortized_extra_tokens_within_cap`; the retrieval path passes the other seven and passes under view B), **R4 pass** (injection rejected by `content_policy` on every gated arm, accepted in none).
+- `tests/experiments/test_wp3_runner.py`: summary shape, paired CI over cases, determinism, attribution (protocol only), `content_policy` on the gated arms, the ungated arm by design, the retrieval stats, and the rules running on a real run.
+
+### Changed
+
 - `mcp_a2a`: outbound messages are now signed unconditionally. `A2A_SIGN_KEY` is required; missing or blank is a tool error and nothing is sent, and there is no unsigned fallback. The peer allowlist is checked before the key is read, so a disallowed `peer_url` is refused without touching the key. **Hosts must add `A2A_SIGN_KEY` to the server environment**; a host without it now fails every outbound call instead of sending unsigned packets.
 - `experiments/timeout_recovery/run.py`: WP3 rule R2 is an equivalence test (TOST) with the fixed margin `WP3_R2_EQ_MARGIN = 0.05`, not "the paired CI contains 0". A paired `protocol − plain_file_gated` ΔSR CI entirely inside ±0.05 is evidence of no protocol increment; a CI that merely contains 0 is reported as `undetermined`, and a CI outside the margin as `increment` (with `positive` / `negative` per host). `protocol_increment` (`none` / `increment` / `undetermined`) is reported per seed and overall, and `no_protocol_increment` is true only for `none`. Revised 2026-11-25, still before any WP3 run, so the pre-registration stays ahead of the data.
 
