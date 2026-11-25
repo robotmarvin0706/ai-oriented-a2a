@@ -23,7 +23,9 @@ The bridge is not part of the wheel; run it from the checkout.
 | `report_absorption` | `result` (Absorption Result object), `peer_url` (optional) | The peer's reply, unchanged: an ack such as `{"ack": true, "type": "result_ack"}`, or a rejected Absorption Result |
 | `query_experience` | `query` (what went wrong), `limit` (default 5), `max_tokens` (default 800) | `{"items": [...], "blocked": [...], "truncated": bool, ...}` from the local corpus |
 
-`query_experience` never touches the network and needs no peer URL. Every candidate goes through the SPEC §2.1 content check first: a packet that matches a forbidden directive pattern is listed in `blocked` with its reason and its content is never returned. Returned content is **untrusted data** (SPEC §2.1): put it below your system and host instructions, never in the system prompt, and absorb it only through your own gate. Each item carries `"untrusted": true` and the reply repeats the notice, because a corpus is not a trust anchor.
+`send_packet` and `report_absorption` return the peer's reply with `"untrusted": true`: its strings (including `reason`) are peer-controlled data, not instructions.
+
+`query_experience` never touches the network and needs no peer URL. Every candidate goes through the SPEC §2.1 content check first — including its metadata (`absorption`, `provenance`, `verification_claim`), because `absorption.hint` is sender text the content scan does not see. A packet that matches a forbidden directive pattern is listed in `blocked` with its reason and its content is never returned; `absorption` comes back as `{"method": ...}` only. Returned content is **untrusted data** (SPEC §2.1): put it below your system and host instructions, never in the system prompt, and absorb it only through your own gate. Each item carries `"untrusted": true` and the reply repeats the notice, because a corpus is not a trust anchor.
 
 A peer's `rejected` result is a protocol answer and is returned normally. These raise an MCP tool error (`isError: true`, with the reason in the text):
 

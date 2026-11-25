@@ -92,7 +92,8 @@ def test_send_packet_returns_bare_absorption_result(peer, monkeypatch):
     body = result.structured_content
     assert body["packet_ref"] == PACKET["id"]
     assert body["status"] == "isolated"
-    assert set(body) == {"packet_ref", "status", "reason", "signature"}  # no wrapper
+    assert set(body) == {"packet_ref", "status", "reason", "signature", "untrusted"}  # no wrapper, marked untrusted
+    assert body["untrusted"] is True
     sent = server.received[0]
     assert core.verify(sent, "k") and sent["nonce"] and sent["timestamp"]
 
@@ -110,7 +111,7 @@ def test_report_absorption_returns_peer_ack(peer, monkeypatch):
     monkeypatch.setenv("A2A_ALLOWED_PEERS", url + "/")
     monkeypatch.setenv("A2A_SIGN_KEY", "k")
     result = _call("report_absorption", {"result": ABSORBED, "peer_url": url})
-    assert result.structured_content == {"ack": True, "type": "result_ack"}
+    assert result.structured_content == {"ack": True, "type": "result_ack", "untrusted": True}
 
 
 def test_report_absorption_to_reference_receiver(monkeypatch, peer):

@@ -42,6 +42,7 @@ import logging
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
@@ -82,6 +83,21 @@ class TransportError(Exception):
 # ---------------------------------------------------------------------------
 
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects instead of following them.
+
+    urllib follows 301/302 only for GET, but a 303 turns a POST into a GET and
+    returns the new body: a peer could point the client at an internal URL and
+    the client would hand its body back, bypassing ``A2A_ALLOWED_PEERS``.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirectHandler)
+
+
 def send_message(
     url: str,
     message: Message,
@@ -108,6 +124,8 @@ def send_message(
         message["timestamp"] = int(time.time())
     if sign_key:
         message = sign_message(message, sign_key)
+    if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
+        raise TransportError(f"unsupported scheme in {url!r}: only http and https are allowed")
     data = json.dumps(message).encode("utf-8")
     request = urllib.request.Request(
         url.rstrip("/") + ENDPOINT,
@@ -116,9 +134,13 @@ def send_message(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as resp:
+        with _OPENER.open(request, timeout=timeout) as resp:
             raw = resp.read()
     except urllib.error.HTTPError as exc:
+        if 300 <= exc.code < 400:
+            raise TransportError(
+                f"peer redirected ({exc.code}) to {exc.headers.get('Location')!r}; redirects are not followed"
+            ) from exc
         raw = exc.read()
     except (urllib.error.URLError, OSError) as exc:
         raise TransportError(f"cannot reach {url}: {exc}") from exc

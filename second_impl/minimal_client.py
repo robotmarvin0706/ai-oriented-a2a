@@ -89,9 +89,13 @@ def post(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as resp:
+        with _OPENER.open(request, timeout=timeout) as resp:
             status, raw = resp.status, resp.read()
     except urllib.error.HTTPError as exc:
+        if 300 <= exc.code < 400:
+            raise TransportError(
+                f"peer redirected ({exc.code}) to {exc.headers.get('Location')!r}; redirects are not followed"
+            ) from exc
         status, raw = exc.code, exc.read()
     except (urllib.error.URLError, OSError) as exc:
         raise TransportError(f"cannot reach {url}: {exc}") from exc
@@ -100,6 +104,16 @@ def post(
     except (UnicodeDecodeError, ValueError) as exc:
         raise TransportError(f"HTTP {status}: reply body is not JSON") from exc
     return status, body, msg
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse redirects; see ai_oriented_a2a.transport (audit P1-7)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirectHandler)
 
 
 def send(
