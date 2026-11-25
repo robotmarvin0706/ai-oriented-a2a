@@ -1,5 +1,9 @@
 # Absorption delta identity and single-step rollback (non-normative)
 
+**Normative level:** non-normative for the wire. Where this file restates a requirement from
+`SPEC.md`, the SPEC wording governs; the other MUST/SHOULD statements below describe the
+reference implementation and are guidance, not new wire requirements.
+
 This document does not change wire requirements in `SPEC.md`. It describes host-local state for an optional AbsorptionDelta produced by one absorption, so the change can be uniquely identified and rolled back in one step.
 
 ## AbsorptionDelta

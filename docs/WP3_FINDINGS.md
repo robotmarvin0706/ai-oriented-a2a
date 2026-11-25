@@ -1,20 +1,22 @@
-# WP3 findings: the gate carries the value, the protocol layer does not
+# WP3 findings: the gate has value, the protocol-layer increment is not measurable
 
 > Four seeds (42, 7, 2026, 31337) at N=30. Per-seed tables and the raw verdicts:
 > [`experiments/timeout_recovery/WP3_RESULTS.md`](../experiments/timeout_recovery/WP3_RESULTS.md).
 > The decision rules (R1–R4) were pre-registered in
 > [`experiments/timeout_recovery/run.py`](../experiments/timeout_recovery/run.py) before
 > any run and were not edited to fit the result. Reproduce with
-> `python -m experiments.timeout_recovery.wp3 --seeds 42 7 2026 31337 --n 30 --results --summary-dir`.
+> `python -m experiments.timeout_recovery.wp3 --seeds 42 7 2026 31337 --n 30 --results
+> --summary-dir /tmp/wp3-summaries` (an explicit temporary path: the bare flag defaults to
+> the committed directory).
 
 ## The claim
 
 In the one scenario this project can currently measure, **the value is in the host's
-absorption gate, not in the protocol layer.** An Experience Packet delivered over the
-protocol and the same content dropped in as a local file produce identical results once
-both pass through the gate; the only observable difference is attribution. This is a
-negative result about the envelope, and it is the strongest result the project has
-produced so far.
+absorption gate.** The protocol layer adds no measurable increment beyond it in this
+experiment — but see the next section: the two arms share one parser, so a zero is what
+the design produces, not something the measurement established. The gate result is the
+strongest evidence the project has; the envelope result is a limitation of the design
+until a non-SR endpoint is used.
 
 ## What was measured
 
@@ -33,33 +35,46 @@ Five arms on two hosts, five packets, four seeds:
 | `protocol` | the packet path: version check, content policy, gate, Absorption Result, attribution |
 | `retrieval_bridge` | local corpus lookup via the MCP tool, then the same gate |
 
-`plain_file_gated` is charged the same resident-context cost as `protocol`, so R2 compares
-decision behaviour, not accounting.
+`plain_file_gated` reads the packet's `content`, while `protocol` is charged the wrapped
+envelope (markers plus the full packet), so the protocol arm costs **+264 to +630
+tokens/case** more. The arms therefore differ in packaging cost and attribution; the
+parameter path is shared, which is the problem below.
+
+## Why R2 cannot be read as "no increment"
+
+Both arms call `parse_recovery_params` on the same content and then the same deterministic
+gate, so identical parameters follow, and a paired ΔSR of 0 is an identity rather than a
+measurement. Replacing the strategy model with a stub that returns `{}` makes the arms
+diverge immediately (−0.667, −0.667, −0.167 on seed 42), which shows the experiment detects
+**parser differences**, not the envelope. R2 can therefore neither confirm nor refute a
+protocol-layer increment; the honest statement is "this design cannot measure it".
 
 ## Findings
 
 ### 1. The gate has value (R1: pass on all four seeds)
 
 On a host that already recovers (`working_host`, SR 0.911–0.944), the ungated wrong packet
-costs **−0.539 / −0.528 / −0.472 / −0.539 ΔSR**. With the gate the same packet ends at
+costs **−0.628 / −0.578 / −0.556 / −0.606 ΔSR** (seeds 42/7/2026/31337). With the gate the same packet ends at
 **+0.000** and rolls back in 30/30 cases. The gate is not free: on `distilled_packet` it
-accepts 27/30 rather than 30/30, because three cases fail the isolation threshold — about
-+0.05 ΔSR given up in exchange for that protection.
+accepts 27, 26, 27 and 25 of 30 on the four seeds, because the remaining cases fail the
+isolation threshold — roughly +0.05 ΔSR given up per seed in exchange for that protection.
 
 ### 2. The protocol layer adds no measurable increment (R2: `none` on all four seeds)
 
 The paired `protocol − plain_file_gated` ΔSR on `distilled_packet` is **0.000** on both
-hosts, with the 95% CI inside the pre-registered equivalence margin of **±0.05**. R2 is a
-TOST-style equivalence test, so the precise claim is "no increment larger than 0.05 ΔSR",
-not "exactly zero"; a CI that merely contains 0 would have been reported as `undetermined`,
-not as evidence.
+hosts, with the 95% CI inside the pre-registered margin of **±0.05**. That is a CI-inclusion
+rule, not a TOST (there is no test statistic and no p-value), and with a degenerate CI of
+[0, 0] the margin says nothing about precision: the zero comes from the shared parser
+above, not from the margin. A run whose arms genuinely differ would need a margin at or
+above the N=30 noise floor (about 0.08) to read as equivalent.
 
 The one measured difference is **attribution**: policy changes traceable to a packet id
 with a matching Absorption Result are 1.0 for `protocol` and 0.0 for `plain_file_gated`.
 
 ### 3. The retrieval path is feasible only if the host drops the text (R3: `false`)
 
-Seven of the eight feasibility checks pass. The failure is
+Nine of the ten feasibility checks pass (four token views plus ΔSR, on each of two hosts).
+The failure is
 `naive_host.a_amortized_extra_tokens_within_cap`: with the retrieved text kept resident and
 absorption amortized over the N cases, the retrieval path costs 578.9 tokens/case against
 `own_history`'s 124.1 (cap 1.5× → 186.1). Under view B — parsed parameters only, text
@@ -86,8 +101,9 @@ and accepted in none. In the LLM-receiver run it never reached the model at all
 - **The value of attribution.** Auditability and accountability may justify the envelope
   even without a performance increment. That is a plausible reason to keep it; it is not
   measured here, and this note does not claim it.
-- **WP3 under an LLM receiver.** It would need about 1,200 model calls per seed. The rules'
-  decisions do not depend on the strategy model, but that is an argument, not a measurement.
+- **WP3 under an LLM receiver.** It would need about 240 model calls per seed (about 1,200
+  for four seeds). R1, R3 and R4 do not depend on the strategy model; R2 does, because its
+  zero is produced by the shared parser.
 
 ## Implications
 
