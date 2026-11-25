@@ -9,6 +9,8 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-25
+
 ### Changed
 
 - `ai_oriented_a2a.transport` and `second_impl` client: redirects are refused. urllib follows a 303 by re-issuing the request as a GET and returning the new body, so a peer could point the client at an internal URL and hand its body back as the "reply", bypassing any allowlist. A 3xx now raises `TransportError` and only `http`/`https` URLs are accepted (audit P1-7).
