@@ -478,6 +478,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     model_factory, model_name = build_model_factory(args.model)
+    # Print before the run, for the same reason as run.py: an output file must
+    # say which strategy model produced it.
+    print(f"strategy model: {model_name}")
     result = run_all(args.seeds, args.n, model_factory)
     write_outputs(result, args.seeds, args.n, args.results, args.summary_dir, args.commit or git_commit())
 

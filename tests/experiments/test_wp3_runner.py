@@ -127,3 +127,9 @@ def test_committed_results_match_a_fresh_run():
     # Everything after the environment block is data; it must not drift.
     tail = lambda text: text.split("## Seed 42", 1)[1]  # noqa: E731
     assert tail(committed) == tail(fresh)
+
+
+def test_cli_states_the_strategy_model(capsys):
+    assert wp3.main(["--seeds", "42", "--n", "1"]) == 0
+    first = capsys.readouterr().out.splitlines()[0]
+    assert first == "strategy model: deterministic-rule-host-v1"

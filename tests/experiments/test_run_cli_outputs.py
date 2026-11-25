@@ -36,6 +36,7 @@ def test_plain_run_writes_nothing_and_prints_tables():
         cwd=REPO, capture_output=True, text=True, check=True,
     )
     assert "| distilled_packet |" in proc.stdout and "seed 42" in proc.stdout
+    assert proc.stdout.startswith("strategy model: deterministic-rule-host-v1\n")
     assert "wrote " not in proc.stderr
     assert _snapshot() == before
 

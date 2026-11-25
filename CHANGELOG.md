@@ -9,6 +9,10 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+### Changed
+
+- `experiments/timeout_recovery/run.py` and `wp3.py`: the CLI now prints `strategy model: <name>` as the first line of stdout, before the run. A smoke run's output file states which strategy model produced it (`deterministic-rule-host-v1` or `llm:<model>`), instead of leaving the reader to infer it from the tables.
+
 ### Added
 
 - `experiments/timeout_recovery/wp3.py`: the WP3 runner (non-normative) that produces the per-seed summary the pre-registered R1–R4 rules in `run.py` read. Arms `own_history`, `plain_file` (ungated counterfactual), `plain_file_gated`, `protocol`, `retrieval_bridge`; both hosts (`naive_host`, `working_host`); the five packets; seeds 42, 7, 2026, 31337 at N=30. `retrieval_bridge` uses `mcp_a2a.lookup` over a one-packet local corpus per row, so it measures the retrieval path's cost, not ranking quality. `protocol` runs in-process (the HTTP binding is covered by the transport and conformance tests) and `plain_file_gated` is charged the same resident-context cost as `protocol`, so the arms differ only in packet id and Absorption Result. No wire change: `SPEC.md`, `schema/` and `docs/` are untouched.
