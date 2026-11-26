@@ -49,11 +49,22 @@ parser, gate and host are the same in both arms.
 - **Scope**: one simulated tool (`web_search` timeout recovery), a deterministic rule-parser receiver
   (`deterministic-rule-host-v1`), synthetic peers, a 50-packet pool with 3 effective packets and 4
   absorption slots. An LLM receiver, other tools and other pool compositions are not covered.
-- **Exchangeability gate not met** (§3, §15.1): no implementation outside this project reads these
-  envelope fields yet, so the envelope is a single-project format, not yet an interoperable protocol.
+- **Exchangeability gate (§3, §15.1): the cross-language part is met, third-party adoption is not.**
+  `impls/go/` — a clean-room Go implementation (standard library only) written from the normative
+  documents, not from this repository's Python code — passes `tests/conformance/` in external mode
+  (`63 passed`, 0 failed, 0 skipped, including the 16-thread concurrency case) and reproduces the exact
+  `history_selection` and `claim_selection` order of the Python runner on the frozen fixture
+  `tests/conformance/fixtures/selection_pools.json` (8 parity tests). Limitation: the Go ranker uses a
+  deterministic `packet.id` ascending tie-break where the runner uses a seeded RNG, so ties may be
+  ordered differently; the scores and the eligibility rules are identical. Independent third-party
+  adoption is still **not** met (0 external authors — the Go implementation lives in this repository and
+  is maintained by the same maintainers), so this is not yet an externally adopted protocol.
+  `experiments/selection/SELECTION_RESULTS.md` is a generated, frozen artifact of the run and is
+  intentionally not edited.
 
 ## Next
 
-Per §15 of the pre-registration: the independent second implementation (exchangeability gate) in
-parallel, then the expiry experiment (`docs/PREREG_EXPIRY.md`, its own pre-registration and merge before
-any run), then the budget experiment.
+Per §15 of the pre-registration: the second implementation is done for the cross-language part (see
+above); next is the expiry experiment (`docs/PREREG_EXPIRY.md`, its own pre-registration and merge
+before any run), then the budget experiment. Wiring `impls/go/` into CI (a Go toolchain job) would be a
+separate PR.

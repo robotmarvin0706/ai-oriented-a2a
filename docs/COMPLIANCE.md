@@ -2,10 +2,13 @@
 
 This document lists what an implementation of AI-oriented A2A v0.4 must do to interoperate, and which tests in this repository check it. It adds no wire requirements: the normative sources are [SPEC.md](../SPEC.md), [TRANSPORT.md](TRANSPORT.md) (HTTP binding and error semantics), [VERSIONING.md](VERSIONING.md), and the schemas in `schema/`.
 
-Two implementations are checked against these tests today:
+Three implementations are checked against these tests today:
 
 - the reference: `ai_oriented_a2a` plus `examples/network_dual_end.py`;
-- an independent second implementation: `second_impl/`, written from SPEC, TRANSPORT, and DATA_POLICY only, which does not import the reference code.
+- an independent second implementation: `second_impl/`, written from SPEC, TRANSPORT, and DATA_POLICY only, which does not import the reference code;
+- a non-Python implementation: `impls/go/`, a clean-room Go receiver and envelope ranker using the standard library only, written from SPEC.md, `schema/`, TRANSPORT, DATA_POLICY, VERSIONING, COMPLIANCE and PREREG_SELECTION §7, without reading or importing `ai_oriented_a2a/` or `second_impl/`.
+
+Authorship note: cross-language clean-room interoperability is met — `impls/go/` passes `tests/conformance/` in external mode and reproduces the Python runner's selection order on a frozen fixture. Independent third-party adoption is **not** met: the Go implementation lives in this repository and is maintained by the same maintainers (external authors: 0).
 
 ## 1. Minimum message support
 
@@ -40,7 +43,8 @@ All paths are under `tests/`. "Wire" tests talk HTTP to a running receiver and a
 | Test file | Kind | What a second implementation must satisfy |
 | --- | --- | --- |
 | `conformance/test_http_conformance.py` | wire, **required** | The 12 HTTP cases: unknown version (incl. `v0.3`) → 200 + rejected; reserved `unknown` ref; signature failure; replay only when enabled; ISO-8601 timestamps; missing nonce/timestamp with the window on; sign and replay independent; omitted version; invalid JSON → JSON body; incoming hard-gate violation; never absorb under `unknown`. |
-| `conformance/test_robustness.py` | wire, **required** | Since 0.3.3: non-finite `timestamp` (`NaN`, `Infinity`, `-Infinity`) with the window on → 200 + `replay_or_stale: invalid timestamp`; missing / invalid / too-large `Content-Length` → 413 + `payload_too_large:` without reading the body; a body of exactly 1048576 bytes is accepted; negotiation → rejected `negotiation_unsupported:` (never a bare ack). The 16-thread concurrency case needs an in-process threaded server, so it runs only for `reference` (`ai_oriented_a2a.transport.make_server`) and `second_impl` (`second_impl.minimal_client.make_server`), not for `external`. |
+| `conformance/test_robustness.py` | wire, **required** | Since 0.3.3: non-finite `timestamp` (`NaN`, `Infinity`, `-Infinity`) with the window on → 200 + `replay_or_stale: invalid timestamp`; missing / invalid / too-large `Content-Length` → 413 + `payload_too_large:` without reading the body; a body of exactly 1048576 bytes is accepted; negotiation → rejected `negotiation_unsupported:` (never a bare ack). The 16-thread concurrency case needs a threaded server: it runs for `reference` (`ai_oriented_a2a.transport.make_server`) and `second_impl` (`second_impl.minimal_client.make_server`) in-process, and since 0.4.3 also for `external` when the peer is started via `A2A_PEER_CMD` (the runner launches a fresh process per configuration). It still does not run for an `A2A_PEER_URL`-only peer, whose threading model the suite cannot control. |
+| `conformance/test_selection_parity.py` | artifact + Go | The Go `rank` subcommand against the Python selection reference (`experiments.selection.sim`) on the frozen pool `tests/conformance/fixtures/selection_pools.json`: `history_score` / `claim_eligible` and the resulting `history_selection` / `claim_selection` order must match exactly, with a deterministic `packet.id` ascending tie-break in place of the runner's seeded RNG. Skipped when `go` is not on `PATH` and `A2A_GO_BIN` is unset. |
 | `conformance/test_untrusted_content.py` | wire, **required** for v0.4 | Since 0.4.0 (SPEC §2.1): the two `datasets/content_policy/` counter-examples, posted standalone and nested as `offered_packet`, → 200 + rejected, reason starting with `content_policy:`, `packet_ref` = the packet `id`, never `absorbed`; on-wire `"0.3"` and `"0.4"` are both accepted; a `"0.3"` message is still checked for content. |
 | `conformance/test_core_constraints.py` | wire, **required** for v0.4 | Since 0.4.0 (SPEC §3.0), with the receiver's core constraints set to `["no parameter_delta"]` where needed: a propose or counter targeting it → 200 + rejected `immutable_constraint:` (exact match only; `0.3` and `0.4` alike); the 4th message with one `negotiation_id` → `negotiation_limit:`, the first 3 are not; messages without `negotiation_id` (different `proposal_id`s) are never limited; the cap is per id; `content_policy:` beats `immutable_constraint:`, and `negotiation_limit:` beats `immutable_constraint:`; a profile with `core_constraints` is accepted. Every id is fresh per test. |
 | `interop/test_negotiation_limits.py` | artifact + reference + second_impl | `core_constraints`, `negotiation_id` (all four branches) and counter `target_constraint` are OPTIONAL in the schemas; old messages still validate. Default cap 3 in both implementations, overridable; no counting without `negotiation_id`; bounded table; per-peer rate limit off by default; both implementations give the same reason on the same message sequences. |
@@ -84,6 +88,15 @@ Wrap your binary in a small script if its flags differ. For example, both of the
 A2A_CONFORMANCE_IMPLS=external A2A_PEER_CMD="python3 second_impl/minimal_client.py serve --port {port}" pytest tests/conformance/ -q
 A2A_CONFORMANCE_IMPLS=external A2A_PEER_CMD="python3 examples/network_dual_end.py --role receiver --port {port}" pytest tests/conformance/ -q
 ```
+
+The Go implementation in `impls/go/` is a single static binary with no dependencies:
+
+```bash
+cd impls/go && go build -o /tmp/a2a-go .
+cd ../.. && A2A_CONFORMANCE_IMPLS=external A2A_PEER_CMD="/tmp/a2a-go serve --port {port}" pytest tests/conformance/ -q
+```
+
+That run gives `63 passed` (0 failed, 0 skipped), including the 16-thread concurrency case and the 8 selection-parity tests. `pytest tests/conformance/test_selection_parity.py -q` alone gives `8 passed`.
 
 **A running peer.** Point the suite at a URL and describe its configuration with `A2A_PEER_SIGN_KEY` and `A2A_PEER_REPLAY_WINDOW` (leave them unset for a peer with both checks off), and since 0.4.0 its core constraints with `A2A_PEER_CORE_CONSTRAINTS` as a JSON array (the core-constraint cases expect `["no parameter_delta"]`). Tests that need another configuration are skipped, and because the peer keeps its replay state, restart it before each run.
 

@@ -12,7 +12,7 @@ Merge plan (tracked in [docs/KNOWN_GAPS.md](../../docs/KNOWN_GAPS.md)): remove t
 
 ## Robustness cases (not duplicated)
 
-`test_robustness.py` (since 0.3.3) has no copy elsewhere: non-finite timestamps, the 413 request-body limit, negotiation rejection, and 16 concurrent requests with distinct nonces. The first three use `start_receiver`. The concurrency case needs a `ThreadingHTTPServer`, and the `reference` receiver of `start_receiver` is `examples/network_dual_end.py` on a synchronous `HTTPServer`, so it uses its own fixture: `ai_oriented_a2a.transport.make_server` for `reference` and `second_impl.minimal_client.make_server` for `second_impl` (no `external` mode).
+`test_robustness.py` (since 0.3.3) has no copy elsewhere: non-finite timestamps, the 413 request-body limit, negotiation rejection, and 16 concurrent requests with distinct nonces. The first three use `start_receiver`. The concurrency case needs a `ThreadingHTTPServer`, and the `reference` receiver of `start_receiver` is `examples/network_dual_end.py` on a synchronous `HTTPServer`, so it uses its own fixture: `ai_oriented_a2a.transport.make_server` for `reference` and `second_impl.minimal_client.make_server` for `second_impl`. When `A2A_PEER_CMD` is set, the same case also runs against `external`: the peer is started as a fresh process on a free port (`shlex.split(template.format(port=port))` plus `--replay-window 600`, `subprocess.Popen` with `DEVNULL`, wait for the port, terminate and wait in teardown), so the implementation under test must genuinely serve 16 threads × 8 distinct nonces. An `A2A_PEER_URL`-only external peer is still not covered (its replay window is not ours to choose).
 
 ## Untrusted content cases (not duplicated)
 
