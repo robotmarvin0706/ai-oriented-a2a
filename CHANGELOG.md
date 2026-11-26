@@ -11,6 +11,8 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ### Added
 
+- `experiments/selection/`: runner, analysis and generated results of the packet-selection experiment, implementing `docs/PREREG_SELECTION.md` as merged (75acb59) with no amendment. Primary contrast `D1 − C` on `naive_host`: +0.447, 95% CI [+0.401, +0.488] over 160 runs, verdict `supported: envelope-informed selection improves plateau SR by at least the margin`; V1 and V2 pass. Writes nothing by default (`--results`, `--summary-dir`). `experiments/timeout_recovery/` is unchanged.
+- `docs/PROTOCOL_LAYER_VALUE.md`: non-normative summary of the selection result, its caveats (the host gate still rejects every harmful packet; token cost) and the exchangeability gate, which is not met.
 - `docs/PREREG_SELECTION.md`: pre-registration of the envelope-informed packet-selection experiment (non-normative). Primary contrast `history_selection − random_selection` on plateau SR, one margin δ = 0.10, a scarce pool (3 effective packets in 50, 4 absorption slots) so the endpoint cannot saturate, 4 seeds × 40 runs × 200 tasks with a power calculation, an envelope-shuffle falsification check and a content-stub sanity check, noisy `prior_outcomes` and a dishonest peer. No runs before it is merged; the WP3 rules in `experiments/timeout_recovery/run.py` stay frozen.
 
 ## [0.4.2] - 2026-11-25

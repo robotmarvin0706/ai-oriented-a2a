@@ -1,0 +1,1377 @@
+{
+ "delta": 0.1,
+ "experiment": "packet-selection (PREREG_SELECTION experiment 1)",
+ "model": "deterministic-rule-host-v1",
+ "prereg_file_commit": "c04e5030bbbe5525899d8fb5bca2d3b41c53b1f5",
+ "prereg_merge_commit": "75acb59262cba1ae4439430d140653835641359f",
+ "result": {
+  "headline": {
+   "contrast": "D1-C",
+   "half_width": 0.0434,
+   "host": "naive_host",
+   "noisier_than_planned": false,
+   "v1": "pass",
+   "v2": "pass",
+   "verdict": {
+    "headline": "supported: envelope-informed selection improves plateau SR by at least the margin",
+    "information_label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+    "information_rule": "R1a",
+    "label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+    "reason": "",
+    "rule": "R1a"
+   }
+  },
+  "hosts": {
+   "naive_host": {
+    "arms": {
+     "A": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       }
+      },
+      "arm": "A",
+      "attributed_changes": 0,
+      "attribution_rate": null,
+      "auc": 0.3402,
+      "content_policy_rejections": 0,
+      "name": "no_sharing",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.3369,
+      "plateau_sr_per_seed": {
+       "2026": 0.3326,
+       "31337": 0.3343,
+       "42": 0.3386,
+       "7": 0.3422
+      },
+      "policy_changes": 0,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "runs": 160,
+      "runs_with_effective_absorbed": 0,
+      "selection_tokens": 0.0,
+      "slot_tokens": 0.0,
+      "slots_before_first_effective_mean": null,
+      "tasks_to_plateau": 29.8438,
+      "tokens_to_plateau": 14806.75,
+      "total_tokens": 98652.25
+     },
+     "B": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.2188,
+         "total": 35
+        },
+        "rolled_back": {
+         "per_run": 0.0312,
+         "total": 5
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.7812,
+         "total": 125
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.2687,
+         "total": 43
+        },
+        "rolled_back": {
+         "per_run": 2.7,
+         "total": 432
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "B",
+      "attributed_changes": 0,
+      "attribution_rate": 0.0,
+      "auc": 0.4547,
+      "content_policy_rejections": 0,
+      "name": "local_file_gated",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.48,
+      "plateau_sr_per_seed": {
+       "2026": 0.4285,
+       "31337": 0.4952,
+       "42": 0.5112,
+       "7": 0.4853
+      },
+      "policy_changes": 78,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 562,
+      "runs": 160,
+      "runs_with_effective_absorbed": 35,
+      "selection_tokens": 0.0,
+      "slot_tokens": 4194.7563,
+      "slots_before_first_effective_mean": 1.6571,
+      "tasks_to_plateau": 39.0625,
+      "tokens_to_plateau": 25495.7125,
+      "total_tokens": 132345.8813
+     },
+     "C": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.2188,
+         "total": 35
+        },
+        "rolled_back": {
+         "per_run": 0.0312,
+         "total": 5
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.7812,
+         "total": 125
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.2687,
+         "total": 43
+        },
+        "rolled_back": {
+         "per_run": 2.7,
+         "total": 432
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "C",
+      "attributed_changes": 78,
+      "attribution_rate": 1.0,
+      "auc": 0.4547,
+      "content_policy_rejections": 0,
+      "name": "protocol_blind",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.48,
+      "plateau_sr_per_seed": {
+       "2026": 0.4285,
+       "31337": 0.4952,
+       "42": 0.5112,
+       "7": 0.4853
+      },
+      "policy_changes": 78,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 562,
+      "runs": 160,
+      "runs_with_effective_absorbed": 35,
+      "selection_tokens": 0.0,
+      "slot_tokens": 5755.9875,
+      "slots_before_first_effective_mean": 1.6571,
+      "tasks_to_plateau": 39.0625,
+      "tokens_to_plateau": 31180.6125,
+      "total_tokens": 166833.05
+     },
+     "D1": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.9875,
+         "total": 158
+        },
+        "rolled_back": {
+         "per_run": 1.0437,
+         "total": 167
+        },
+        "selected": {
+         "per_run": 2.0312,
+         "total": 325
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 1.6438,
+         "total": 263
+        },
+        "selected": {
+         "per_run": 1.6438,
+         "total": 263
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0125,
+         "total": 2
+        },
+        "rolled_back": {
+         "per_run": 0.3125,
+         "total": 50
+        },
+        "selected": {
+         "per_run": 0.325,
+         "total": 52
+        }
+       }
+      },
+      "arm": "D1",
+      "attributed_changes": 160,
+      "attribution_rate": 1.0,
+      "auc": 0.8441,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_history",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9265,
+      "plateau_sr_per_seed": {
+       "2026": 0.9361,
+       "31337": 0.9068,
+       "42": 0.9539,
+       "7": 0.9093
+      },
+      "policy_changes": 160,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 480,
+      "runs": 160,
+      "runs_with_effective_absorbed": 153,
+      "selection_tokens": 24331.2438,
+      "slot_tokens": 7289.9125,
+      "slots_before_first_effective_mean": 1.1242,
+      "tasks_to_plateau": 52.1875,
+      "tokens_to_plateau": 61248.3187,
+      "total_tokens": 272626.1562
+     },
+     "D2": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 1.025,
+         "total": 164
+        },
+        "rolled_back": {
+         "per_run": 1.5562,
+         "total": 249
+        },
+        "selected": {
+         "per_run": 2.5812,
+         "total": 413
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 1.4187,
+         "total": 227
+        },
+        "selected": {
+         "per_run": 1.4187,
+         "total": 227
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       }
+      },
+      "arm": "D2",
+      "attributed_changes": 164,
+      "attribution_rate": 1.0,
+      "auc": 0.9274,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_claim",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9429,
+      "plateau_sr_per_seed": {
+       "2026": 0.9569,
+       "31337": 0.9056,
+       "42": 0.9554,
+       "7": 0.9537
+      },
+      "policy_changes": 164,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 476,
+      "runs": 160,
+      "runs_with_effective_absorbed": 157,
+      "selection_tokens": 24331.5062,
+      "slot_tokens": 8440.85,
+      "slots_before_first_effective_mean": 0.2166,
+      "tasks_to_plateau": 30.3125,
+      "tokens_to_plateau": 44142.4313,
+      "total_tokens": 295423.3563
+     },
+     "V1": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "V1",
+      "attributed_changes": 0,
+      "attribution_rate": null,
+      "auc": 0.3402,
+      "content_policy_rejections": 0,
+      "name": "protocol_blind_stub",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.3369,
+      "plateau_sr_per_seed": {
+       "2026": 0.3326,
+       "31337": 0.3343,
+       "42": 0.3386,
+       "7": 0.3422
+      },
+      "policy_changes": 0,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "runs": 160,
+      "runs_with_effective_absorbed": 0,
+      "selection_tokens": 0.0,
+      "slot_tokens": 519.8125,
+      "slots_before_first_effective_mean": null,
+      "tasks_to_plateau": 29.8438,
+      "tokens_to_plateau": 14958.5688,
+      "total_tokens": 99172.0625
+     },
+     "V2": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.2188,
+         "total": 35
+        },
+        "rolled_back": {
+         "per_run": 0.0688,
+         "total": 11
+        },
+        "selected": {
+         "per_run": 0.2875,
+         "total": 46
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0063,
+         "total": 1
+        },
+        "rolled_back": {
+         "per_run": 0.7562,
+         "total": 121
+        },
+        "selected": {
+         "per_run": 0.7625,
+         "total": 122
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.2687,
+         "total": 43
+        },
+        "rolled_back": {
+         "per_run": 2.6812,
+         "total": 429
+        },
+        "selected": {
+         "per_run": 2.95,
+         "total": 472
+        }
+       }
+      },
+      "arm": "V2",
+      "attributed_changes": 79,
+      "attribution_rate": 1.0,
+      "auc": 0.4644,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_history_shuffled",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.4857,
+      "plateau_sr_per_seed": {
+       "2026": 0.5055,
+       "31337": 0.4692,
+       "42": 0.4568,
+       "7": 0.5112
+      },
+      "policy_changes": 79,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 561,
+      "runs": 160,
+      "runs_with_effective_absorbed": 35,
+      "selection_tokens": 24331.2188,
+      "slot_tokens": 5841.55,
+      "slots_before_first_effective_mean": 1.2,
+      "tasks_to_plateau": 38.9062,
+      "tokens_to_plateau": 39196.0125,
+      "total_tokens": 193182.0812
+     }
+    },
+    "contrasts": {
+     "B-A": {
+      "contrast": "B-A",
+      "estimate": 0.1431,
+      "half_width": 0.0371,
+      "hi": 0.1789,
+      "host": "naive_host",
+      "lo": 0.1047,
+      "per_seed": {
+       "2026": 0.0959,
+       "31337": 0.1608,
+       "42": 0.1727,
+       "7": 0.1431
+      },
+      "role": "secondary (content value)",
+      "runs": 160
+     },
+     "C-B": {
+      "contrast": "C-B",
+      "estimate": 0.0,
+      "half_width": 0.0,
+      "hi": 0.0,
+      "host": "naive_host",
+      "lo": 0.0,
+      "per_seed": {
+       "2026": 0.0,
+       "31337": 0.0,
+       "42": 0.0,
+       "7": 0.0
+      },
+      "role": "secondary (identical SR by design)",
+      "runs": 160
+     },
+     "C-V1": {
+      "contrast": "C-V1",
+      "estimate": 0.1431,
+      "half_width": 0.0377,
+      "hi": 0.1822,
+      "host": "naive_host",
+      "lo": 0.1068,
+      "per_seed": {
+       "2026": 0.0959,
+       "31337": 0.1608,
+       "42": 0.1727,
+       "7": 0.1431
+      },
+      "role": "validity V1",
+      "runs": 160
+     },
+     "D1-C": {
+      "contrast": "D1-C",
+      "estimate": 0.4465,
+      "half_width": 0.0434,
+      "hi": 0.4884,
+      "host": "naive_host",
+      "lo": 0.4015,
+      "per_seed": {
+       "2026": 0.5076,
+       "31337": 0.4117,
+       "42": 0.4427,
+       "7": 0.4241
+      },
+      "role": "primary",
+      "runs": 160
+     },
+     "D2-C": {
+      "contrast": "D2-C",
+      "estimate": 0.4629,
+      "half_width": 0.0428,
+      "hi": 0.5049,
+      "host": "naive_host",
+      "lo": 0.4193,
+      "per_seed": {
+       "2026": 0.5284,
+       "31337": 0.4104,
+       "42": 0.4442,
+       "7": 0.4685
+      },
+      "role": "secondary",
+      "runs": 160
+     },
+     "V2-C": {
+      "contrast": "V2-C",
+      "estimate": 0.0056,
+      "half_width": 0.0538,
+      "hi": 0.0585,
+      "host": "naive_host",
+      "lo": -0.0491,
+      "per_seed": {
+       "2026": 0.077,
+       "31337": -0.026,
+       "42": -0.0544,
+       "7": 0.026
+      },
+      "role": "validity V2",
+      "runs": 160
+     }
+    },
+    "token_contrasts": {
+     "C-B:tokens_to_plateau": {
+      "contrast": "C-B",
+      "estimate": 5684.9,
+      "field": "tokens_to_plateau",
+      "hi": 7426.1625,
+      "host": "naive_host",
+      "lo": 4076.3688
+     },
+     "C-B:total_tokens": {
+      "contrast": "C-B",
+      "estimate": 34487.1687,
+      "field": "total_tokens",
+      "hi": 40286.975,
+      "host": "naive_host",
+      "lo": 28338.025
+     },
+     "D1-C:tokens_to_plateau": {
+      "contrast": "D1-C",
+      "estimate": 30067.7062,
+      "field": "tokens_to_plateau",
+      "hi": 35314.0938,
+      "host": "naive_host",
+      "lo": 24500.9813
+     },
+     "D1-C:total_tokens": {
+      "contrast": "D1-C",
+      "estimate": 105793.1062,
+      "field": "total_tokens",
+      "hi": 119081.0063,
+      "host": "naive_host",
+      "lo": 92862.2625
+     },
+     "D2-C:tokens_to_plateau": {
+      "contrast": "D2-C",
+      "estimate": 12961.8188,
+      "field": "tokens_to_plateau",
+      "hi": 17967.6562,
+      "host": "naive_host",
+      "lo": 7141.5625
+     },
+     "D2-C:total_tokens": {
+      "contrast": "D2-C",
+      "estimate": 128590.3062,
+      "field": "total_tokens",
+      "hi": 141745.3813,
+      "host": "naive_host",
+      "lo": 115493.1625
+     }
+    },
+    "v1_on_this_host": "pass",
+    "v2_on_this_host": "pass",
+    "verdicts": {
+     "D1-C": {
+      "headline": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "information_label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "information_rule": "R1a",
+      "label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "reason": "",
+      "rule": "R1a"
+     },
+     "D2-C": {
+      "headline": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "information_label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "information_rule": "R1a",
+      "label": "supported: envelope-informed selection improves plateau SR by at least the margin",
+      "reason": "",
+      "rule": "R1a"
+     }
+    }
+   },
+   "working_host": {
+    "arms": {
+     "A": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       }
+      },
+      "arm": "A",
+      "attributed_changes": 0,
+      "attribution_rate": null,
+      "auc": 0.9468,
+      "content_policy_rejections": 0,
+      "name": "no_sharing",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9464,
+      "plateau_sr_per_seed": {
+       "2026": 0.9483,
+       "31337": 0.9432,
+       "42": 0.9467,
+       "7": 0.9473
+      },
+      "policy_changes": 0,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "runs": 160,
+      "runs_with_effective_absorbed": 0,
+      "selection_tokens": 0.0,
+      "slot_tokens": 0.0,
+      "slots_before_first_effective_mean": null,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 13680.5,
+      "total_tokens": 108823.5
+     },
+     "B": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0187,
+         "total": 3
+        },
+        "rolled_back": {
+         "per_run": 0.2313,
+         "total": 37
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.7812,
+         "total": 125
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 2.9688,
+         "total": 475
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "B",
+      "attributed_changes": 0,
+      "attribution_rate": 0.0,
+      "auc": 0.947,
+      "content_policy_rejections": 0,
+      "name": "local_file_gated",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.947,
+      "plateau_sr_per_seed": {
+       "2026": 0.9494,
+       "31337": 0.9444,
+       "42": 0.9467,
+       "7": 0.9473
+      },
+      "policy_changes": 3,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 637,
+      "runs": 160,
+      "runs_with_effective_absorbed": 3,
+      "selection_tokens": 0.0,
+      "slot_tokens": 4086.4688,
+      "slots_before_first_effective_mean": 1.3333,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 14726.2625,
+      "total_tokens": 113973.4688
+     },
+     "C": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0187,
+         "total": 3
+        },
+        "rolled_back": {
+         "per_run": 0.2313,
+         "total": 37
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.7812,
+         "total": 125
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 2.9688,
+         "total": 475
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "C",
+      "attributed_changes": 3,
+      "attribution_rate": 1.0,
+      "auc": 0.947,
+      "content_policy_rejections": 0,
+      "name": "protocol_blind",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.947,
+      "plateau_sr_per_seed": {
+       "2026": 0.9494,
+       "31337": 0.9444,
+       "42": 0.9467,
+       "7": 0.9473
+      },
+      "policy_changes": 3,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 637,
+      "runs": 160,
+      "runs_with_effective_absorbed": 3,
+      "selection_tokens": 0.0,
+      "slot_tokens": 5213.0,
+      "slots_before_first_effective_mean": 1.3333,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 15067.7,
+      "total_tokens": 116393.75
+     },
+     "D1": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0563,
+         "total": 9
+        },
+        "rolled_back": {
+         "per_run": 1.725,
+         "total": 276
+        },
+        "selected": {
+         "per_run": 1.7812,
+         "total": 285
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 1.975,
+         "total": 316
+        },
+        "selected": {
+         "per_run": 1.975,
+         "total": 316
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.2437,
+         "total": 39
+        },
+        "selected": {
+         "per_run": 0.2437,
+         "total": 39
+        }
+       }
+      },
+      "arm": "D1",
+      "attributed_changes": 9,
+      "attribution_rate": 1.0,
+      "auc": 0.9474,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_history",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9471,
+      "plateau_sr_per_seed": {
+       "2026": 0.9492,
+       "31337": 0.9447,
+       "42": 0.9473,
+       "7": 0.9473
+      },
+      "policy_changes": 9,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 631,
+      "runs": 160,
+      "runs_with_effective_absorbed": 9,
+      "selection_tokens": 24331.2438,
+      "slot_tokens": 5552.35,
+      "slots_before_first_effective_mean": 1.6667,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 21503.7062,
+      "total_tokens": 145429.8438
+     },
+     "D2": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.125,
+         "total": 20
+        },
+        "rolled_back": {
+         "per_run": 2.4562,
+         "total": 393
+        },
+        "selected": {
+         "per_run": 2.5812,
+         "total": 413
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 1.4187,
+         "total": 227
+        },
+        "selected": {
+         "per_run": 1.4187,
+         "total": 227
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.0,
+         "total": 0
+        }
+       }
+      },
+      "arm": "D2",
+      "attributed_changes": 20,
+      "attribution_rate": 1.0,
+      "auc": 0.9482,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_claim",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9476,
+      "plateau_sr_per_seed": {
+       "2026": 0.9506,
+       "31337": 0.945,
+       "42": 0.9468,
+       "7": 0.9478
+      },
+      "policy_changes": 20,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 620,
+      "runs": 160,
+      "runs_with_effective_absorbed": 19,
+      "selection_tokens": 24331.5062,
+      "slot_tokens": 5684.85,
+      "slots_before_first_effective_mean": 0.8947,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 22159.6063,
+      "total_tokens": 155710.6063
+     },
+     "V1": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.25,
+         "total": 40
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 0.7812,
+         "total": 125
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "selected": {
+         "per_run": 2.9688,
+         "total": 475
+        }
+       }
+      },
+      "arm": "V1",
+      "attributed_changes": 0,
+      "attribution_rate": null,
+      "auc": 0.9468,
+      "content_policy_rejections": 0,
+      "name": "protocol_blind_stub",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9464,
+      "plateau_sr_per_seed": {
+       "2026": 0.9483,
+       "31337": 0.9432,
+       "42": 0.9467,
+       "7": 0.9473
+      },
+      "policy_changes": 0,
+      "rollback_success_rate": null,
+      "rollbacks": 0,
+      "runs": 160,
+      "runs_with_effective_absorbed": 0,
+      "selection_tokens": 0.0,
+      "slot_tokens": 519.8125,
+      "slots_before_first_effective_mean": null,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 13810.3625,
+      "total_tokens": 109343.3125
+     },
+     "V2": {
+      "absorption": {
+       "effective": {
+        "absorbed": {
+         "per_run": 0.0063,
+         "total": 1
+        },
+        "rolled_back": {
+         "per_run": 0.2687,
+         "total": 43
+        },
+        "selected": {
+         "per_run": 0.275,
+         "total": 44
+        }
+       },
+       "harmful": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 0.8063,
+         "total": 129
+        },
+        "selected": {
+         "per_run": 0.8063,
+         "total": 129
+        }
+       },
+       "mediocre": {
+        "absorbed": {
+         "per_run": 0.0,
+         "total": 0
+        },
+        "rolled_back": {
+         "per_run": 2.9188,
+         "total": 467
+        },
+        "selected": {
+         "per_run": 2.9188,
+         "total": 467
+        }
+       }
+      },
+      "arm": "V2",
+      "attributed_changes": 1,
+      "attribution_rate": 1.0,
+      "auc": 0.9468,
+      "content_policy_rejections": 0,
+      "name": "protocol_informed_history_shuffled",
+      "plateau_not_reached": 0,
+      "plateau_sr": 0.9465,
+      "plateau_sr_per_seed": {
+       "2026": 0.9489,
+       "31337": 0.9432,
+       "42": 0.9467,
+       "7": 0.9473
+      },
+      "policy_changes": 1,
+      "rollback_success_rate": 1.0,
+      "rollbacks": 639,
+      "runs": 160,
+      "runs_with_effective_absorbed": 1,
+      "selection_tokens": 24331.2375,
+      "slot_tokens": 5241.425,
+      "slots_before_first_effective_mean": 1.0,
+      "tasks_to_plateau": 25.0,
+      "tokens_to_plateau": 21236.3563,
+      "total_tokens": 139219.1625
+     }
+    },
+    "contrasts": {
+     "B-A": {
+      "contrast": "B-A",
+      "estimate": 0.0006,
+      "half_width": 0.0007,
+      "hi": 0.0014,
+      "host": "working_host",
+      "lo": 0.0,
+      "per_seed": {
+       "2026": 0.0012,
+       "31337": 0.0012,
+       "42": 0.0,
+       "7": 0.0
+      },
+      "role": "secondary (content value)",
+      "runs": 160
+     },
+     "C-B": {
+      "contrast": "C-B",
+      "estimate": 0.0,
+      "half_width": 0.0,
+      "hi": 0.0,
+      "host": "working_host",
+      "lo": 0.0,
+      "per_seed": {
+       "2026": 0.0,
+       "31337": 0.0,
+       "42": 0.0,
+       "7": 0.0
+      },
+      "role": "secondary (identical SR by design)",
+      "runs": 160
+     },
+     "C-V1": {
+      "contrast": "C-V1",
+      "estimate": 0.0006,
+      "half_width": 0.0007,
+      "hi": 0.0015,
+      "host": "working_host",
+      "lo": 0.0,
+      "per_seed": {
+       "2026": 0.0012,
+       "31337": 0.0012,
+       "42": 0.0,
+       "7": 0.0
+      },
+      "role": "validity V1",
+      "runs": 160
+     },
+     "D1-C": {
+      "contrast": "D1-C",
+      "estimate": 0.0001,
+      "half_width": 0.0009,
+      "hi": 0.001,
+      "host": "working_host",
+      "lo": -0.0007,
+      "per_seed": {
+       "2026": -0.0003,
+       "31337": 0.0003,
+       "42": 0.0006,
+       "7": 0.0
+      },
+      "role": "primary",
+      "runs": 160
+     },
+     "D2-C": {
+      "contrast": "D2-C",
+      "estimate": 0.0006,
+      "half_width": 0.001,
+      "hi": 0.0015,
+      "host": "working_host",
+      "lo": -0.0004,
+      "per_seed": {
+       "2026": 0.0012,
+       "31337": 0.0006,
+       "42": 0.0001,
+       "7": 0.0006
+      },
+      "role": "secondary",
+      "runs": 160
+     },
+     "V2-C": {
+      "contrast": "V2-C",
+      "estimate": -0.0004,
+      "half_width": 0.0006,
+      "hi": 0.0,
+      "host": "working_host",
+      "lo": -0.0012,
+      "per_seed": {
+       "2026": -0.0005,
+       "31337": -0.0012,
+       "42": 0.0,
+       "7": 0.0
+      },
+      "role": "validity V2",
+      "runs": 160
+     }
+    },
+    "token_contrasts": {
+     "C-B:tokens_to_plateau": {
+      "contrast": "C-B",
+      "estimate": 341.4375,
+      "field": "tokens_to_plateau",
+      "hi": 470.9875,
+      "host": "working_host",
+      "lo": 276.575
+     },
+     "C-B:total_tokens": {
+      "contrast": "C-B",
+      "estimate": 2420.2812,
+      "field": "total_tokens",
+      "hi": 4057.275,
+      "host": "working_host",
+      "lo": 1107.2
+     },
+     "D1-C:tokens_to_plateau": {
+      "contrast": "D1-C",
+      "estimate": 6436.0063,
+      "field": "tokens_to_plateau",
+      "hi": 6768.6187,
+      "host": "working_host",
+      "lo": 6104.9625
+     },
+     "D1-C:total_tokens": {
+      "contrast": "D1-C",
+      "estimate": 29036.0938,
+      "field": "total_tokens",
+      "hi": 33755.6062,
+      "host": "working_host",
+      "lo": 24571.125
+     },
+     "D2-C:tokens_to_plateau": {
+      "contrast": "D2-C",
+      "estimate": 7091.9062,
+      "field": "tokens_to_plateau",
+      "hi": 7728.9187,
+      "host": "working_host",
+      "lo": 6603.4688
+     },
+     "D2-C:total_tokens": {
+      "contrast": "D2-C",
+      "estimate": 39316.8562,
+      "field": "total_tokens",
+      "hi": 47088.8125,
+      "host": "working_host",
+      "lo": 32491.7812
+     }
+    },
+    "v1_on_this_host": "fail",
+    "v2_on_this_host": "pass",
+    "verdicts": {
+     "D1-C": {
+      "headline": "equivalent within ±0.10 ΔSR",
+      "information_label": "equivalent within ±0.10 ΔSR",
+      "information_rule": "R2",
+      "label": "equivalent within ±0.10 ΔSR",
+      "reason": "",
+      "rule": "R2"
+     },
+     "D2-C": {
+      "headline": "equivalent within ±0.10 ΔSR",
+      "information_label": "equivalent within ±0.10 ΔSR",
+      "information_rule": "R2",
+      "label": "equivalent within ±0.10 ΔSR",
+      "reason": "",
+      "rule": "R2"
+     }
+    }
+   }
+  }
+ },
+ "runner_base_commit": "75acb59262cba1ae4439430d140653835641359f",
+ "runs": [
+  0,
+  39
+ ],
+ "seeds": [
+  42,
+  7,
+  2026,
+  31337
+ ],
+ "tasks": 200
+}
