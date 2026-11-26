@@ -32,7 +32,8 @@ selection reach a higher plateau success rate than envelope-blind selection?**
 ## 2. Changes from the design draft
 
 This file is the English, repository version of the protocol-layer measurement draft of
-2026-11-26, with the required fixes from the review of the same date applied. Where the
+2026-11-26, with the required fixes from the review and the PR #66 re-review of the same
+date applied. Where the
 draft and the review disagree, the review is followed.
 
 | Review item | Where it is applied |
@@ -41,12 +42,15 @@ draft and the review disagree, the review is followed.
 | 2. `prior_outcomes` must not be computed from the scoring ground truth: pre-registered noise model, and at least one dishonest peer whose self-reports are good while its packets are harmful. Report harmful absorption per arm. | §6.2 (noise model), §6.3 (dishonest peer), §8.2 (harmful absorption) |
 | 3a. One margin, at or above the noise floor, used everywhere. | §10: δ = 0.10, used in §8.3, §11, §12 |
 | 3b. Arm mapping table A/B/C/D ↔ selection arms; name the primary contrast. | §4 |
-| 3c. Power calculation for ΔSR = 0.10; raise N if insufficient. | §9: N raised from 4 runs to 48 runs |
+| 3c. Power calculation for ΔSR = 0.10; raise N if insufficient. | §9: N raised from 4 runs to 160 runs |
 | 3d. Operational plateau definition, hence `tasks_to_plateau` and `tokens_to_plateau`. | §8.3 |
 | 3e. Equivalence is worded "equivalent within ±δ", never "no measurable increment" or "protocol has no effect". | §12, §14 |
 | 4a. A minimal independent second implementation that passes conformance, built in parallel. | §15.1 |
 | 4b. The expiry experiment runs right after this one, before the budget experiment. | §15.2 |
 | Housekeeping: English only; repo-relative links; open a PR, the maintainer merges. | This file |
+| Re-review B1 (blocking). The primary endpoint must not saturate: make the pool scarce, or change the primary endpoint and recompute power. | Option (a): 3 effective packets in 50 and 4 slots, random hit rate 22.6% (§5, §6.1); power recomputed, N = 160 runs (§9, §10) |
+| Re-review M1. The content-stub check must not mix in the selection effect. | §11.1: V1 uses `C − V1` (same random order, real content vs stub) |
+| Re-review M2. A positive estimate below the margin is not support. | §12: R1b relabelled; only R1a may be stated as support in the headline |
 
 Other changes made while turning the draft into a runnable specification are listed
 where they occur and collected in §16.
@@ -104,13 +108,15 @@ random-selection order (paired design).
   (`Case`, `run_window`) with 3 `immediate` and 3 `delayed` evaluation episodes, as in
   WP0–WP3. Task SR is the mean success over its 6 episodes. The receiver's current policy
   carries over from task to task.
-- **Absorption slots.** 10 slots, at the start of tasks 1, 16, 31, …, 136 (every 15 tasks).
+- **Absorption slots.** 4 slots, at the start of tasks 1, 26, 51 and 76 (every 25 tasks,
+  one per window W1–W4 of §8.3).
   At each slot the arm selects one untried packet from the pool and sends it through the
   host's gate: content policy (SPEC §2.1), isolation (`ISOLATION_N = 3` trials,
   `DSR_THRESHOLD = 0.05` against the **current** policy), single-step rollback, and the §3.1
   hard gate. A rejected, isolated or rolled-back packet still uses its slot. The budget is
-  10 attempts out of a pool of 50.
-- **No absorption in T151–T200.** The last 50 tasks are the plateau window (§8.1).
+  4 attempts out of a pool of 50.
+- **No absorption in T101–T200.** The last 50 tasks, T151–T200, are the plateau window
+  (§8.1); T101–T150 leave room for the last absorbed policy to settle.
 - **Gate constants** are those in `host.py` at the merge commit of this file and are not
   changed for this experiment.
 
@@ -120,13 +126,35 @@ random-selection order (paired design).
 
 Five simulated peers, ten packets each, 50 packets per run. Packet content uses the
 existing `recovery_policy` format of `experiments/timeout_recovery/packets.py`. Each
-packet's parameters are drawn per run from its peer's family:
+packet's parameters are drawn per run from its family:
 
-| Peer | Count | Family (per-packet draw) | Honest reports |
+| Peer | Peers | Packets (family per packet) | Honest reports |
 | --- | --- | --- | --- |
-| `peer-eff-1`, `peer-eff-2` | 2 | effective: exponential backoff, `base_backoff_ms` ∈ {200, 400, 800}, `max_attempts` ∈ {3, 4, 5}, `drop_stale_partials` = true with probability 0.8 | yes |
-| `peer-med-1`, `peer-med-2` | 2 | mediocre: exponential backoff, `base_backoff_ms` ∈ {50, 100}, `max_attempts` ∈ {2, 3}, `drop_stale_partials` = false | yes |
-| `peer-dis-1` | 1 | harmful: the `wrong_packet` family, `backoff` = none, `max_attempts` ∈ {6, "unbounded"}, `drop_stale_partials` = false | **no** (§6.3) |
+| `peer-eff-1` | 1 | 2 effective + 8 mediocre | yes |
+| `peer-eff-2` | 1 | 1 effective + 9 mediocre | yes |
+| `peer-med-1`, `peer-med-2` | 2 | 10 mediocre each | yes |
+| `peer-dis-1` | 1 | 10 harmful: the `wrong_packet` family, `backoff` = none, `max_attempts` ∈ {6, "unbounded"}, `drop_stale_partials` = false | **no** (§6.3) |
+
+Families:
+
+- **effective**: exponential backoff, `base_backoff_ms` ∈ {400, 800}, `max_attempts` ∈
+  {4, 5}, `drop_stale_partials` = true. These are close to the peer policy of
+  `packets.py`, whose `distilled_packet` gives +0.52 to +0.58 ΔSR on `naive_host`.
+- **mediocre**: exponential backoff, `base_backoff_ms` ∈ {50, 100}, `max_attempts` ∈ {2, 3},
+  `drop_stale_partials` = false. `mediocre_packet` gives +0.00 to +0.01 ΔSR on `naive_host`
+  and is accepted by the gate in 1–5 of 30 cases.
+
+**Pool composition per run: 3 effective, 37 mediocre, 10 harmful (dishonest).** Which
+packets of `peer-eff-1` and `peer-eff-2` are the effective ones is drawn per run.
+
+**Scarcity (re-review B1).** With 3 effective packets in 50 and 4 slots, random selection
+tries at least one effective packet in **1 − C(47,4)/C(50,4) = 22.6%** of runs; the gate
+then accepts an effective packet in about 0.9 of those cases (25–27 of 30 for
+`distilled_packet` in WP3), so C absorbs an effective packet in roughly 20% of runs. The
+previous design (20 effective, 10 slots) gave 99.7% and would have made `plateau_SR`
+saturate in both arms. The primary endpoint therefore stays `plateau_SR`, and it can
+separate selection rules: an arm that finds an effective packet ends near 0.9, one that
+does not stays near the `no_sharing` level of about 0.3.
 
 Every pool packet must pass `content_policy` (SPEC §2.1). A `content_policy:` rejection of
 a pool packet is a bug in the generator, and the run is discarded and fixed before the
@@ -250,37 +278,52 @@ inside). It is fixed in advance and does not depend on plateau detection.
 The unit of analysis is the **run** (§5). Tasks inside a run share one sequence of
 selection decisions, so they are not independent replicates of the selection effect.
 
-**Variance model.** The paired difference of `plateau_SR` between two arms in one run has
-variance `σ_b² + σ_t² / 50`:
+**Variance model.** With a scarce pool (§6.1), a run's `plateau_SR` is close to a
+two-point outcome: about `G` higher if the arm absorbed an effective packet, otherwise near
+the `no_sharing` level. Let `p_C` and `p_D` be the probabilities that C and D1 absorb an
+effective packet in a run, treated as independent within a run. The paired run-level
+difference D1 − C then has
 
+```
+E[Δ]   = G × (p_D − p_C)
+Var[Δ] = G² × (p_D(1 − p_D) + p_C(1 − p_C)) + σ_t² / 50
+```
+
+- `G` is the plateau gain from one effective packet. `distilled_packet` gives +0.517 to
+  +0.578 ΔSR on `naive_host` in the committed four-arm data. Planning value **G = 0.55**,
+  sensitivity 0.45 and 0.65.
+- `p_C` = **0.226**, the random hit rate of §6.1. Gate rejections of effective packets
+  (about 10%) are ignored here, which is conservative: they lower `p_C` and the variance
+  slightly.
+- Under the alternative ΔSR = δ = 0.10, `p_D = p_C + 0.10 / G` (0.408 at G = 0.55). Under the
+  null, `p_D = p_C`.
 - `σ_t` is the per-task paired SD. In the committed four-arm data
   (`datasets/timeout_recovery/runs/`, seeds 42, 7, 2026) the per-case SD of paired ΔSR is at
-  most 0.302 (`distilled_packet`, seed 42; 0.199–0.302 over the arms with non-zero
-  variance). Planning value **σ_t = 0.30**, so `σ_t / √50 = 0.042`.
-- `σ_b` is the between-run SD of the selection effect (which packets a run's selection
-  finds). It has not been measured. Plateau SR in the committed data ranges from about 0.28
-  (`no_sharing`) to about 0.91 (`distilled_packet`); a run-level outcome spread uniformly
-  over that range has SD 0.63 / √12 ≈ 0.18. Planning value **σ_b = 0.20**, giving a
-  per-run SD of **σ = 0.204**.
+  most 0.302 (`distilled_packet`, seed 42). Planning value **σ_t = 0.30**, so
+  `σ_t / √50 = 0.042`.
+- Mediocre absorptions (about +0.01 each) are ignored.
+
+At G = 0.55 this gives a per-run SD of **0.357 under the alternative and 0.328 under the
+null**. A scarce pool makes the run-level outcome close to binary, so it is much noisier
+than the σ = 0.204 planned for the earlier, saturating design, and N is raised again.
 
 **Test.** Two-sided 95% CI (α = 0.05, 0.025 per side), effect of interest ΔSR = δ = 0.10.
 Normal approximation, `SE = σ / √R` for R runs.
 
-| Design | R (runs) | σ_b = 0.15 | σ_b = 0.20 (plan) | σ_b = 0.25 |
+Power to declare R1 (CI lower bound > 0) when the true D1 − C is +0.10:
+
+| Design | R (runs) | G = 0.45 | G = 0.55 (plan) | G = 0.65 |
 | --- | --- | --- | --- | --- |
-| Draft: 4 seeds × 1 run × 200 tasks | 4 | 0.25 | 0.17 | 0.12 |
-| 4 seeds × 8 runs | 32 | 0.95 | 0.79 | 0.61 |
-| **Registered: 4 seeds × 12 runs** | **48** | **0.99** | **0.92** | **0.78** |
+| Previous registration: 4 seeds × 12 runs | 48 | 0.65 | 0.49 | 0.38 |
+| 4 seeds × 30 runs | 120 | 0.96 | 0.87 | 0.74 |
+| **Registered: 4 seeds × 40 runs** | **160** | **0.99** | **0.94** | **0.86** |
 
-Power to declare R1 (CI lower bound > 0) when the true D1 − C is +0.10. The draft's design
-is far too small, so N is raised before registration.
+Power to declare R2 (CI inside ±0.10) when the true D1 − C is 0, with R = 160: 0.99, 0.94
+and 0.81 for G = 0.45, 0.55, 0.65. At G = 0.55, 80% power needs R ≈ 101 for R1 and
+R ≈ 113 for R2; 160 runs also keep both above 0.80 at the pessimistic G = 0.65.
 
-Power to declare R2 (CI inside ±0.10) when the true D1 − C is 0, with R = 48: 0.99, 0.85
-and 0.56 for σ_b = 0.15, 0.20, 0.25. The required R at σ_b = 0.20 is 33 for R1 and 44 for
-R2 at 80% power; 48 covers both.
-
-**Registered sample: seeds 42, 7, 2026, 31337 × 12 runs (run index 0–11) × 200 tasks = 48
-runs, 9,600 tasks per arm and host.** Run seeds are `stable_int("selection", seed, run)`.
+**Registered sample: seeds 42, 7, 2026, 31337 × 40 runs (run index 0–39) × 200 tasks = 160
+runs, 32,000 tasks per arm and host.** Run seeds are `stable_int("selection", seed, run)`.
 The planning values are not re-estimated from the data and N is not changed after the
 pilot.
 
@@ -296,15 +339,17 @@ The noise floor it must clear:
   0.053–0.106 in the committed bootstrap CIs (`experiments/timeout_recovery/RESULTS.md`)
   and 0.054–0.108 by normal approximation from the per-case data. `docs/WP3_FINDINGS.md`
   gives about 0.08; the draft gave 0.08–0.13.
-- At this experiment's registered size (R = 48 runs), the planned 95% half-width of the
-  primary contrast is **0.058** at σ_b = 0.20, and 0.044–0.072 over σ_b = 0.15–0.25.
+- At this experiment's registered size (R = 160 runs), the planned 95% half-width of the
+  primary contrast is **0.055** at G = 0.55 under the alternative (0.051 under the null),
+  and 0.042–0.065 over G = 0.45–0.65.
 
-δ = 0.10 is above the planned noise floor of this design at every σ_b in §9, and above the
+δ = 0.10 is above the planned noise floor of this design at every G in §9, and above the
 WP3 figure of 0.08. It is below the largest N = 30 half-width (0.106–0.108) and the
 draft's upper estimate (0.13); those describe a 30-case sample, which this design does not
 use. A realised CI that is wider than ±δ cannot satisfy R2 by construction, so an
 underpowered run cannot be read as equivalence. If the realised half-width of the primary
-contrast exceeds 0.072, the report says that the run was noisier than planned.
+contrast exceeds 0.065 (the planned half-width at the pessimistic G = 0.65), the report
+says that the run was noisier than planned.
 
 The WP3 margin (`WP3_R2_EQ_MARGIN = 0.05`) is not changed and does not apply here. The
 expiry and budget experiments register their own margins (§15.2).
@@ -317,9 +362,13 @@ bootstrap as §12.
 ### 11.1 V1: content-stub sanity check (pipeline is not degenerate)
 
 In arm V1 the strategy model of the C arm is replaced by a stub whose `derive()` returns
-`{}`: packets are delivered, gated and attributed as in C, but carry no usable parameters.
+`{}`: packets are delivered, gated and attributed as in C, in the same random order, but
+carry no usable parameters. C and V1 differ only in whether absorbed content reaches the
+policy, so the check contains no selection effect.
 
-- **Pass**: the CI of `D1 − V1` has lower bound > 0.
+- **Pass**: the CI of `C − V1` has lower bound > 0. (Planned: C absorbs an effective packet
+  in about 20% of runs, so `C − V1` ≈ 0.20 × 0.55 ≈ +0.11, with a planned half-width of
+  about 0.04 at R = 160.)
 - **Fail**: otherwise. The pipeline does not turn absorbed content into SR, so a
   comparison of selection rules is meaningless. The result is **VOID**.
 
@@ -346,7 +395,7 @@ Under this ablation D must collapse to C:
 ## 12. Analysis and decision rules
 
 **Estimate.** For each run, `Δ = plateau_SR(D1) − plateau_SR(C)` on `naive_host`. The
-estimate is the mean over the 48 runs. **CI**: paired percentile bootstrap over runs,
+estimate is the mean over the 160 runs. **CI**: paired percentile bootstrap over runs,
 stratified by seed (runs resampled within each of the four seeds), B = 2000, 95%, seeded
 with `stable_int("selection-bootstrap", host, contrast)`. Per-seed means are reported
 alongside, without a per-seed verdict.
@@ -357,10 +406,14 @@ Rules are applied in this order. The first that matches is the verdict.
 | --- | --- | --- |
 | V | V1 fails, or V2 is VOID | `VOID` (the reason is stated) |
 | R1a | CI lower bound > 0 and point estimate ≥ δ | `supported: envelope-informed selection improves plateau SR by at least the margin` |
-| R1b | CI lower bound > 0 and point estimate < δ | `supported: positive, below the 0.10 margin` |
+| R1b | CI lower bound > 0 and point estimate < δ | `positive but below the 0.10 margin; not practically significant` |
 | R3 | CI upper bound < 0 | `envelope-informed selection is worse` |
 | R2 | CI inside [−δ, +δ] | `equivalent within ±0.10 ΔSR` |
 | R4 | otherwise | `undetermined` |
+
+**Headline.** Only R1a may be stated as support for the envelope. An R1b result is
+reported with its label verbatim and must not be called "supported", in the headline or
+elsewhere.
 
 If V2 is inconclusive (§11.2), R1a, R1b, R3 and R2 are reported as information and the
 headline verdict is `undetermined`.
@@ -380,7 +433,7 @@ statement may rest on a secondary contrast.
    V1/V2 compute. Pilot runs are not part of the analysis, and their numbers are not used
    to change any rule, N, δ or planning value. A bug found in the pilot is fixed in code
    and recorded in the results.
-4. Main run: the 48 runs of §9 on both hosts, all arms of §4.1. Output to `/tmp` unless
+4. Main run: the 160 runs of §9 on both hosts, all arms of §4.1. Output to `/tmp` unless
    committing data with explicit flags, following the existing runner convention.
 5. Write `experiments/selection/SELECTION_RESULTS.md` from the runner (generated, not
    hand-edited), then update the limitations in `docs/WP3_FINDINGS.md` or add
@@ -451,15 +504,14 @@ Each has its own pre-registration file (`docs/PREREG_EXPIRY.md`, then
 Decisions made here that neither the draft nor the review fixed, listed so a reviewer can
 check them:
 
-- Unit of analysis = run; N raised to 48 runs (§9).
+- Unit of analysis = run; N raised to 160 runs (§9).
 - R1 split into R1a/R1b; a "worse" verdict (R3) added; rule order fixed (§12). The draft's
   "ΔSR ≥ 0.10 and CI lower > 0" has at most 50% power when the true effect is exactly
-  0.10, so the margin grades the result instead of gating it.
-- The harmful peer of the draft is the dishonest peer; the peer mix stays 2 effective, 2
-  mediocre, 1 harmful (§6.1).
-- Absorption slots every 15 tasks in T1–T150, plateau window T151–T200 (§5).
+  0.10, so the margin grades the result instead of gating it. R1b is not support (§12).
+- The harmful peer of the draft is the dishonest peer. The draft's two effective peers
+  remain, but they hold only 3 effective packets between them; the rest of the pool is
+  mediocre (§6.1).
+- Saturation fix (re-review B1, option a): 3 effective packets in 50 and 4 slots, so random
+  selection tries an effective packet in 22.6% of runs; `plateau_SR` stays primary.
+- Absorption slots every 25 tasks in T1–T100, plateau window T151–T200 (§5).
 - `naive_host` is the primary host; `working_host` is secondary (§4.2).
-- Known risk: with 20 effective packets in 50, random selection finds at least one
-  effective packet in 10 draws in all but about 0.3% of runs, so `plateau_SR` may saturate
-  in both arms and land in R2. If so, the difference is in `tasks_to_plateau`,
-  `tokens_to_plateau` and AUC, which are reported but do not change the verdict.

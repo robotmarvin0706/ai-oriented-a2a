@@ -11,7 +11,7 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ### Added
 
-- `docs/PREREG_SELECTION.md`: pre-registration of the envelope-informed packet-selection experiment (non-normative). Primary contrast `history_selection − random_selection` on plateau SR, one margin δ = 0.10, 4 seeds × 12 runs × 200 tasks with a power calculation, an envelope-shuffle falsification check and a content-stub sanity check, noisy `prior_outcomes` and a dishonest peer. No runs before it is merged; the WP3 rules in `experiments/timeout_recovery/run.py` stay frozen.
+- `docs/PREREG_SELECTION.md`: pre-registration of the envelope-informed packet-selection experiment (non-normative). Primary contrast `history_selection − random_selection` on plateau SR, one margin δ = 0.10, a scarce pool (3 effective packets in 50, 4 absorption slots) so the endpoint cannot saturate, 4 seeds × 40 runs × 200 tasks with a power calculation, an envelope-shuffle falsification check and a content-stub sanity check, noisy `prior_outcomes` and a dishonest peer. No runs before it is merged; the WP3 rules in `experiments/timeout_recovery/run.py` stay frozen.
 
 ## [0.4.2] - 2026-11-25
 
