@@ -1,0 +1,7 @@
+# Compiled binary (build it outside the repo, e.g. -o /tmp/a2a-go)
+a2a-go
+a2a-go.exe
+
+# Go build/test artefacts
+*.test
+*.out
