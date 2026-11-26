@@ -1,4 +1,4 @@
-# Protocol-layer value: what the selection experiment shows (non-normative)
+# Protocol-layer value: what the selection and expiry experiments show (non-normative)
 
 > **Status: non-normative.** Summary of experiment 1 of
 > [`docs/PREREG_SELECTION.md`](PREREG_SELECTION.md). The generated report with every table is
@@ -62,9 +62,64 @@ parser, gate and host are the same in both arms.
   `experiments/selection/SELECTION_RESULTS.md` is a generated, frozen artifact of the run and is
   intentionally not edited.
 
+## Experiment 2: expiry
+
+> **Status: non-normative.** Summary of experiment 2, [`docs/PREREG_EXPIRY.md`](PREREG_EXPIRY.md), run
+> as merged (no amendment). The generated report with every table is
+> [`experiments/expiry/EXPIRY_RESULTS.md`](../experiments/expiry/EXPIRY_RESULTS.md); if this file and
+> the report disagree, the report governs. Nothing here changes `SPEC.md`, `schema/`, the WP3 rules in
+> `experiments/timeout_recovery/run.py`, or `experiments/selection/`.
+
+Experiment 1 asked which packets a receiver should absorb. Experiment 2 asks when it should stop using a
+packet it has already absorbed: part-way through the sequence the simulated tool changes behaviour, and
+the recovery policy that was good before the change becomes harmful after it. Only the use of the
+machine-checkable `expiry` field differs between the two arms: C (`expiry_blind`) receives the field and
+ignores it, D (`expiry_enforced`) enforces it. Content, parser, gate, host, peer feed and task draws are
+identical.
+
+- Verdict (§12): **`supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin`** (R1a).
+- `D − C` on `recovery_window_SR` (mean task SR over `T_shift … T_shift + 24`): **+0.167, 95% CI
+  [+0.143, +0.192]** over 160 runs (seeds 42, 7, 2026, 31337 × 40 runs × 200 tasks). Realised
+  half-width **0.024**, below the 0.034 flag; per-seed means +0.134 to +0.205.
+- V1 content-stub check: **pass** (`C − V1` on `pre_ref_SR` = +0.598 [+0.586, +0.606]): absorbed
+  content does reach the policy. V2 random-expiry falsification: **pass** (`V2 − C` on
+  `recovery_window_SR` = +0.017 [+0.006, +0.029], inside ±0.08): random triggers do not reproduce the
+  gain, so it comes from coupling the trigger to the observed shift.
+- Next to the headline: `D − C` on `pre_shift_SR` = **−0.020 [−0.024, −0.017]** (secondary; its label is
+  `enforcing expiry is worse` for that window) and on `full_sequence_SR` = **+0.015 [+0.010, +0.020]**
+  (secondary, R1b, `positive but below the 0.08 margin; not practically significant`). So the post-shift
+  gain survives the pre-shift cost over the whole sequence, but only slightly.
+- **The false-positive expiries cost success rate before the shift.** D fires 87 expiry events before
+  `T_shift` (0.54 per run) and V2 fires 80 (0.50 per run); D's cost is the −0.020 `pre_shift_SR` above,
+  and it is reported together with that cost, never on its own.
+- **Its total token use is lower.** Over T1–T200 D spends 297,367 tokens per run against C's 360,867,
+  and D's stale-policy stretch is shorter: 4.44 stale-policy uses over the recovery window against 17.91,
+  with 63.41 extra tool calls against 149.74. `expiry_overhead_tokens`
+  (reading and evaluating the field) is 6,127 for D against 1,008 for C and 6,295 for V2; the report
+  does not test what causes the total difference. `tasks_to_recover` is 11.3 (median 5.0)
+  against 20.6 (median 19.0), `D − C` = −9.244 [−11.213, −7.362]: lower is better here and the
+  difference favours D, reported with no verdict (§8.2 assigns no §12 rule to task counts).
+- **Secondary contrasts only, no headline.** `D − V2` on `recovery_window_SR` = +0.150 [+0.127, +0.175];
+  `C − A` = +0.040 [+0.021, +0.060] (R1b: the blind arm beats the no-sharing baseline by less than the
+  margin). Strata: detected shift 118 runs, +0.227 [+0.202, +0.251]; silent shift 42 runs, +0.000
+  [+0.000, +0.000] (`equivalent within ±0.08 recovery-window SR`); benign bump 88 runs +0.167, no benign
+  bump 72 runs +0.167. Saturation check: C 0.382 and D 0.549 both inside the band [0.10, 0.90] (not
+  saturated).
+- **The gain is bounded by the share of detected shifts.** The planned silent-shift rate is 25% and the
+  planned benign-bump rate 50%; observed here are 26.2% silent, 55.0% benign bump, 73.8% detected. An
+  expiry predicate can only act on a shift it can detect, so a silent shift contributes nothing to
+  either arm and dilutes the contrast by its share of runs.
+- **Caveats.** The `expiry` keys are a non-normative single-project convention (a `tool-version/0` string
+  on `web_search` packets), not part of `SPEC.md`; `impls/go/` and no other implementation reads them.
+  Scope is one simulated tool (`web_search` timeout recovery) with one simulated, pre-registered regime
+  shift (the v2 lease rule), one honest peer and a rule-parser receiver
+  (`deterministic-rule-host-v1`) — not an LLM receiver and not a real API. Only R1a is stated as support;
+  an R2 verdict would read `equivalent within ±0.08 recovery-window SR` and R4 `undetermined`, and neither
+  would support a claim of zero increment.
+
 ## Next
 
 Per §15 of the pre-registration: the second implementation is done for the cross-language part (see
-above); next is the expiry experiment (`docs/PREREG_EXPIRY.md`, its own pre-registration and merge
-before any run), then the budget experiment. Wiring `impls/go/` into CI (a Go toolchain job) would be a
-separate PR.
+above); the expiry experiment is reported above as experiment 2, run as merged with no amendment
+(`experiments/expiry/EXPIRY_RESULTS.md`); next is the budget experiment. Wiring `impls/go/` into CI (a Go
+toolchain job) would be a separate PR.

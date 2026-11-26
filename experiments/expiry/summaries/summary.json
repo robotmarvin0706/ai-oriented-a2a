@@ -1,0 +1,473 @@
+{
+ "amendments": "none",
+ "delta": 0.08,
+ "experiment": "expiry-predicate (PREREG_EXPIRY experiment 2)",
+ "half_width_flag": 0.034,
+ "model": "deterministic-rule-host-v1",
+ "pilot": false,
+ "prereg_file_commit": "21d7c93",
+ "prereg_merge_commit": "56a47f32616727132d0361df95d7102037baa0f7",
+ "result": {
+  "arms": {
+   "A": {
+    "arm": "A",
+    "attributed_changes": 0,
+    "attribution_rate": null,
+    "expiry_events": 0,
+    "expiry_overhead_tokens": 0.0,
+    "extra_tool_calls_window": 0.0,
+    "false_positive_expiries_per_run": 0.0,
+    "false_positive_expiries_total": 0,
+    "full_sequence_sr": 0.3387864583333333,
+    "policy_changes": 0,
+    "pre_ref_sr": 0.3408125,
+    "pre_shift_sr": 0.3393135802839545,
+    "recovery_window_sr": 0.3410833333333333,
+    "runs": 160,
+    "stale_policy_uses_total": 0.0,
+    "stale_policy_uses_window": 0.0,
+    "tasks_to_recover_censored": 160,
+    "tasks_to_recover_mean": 75.0,
+    "tasks_to_recover_median": 75.0,
+    "total_tokens": 98757.5
+   },
+   "C": {
+    "arm": "C",
+    "attributed_changes": 320,
+    "attribution_rate": 1.0,
+    "expiry_events": 0,
+    "expiry_overhead_tokens": 1008.43125,
+    "extra_tool_calls_window": 149.74375,
+    "false_positive_expiries_per_run": 0.0,
+    "false_positive_expiries_total": 0,
+    "full_sequence_sr": 0.7717031249999999,
+    "policy_changes": 320,
+    "pre_ref_sr": 0.9383333333333332,
+    "pre_shift_sr": 0.9258910736666468,
+    "recovery_window_sr": 0.3815,
+    "runs": 160,
+    "stale_policy_uses_total": 20.575,
+    "stale_policy_uses_window": 17.9125,
+    "tasks_to_recover_censored": 0,
+    "tasks_to_recover_mean": 20.575,
+    "tasks_to_recover_median": 19.0,
+    "total_tokens": 360867.0875
+   },
+   "D": {
+    "arm": "D",
+    "attributed_changes": 407,
+    "attribution_rate": 1.0,
+    "expiry_events": 205,
+    "expiry_overhead_tokens": 6127.175,
+    "extra_tool_calls_window": 63.40625,
+    "false_positive_expiries_per_run": 0.54375,
+    "false_positive_expiries_total": 87,
+    "full_sequence_sr": 0.7866614583333333,
+    "policy_changes": 407,
+    "pre_ref_sr": 0.8983958333333334,
+    "pre_shift_sr": 0.9055465850222918,
+    "recovery_window_sr": 0.548625,
+    "runs": 160,
+    "stale_policy_uses_total": 5.03125,
+    "stale_policy_uses_window": 4.4375,
+    "tasks_to_recover_censored": 0,
+    "tasks_to_recover_mean": 11.33125,
+    "tasks_to_recover_median": 5.0,
+    "total_tokens": 297367.15
+   },
+   "V1": {
+    "arm": "V1",
+    "attributed_changes": 0,
+    "attribution_rate": null,
+    "expiry_events": 0,
+    "expiry_overhead_tokens": 1008.43125,
+    "extra_tool_calls_window": 0.0,
+    "false_positive_expiries_per_run": 0.0,
+    "false_positive_expiries_total": 0,
+    "full_sequence_sr": 0.3387864583333333,
+    "policy_changes": 0,
+    "pre_ref_sr": 0.3408125,
+    "pre_shift_sr": 0.3393135802839545,
+    "recovery_window_sr": 0.3410833333333333,
+    "runs": 160,
+    "stale_policy_uses_total": 0.0,
+    "stale_policy_uses_window": 0.0,
+    "tasks_to_recover_censored": 160,
+    "tasks_to_recover_mean": 75.0,
+    "tasks_to_recover_median": 75.0,
+    "total_tokens": 100890.8125
+   },
+   "V2": {
+    "arm": "V2",
+    "attributed_changes": 489,
+    "attribution_rate": 1.0,
+    "expiry_events": 205,
+    "expiry_overhead_tokens": 6295.425,
+    "extra_tool_calls_window": 141.3625,
+    "false_positive_expiries_per_run": 0.5,
+    "false_positive_expiries_total": 80,
+    "full_sequence_sr": 0.7709479166666667,
+    "policy_changes": 489,
+    "pre_ref_sr": 0.938375,
+    "pre_shift_sr": 0.9255867110065801,
+    "recovery_window_sr": 0.39825,
+    "runs": 160,
+    "stale_policy_uses_total": 18.15625,
+    "stale_policy_uses_window": 16.39375,
+    "tasks_to_recover_censored": 0,
+    "tasks_to_recover_mean": 19.45,
+    "tasks_to_recover_median": 18.0,
+    "total_tokens": 328693.20625
+   }
+  },
+  "bootstrap": {
+   "b": 2000,
+   "method": "paired percentile bootstrap over runs, stratified by seed, 95%",
+   "seed": "stable_int('expiry-bootstrap', contrast)"
+  },
+  "decision": {
+   "half_width": 0.024354166666666677,
+   "headline": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+   "information_label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+   "information_rule": "R1a",
+   "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+   "noisier_than_planned": false,
+   "reason": "",
+   "role": "primary",
+   "rule": "R1a",
+   "saturation": false,
+   "v1": "pass",
+   "v2": "pass"
+  },
+  "half_width": 0.024354166666666677,
+  "half_width_flag": 0.034,
+  "margin": 0.08,
+  "n_runs": 160,
+  "noisier_than_planned": false,
+  "observed": {
+   "benign_bump_rate": 0.55,
+   "detected_shift_rate": 0.7375,
+   "planned_benign_bump_rate": 0.5,
+   "planned_silent_shift_rate": 0.25,
+   "runs": 160,
+   "silent_shift_rate": 0.2625
+  },
+  "per_seed": {
+   "2026": 0.14566666666666667,
+   "31337": 0.134,
+   "42": 0.20516666666666664,
+   "7": 0.18366666666666667
+  },
+  "primary": {
+   "contrast": "D-C:recovery_window_SR",
+   "estimate": 0.167125,
+   "half_width": 0.024354166666666677,
+   "headline": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+   "hi": 0.1916666666666666,
+   "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+   "left": "D",
+   "lo": 0.14295833333333324,
+   "metric": "recovery_window_sr",
+   "per_seed": {
+    "2026": 0.14566666666666667,
+    "31337": 0.134,
+    "42": 0.20516666666666664,
+    "7": 0.18366666666666667
+   },
+   "right": "C",
+   "role": "primary",
+   "rule": "R1a",
+   "runs": 160
+  },
+  "saturation": {
+   "arms_outside": [],
+   "band": [
+    0.1,
+    0.9
+   ],
+   "means": {
+    "C": 0.3815,
+    "D": 0.548625
+   },
+   "planned": {
+    "C": 0.384,
+    "D": 0.535
+   },
+   "saturated": false
+  },
+  "secondary": [
+   {
+    "contrast": "D-C:full_sequence_SR",
+    "estimate": 0.014958333333333327,
+    "half_width": 0.00494270833333333,
+    "hi": 0.019874999999999993,
+    "label": "positive but below the 0.08 margin; not practically significant",
+    "left": "D",
+    "lo": 0.009989583333333333,
+    "metric": "full_sequence_sr",
+    "per_seed": {
+     "2026": 0.010624999999999987,
+     "31337": 0.011145833333333324,
+     "42": 0.02156249999999999,
+     "7": 0.016499999999999997
+    },
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1b",
+    "runs": 160
+   },
+   {
+    "contrast": "D-C:pre_shift_SR",
+    "estimate": -0.020344488644354914,
+    "half_width": 0.00358508029709499,
+    "hi": -0.01681757918075893,
+    "label": "enforcing expiry is worse",
+    "left": "D",
+    "lo": -0.02398773977494891,
+    "metric": "pre_shift_sr",
+    "per_seed": {
+     "2026": -0.01743593074296571,
+     "31337": -0.019976206880671414,
+     "42": -0.0233414183946423,
+     "7": -0.020624398559140233
+    },
+    "right": "C",
+    "role": "secondary",
+    "rule": "R3",
+    "runs": 160
+   },
+   {
+    "contrast": "D-V2:recovery_window_SR",
+    "estimate": 0.15037499999999998,
+    "half_width": 0.024187499999999973,
+    "hi": 0.1749166666666666,
+    "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+    "left": "D",
+    "lo": 0.12654166666666666,
+    "metric": "recovery_window_sr",
+    "per_seed": {
+     "2026": 0.13766666666666666,
+     "31337": 0.12533333333333332,
+     "42": 0.18849999999999997,
+     "7": 0.15
+    },
+    "right": "V2",
+    "role": "secondary",
+    "rule": "R1a",
+    "runs": 160
+   },
+   {
+    "contrast": "C-A:recovery_window_SR",
+    "estimate": 0.04041666666666667,
+    "half_width": 0.019479166666666683,
+    "hi": 0.05983333333333337,
+    "label": "positive but below the 0.08 margin; not practically significant",
+    "left": "C",
+    "lo": 0.020875000000000005,
+    "metric": "recovery_window_sr",
+    "per_seed": {
+     "2026": 0.06966666666666667,
+     "31337": 0.04533333333333332,
+     "42": 0.019666666666666676,
+     "7": 0.027000000000000003
+    },
+    "right": "A",
+    "role": "secondary",
+    "rule": "R1b",
+    "runs": 160
+   }
+  ],
+  "seeds": {
+   "2026": 40,
+   "31337": 40,
+   "42": 40,
+   "7": 40
+  },
+  "strata": {
+   "bump": {
+    "no": {
+     "contrast": "D-C:no_benign_bump",
+     "estimate": 0.16703703703703704,
+     "half_width": 0.03564814814814815,
+     "hi": 0.20370370370370372,
+     "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+     "left": "D",
+     "lo": 0.13240740740740742,
+     "metric": "recovery_window_sr",
+     "per_seed": {
+      "2026": 0.13017543859649122,
+      "31337": 0.131,
+      "42": 0.22941176470588234,
+      "7": 0.18958333333333333
+     },
+     "right": "C",
+     "role": "secondary",
+     "rule": "R1a",
+     "runs": 72
+    },
+    "yes": {
+     "contrast": "D-C:benign_bump",
+     "estimate": 0.16719696969696968,
+     "half_width": 0.03268939393939395,
+     "hi": 0.20060606060606057,
+     "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+     "left": "D",
+     "lo": 0.13522727272727267,
+     "metric": "recovery_window_sr",
+     "per_seed": {
+      "2026": 0.15968253968253968,
+      "31337": 0.13699999999999998,
+      "42": 0.18724637681159417,
+      "7": 0.17972222222222223
+     },
+     "right": "C",
+     "role": "secondary",
+     "rule": "R1a",
+     "runs": 88
+    }
+   },
+   "shift": {
+    "detected": {
+     "contrast": "D-C:detected_shift",
+     "estimate": 0.2266101694915254,
+     "half_width": 0.02463276836158189,
+     "hi": 0.2510169491525423,
+     "label": "supported: enforcing machine-checkable expiry improves recovery-window SR by at least the margin",
+     "left": "D",
+     "lo": 0.20175141242937852,
+     "metric": "recovery_window_sr",
+     "per_seed": {
+      "2026": 0.18208333333333332,
+      "31337": 0.22333333333333336,
+      "42": 0.2647311827956989,
+      "7": 0.23698924731182797
+     },
+     "right": "C",
+     "role": "secondary",
+     "rule": "R1a",
+     "runs": 118
+    },
+    "silent": {
+     "contrast": "D-C:silent_shift",
+     "estimate": 0.0,
+     "half_width": 0.0,
+     "hi": 0.0,
+     "label": "equivalent within ±0.08 recovery-window SR",
+     "left": "D",
+     "lo": 0.0,
+     "metric": "recovery_window_sr",
+     "per_seed": {
+      "2026": 0.0,
+      "31337": 0.0,
+      "42": 0.0,
+      "7": 0.0
+     },
+     "right": "C",
+     "role": "secondary",
+     "rule": "R2",
+     "runs": 42
+    }
+   }
+  },
+  "tasks_to_recover": {
+   "D-C": {
+    "contrast": "D-C:tasks_to_recover(censored at 75)",
+    "estimate": -9.24375,
+    "half_width": 1.9250000000000003,
+    "hi": -7.3625,
+    "label": "reported, no verdict (§8.2); lower is better (fewer tasks to recover)",
+    "left": "D",
+    "lo": -11.2125,
+    "metric": "tasks_to_recover",
+    "per_seed": {
+     "2026": -6.7,
+     "31337": -7.35,
+     "42": -13.05,
+     "7": -9.875
+    },
+    "right": "C",
+    "role": "secondary",
+    "rule": "n/a",
+    "runs": 160
+   },
+   "per_arm": {
+    "A": {
+     "mean": 75.0,
+     "median": 75.0,
+     "n_censored": 160
+    },
+    "C": {
+     "mean": 20.575,
+     "median": 19.0,
+     "n_censored": 0
+    },
+    "D": {
+     "mean": 11.33125,
+     "median": 5.0,
+     "n_censored": 0
+    },
+    "V1": {
+     "mean": 75.0,
+     "median": 75.0,
+     "n_censored": 160
+    },
+    "V2": {
+     "mean": 19.45,
+     "median": 18.0,
+     "n_censored": 0
+    }
+   }
+  },
+  "v1": {
+   "check": "V1",
+   "contrast": "C-V1:pre_ref_SR",
+   "estimate": 0.5975208333333333,
+   "half_width": 0.01020833333333343,
+   "hi": 0.6063125000000004,
+   "left": "C",
+   "lo": 0.5858958333333335,
+   "metric": "pre_ref_sr",
+   "outcome": "pass",
+   "per_seed": {
+    "2026": 0.6089166666666667,
+    "31337": 0.5996666666666666,
+    "42": 0.5873333333333333,
+    "7": 0.5941666666666666
+   },
+   "right": "V1",
+   "runs": 160
+  },
+  "v2": {
+   "check": "V2",
+   "contrast": "V2-C:recovery_window_SR",
+   "estimate": 0.01675,
+   "half_width": 0.011354166666666665,
+   "hi": 0.02895833333333333,
+   "left": "V2",
+   "lo": 0.00625,
+   "metric": "recovery_window_sr",
+   "outcome": "pass",
+   "per_seed": {
+    "2026": 0.008,
+    "31337": 0.008666666666666668,
+    "42": 0.016666666666666663,
+    "7": 0.03366666666666667
+   },
+   "reason": "",
+   "right": "C",
+   "runs": 160
+  }
+ },
+ "runner_base_commit": "56a47f32616727132d0361df95d7102037baa0f7",
+ "runs": [
+  0,
+  39
+ ],
+ "seeds": [
+  42,
+  7,
+  2026,
+  31337
+ ],
+ "tasks": 200
+}
