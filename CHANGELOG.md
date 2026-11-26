@@ -9,6 +9,10 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ## [Unreleased]
 
+### Added
+
+- `docs/PREREG_SELECTION.md`: pre-registration of the envelope-informed packet-selection experiment (non-normative). Primary contrast `history_selection − random_selection` on plateau SR, one margin δ = 0.10, 4 seeds × 12 runs × 200 tasks with a power calculation, an envelope-shuffle falsification check and a content-stub sanity check, noisy `prior_outcomes` and a dishonest peer. No runs before it is merged; the WP3 rules in `experiments/timeout_recovery/run.py` stay frozen.
+
 ## [0.4.2] - 2026-11-25
 
 Library patch release, built from tag `v0.4.2`. The protocol version is unchanged (v0.4, on-wire `"0.4"`) and the wire format does not change: `schema/` is identical to 0.4.1 and `SPEC.md` gains only the RFC 2119/8174 boilerplate. Security fixes and documentation corrections: unattributable packets are rejected, redirects are refused, MCP output is sanitized, an over-long version segment and a non-result callback no longer produce a 500-shaped reply. Collects #61, #63 and #64.
