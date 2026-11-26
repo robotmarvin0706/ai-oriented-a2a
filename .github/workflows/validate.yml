@@ -129,3 +129,40 @@ jobs:
           pip install -e ".[schema,mcp]" pytest -q
           python3 -c "import mcp.server; print('mcp ok')"
           pytest tests/mcp_bridge/ -q
+
+  # Go second implementation: vet/test/build, then §15.1 external conformance and selection parity.
+  go-second-impl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: impls/go/go.mod
+          cache: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Go vet, unit tests, and build
+        working-directory: impls/go
+        run: |
+          go vet ./...
+          go test -count=1 ./...
+          go build -o /tmp/a2a-go .
+
+      - name: Install Python test deps
+        run: |
+          pip install -e ".[schema]" pytest -q
+
+      - name: Gate 1 — External conformance
+        run: |
+          A2A_CONFORMANCE_IMPLS=external \
+          A2A_PEER_CMD="/tmp/a2a-go serve --port {port}" \
+          A2A_GO_BIN=/tmp/a2a-go \
+          pytest tests/conformance/ -q -rs
+
+      - name: Gate 2 — Explicit parity check
+        run: |
+          A2A_GO_BIN=/tmp/a2a-go pytest tests/conformance/test_selection_parity.py -v
