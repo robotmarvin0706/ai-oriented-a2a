@@ -11,6 +11,7 @@ The protocol version on `main` is **v0.4** (on-wire `"0.4"`; v0.4 receivers stil
 
 ### Added
 
+- CI: new `go-second-impl` job in `.github/workflows/validate.yml` builds `impls/go/` and runs the §15.1 external conformance and envelope selection parity gates.
 - `impls/go/`: a minimal clean-room Go implementation (standard library only) — a `serve` receiver for `POST /a2a/message` and a `rank` envelope ranker — written from SPEC.md, `schema/`, TRANSPORT, DATA_POLICY, VERSIONING, COMPLIANCE and PREREG_SELECTION §7, without reading or importing `ai_oriented_a2a/` or `second_impl/`. It passes `tests/conformance/` in external mode (`63 passed`, 0 failed, 0 skipped, including the 16-thread concurrency case), and `rank` matches the Python runner's `history_selection` / `claim_selection` order on `tests/conformance/fixtures/selection_pools.json`. Not wired into CI; maintained by the same maintainers, so this is cross-language interoperability, not third-party adoption.
 - `tests/conformance/test_selection_parity.py` and `tests/conformance/fixtures/selection_pools.json`: 8 parity tests comparing the Go `rank` subcommand with `experiments.selection.sim` (`history_score` / `claim_eligible`) on a frozen pool, with a deterministic `packet.id` ascending tie-break; skipped when `go` is absent and `A2A_GO_BIN` is unset.
 - `tests/conformance/test_robustness.py`: the 16-thread concurrency case now also runs for `external` peers started via `A2A_PEER_CMD` (still not for `A2A_PEER_URL`-only peers).
