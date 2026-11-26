@@ -1,0 +1,1766 @@
+{
+  "description": "Frozen selection pools for the Go rank parity test (docs/PREREG_SELECTION.md \u00a76-\u00a77). Hand-checkable, not generated per run. own_results entries are {result: <Absorption Result>, rolled_back: bool}.",
+  "pools": [
+    {
+      "name": "history-ties",
+      "packets": [
+        {
+          "id": "pkt-tie-a1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 800,
+              "max_attempts": 5,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 800 ms, at most 5 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 9,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.92,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-a2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 400,
+              "max_attempts": 4,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 400 ms, at most 4 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 8,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.88,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-b1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.31,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-b2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 3,
+            "rejected_count": 7,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.28,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-b3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 5,
+            "rejected_count": 7,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.35,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-b4",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 5,
+            "rejected_count": 7,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.35,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-c1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 1,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.5,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-c2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 2,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.5,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-c3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 3,
+            "rejected_count": 3,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.5,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-d1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.4,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-e1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 11,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.9,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-tie-e2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 10,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.87,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        }
+      ],
+      "own_results": [
+        {
+          "result": {
+            "packet_ref": "pkt-tie-a1",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-tie-b1",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-tie-b2",
+            "status": "isolated",
+            "reason": "isolated: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-tie-c1",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": true
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-tie-e1",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-not-in-pool",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        }
+      ]
+    },
+    {
+      "name": "claim-eligibility",
+      "packets": [
+        {
+          "id": "pkt-clm-a1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 800,
+              "max_attempts": 5,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 800 ms, at most 5 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 9,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.93,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-a2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 400,
+              "max_attempts": 4,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 400 ms, at most 4 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 8,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.71,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-b1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.42,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-b2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 3,
+            "rejected_count": 7,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.42,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-b3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 5,
+            "rejected_count": 7,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 1,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "latency_p50",
+            "value": 0.99,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.98,
+            "repro": {
+              "seed": 42,
+              "n": 29,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.97,
+            "repro": {
+              "seed": 42,
+              "n": 30.0,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x4",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.96,
+            "repro": {
+              "seed": 42,
+              "n": true,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x5",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-x6",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          }
+        },
+        {
+          "id": "pkt-clm-e1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 11,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.95,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-clm-e2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 10,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.88,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        }
+      ],
+      "own_results": []
+    },
+    {
+      "name": "history-own-results",
+      "packets": [
+        {
+          "id": "pkt-own-e1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 12,
+            "rejected_count": 0,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.94,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-e2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 11,
+            "rejected_count": 1,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.9,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-a1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 800,
+              "max_attempts": 4,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 800 ms, at most 4 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 5,
+            "rejected_count": 5,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.86,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-a2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 6,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.55,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-b1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 6,
+            "rejected_count": 4,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.44,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-b2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 2,
+            "rejected_count": 8,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.22,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-b3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.3,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-own-n1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "retrieval",
+            "target": "tool_retry_policy"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 0,
+            "rejected_count": 1,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.33,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        }
+      ],
+      "own_results": [
+        {
+          "result": {
+            "packet_ref": "pkt-own-e1",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-e2",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-e2",
+            "status": "isolated",
+            "reason": "isolated: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-e2",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": true
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-a1",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-b3",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-b3",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-own-n1",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        }
+      ]
+    },
+    {
+      "name": "mixed",
+      "packets": [
+        {
+          "id": "pkt-mix-a1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 800,
+              "max_attempts": 5,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 800 ms, at most 5 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 10,
+            "rejected_count": 2,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.9,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-a2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 3,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 3 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 6,
+            "rejected_count": 6,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.5,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-a3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 400,
+              "max_attempts": 4,
+              "drop_stale_partials": true
+            },
+            "compressed_signal": "exponential backoff from 400 ms, at most 4 attempts, drop late partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-eff-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 7,
+            "rejected_count": 3,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.84,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-b1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 5,
+            "rejected_count": 5,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.4,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-b2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 4,
+            "rejected_count": 8,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.25,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-b3",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 100,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 100 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 3,
+            "rejected_count": 9,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.2,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-b4",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-2"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.15,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-e1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 9,
+            "rejected_count": 3,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.86,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-e2",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "none",
+              "base_backoff_ms": 0,
+              "max_attempts": 6,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "retry immediately without backoff, up to 6 attempts; keep partial results"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-dis-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 8,
+            "rejected_count": 4,
+            "last_status": "absorbed"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.83,
+            "repro": {
+              "seed": 42,
+              "n": 30,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        },
+        {
+          "id": "pkt-mix-x1",
+          "version": "0.4",
+          "type": "failure_mode",
+          "content": {
+            "trigger": "tool_call_timeout on web_search",
+            "recovery_policy": {
+              "backoff": "exponential",
+              "base_backoff_ms": 50,
+              "max_attempts": 2,
+              "drop_stale_partials": false
+            },
+            "compressed_signal": "exponential backoff from 50 ms, at most 2 attempts"
+          },
+          "absorption": {
+            "method": "prompt_injection",
+            "target": "tool_retry_policy"
+          },
+          "provenance": {
+            "source_ref": "peer:peer-med-1"
+          },
+          "prior_outcomes": {
+            "absorbed_count": 2,
+            "rejected_count": 10,
+            "last_status": "rejected"
+          },
+          "verification_claim": {
+            "expected_effect": "recover from web_search timeouts without throttling or accepting late partial results",
+            "metric": "recovery_sr",
+            "value": 0.1,
+            "repro": {
+              "seed": 42,
+              "n": 12,
+              "model": "deterministic-rule-host-v1"
+            }
+          }
+        }
+      ],
+      "own_results": [
+        {
+          "result": {
+            "packet_ref": "pkt-mix-a1",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-mix-a3",
+            "status": "absorbed",
+            "effect_summary": {
+              "note": "policy applied to the local retry loop"
+            }
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-mix-e1",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-mix-e2",
+            "status": "rejected",
+            "reason": "rejected: local regression did not improve"
+          },
+          "rolled_back": false
+        },
+        {
+          "result": {
+            "packet_ref": "pkt-mix-b1",
+            "status": "isolated",
+            "reason": "isolated: local regression did not improve"
+          },
+          "rolled_back": false
+        }
+      ]
+    }
+  ]
+}

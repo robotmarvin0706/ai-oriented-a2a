@@ -18,7 +18,10 @@ so nothing here needs a second copy.
   (whose ``reference`` receiver is examples/network_dual_end.py on a
   synchronous ``HTTPServer``). It runs against
   ``ai_oriented_a2a.transport.make_server`` and
-  ``second_impl.minimal_client.make_server``, both ``ThreadingHTTPServer``.
+  ``second_impl.minimal_client.make_server``, both ``ThreadingHTTPServer``,
+  and — when ``A2A_PEER_CMD`` is set — against the ``external`` peer, started
+  as a fresh process with ``--replay-window`` like ``conftest.py`` does. An
+  ``A2A_PEER_URL``-only external peer is still not covered.
 
 No ``dict |`` (Python 3.8).
 """
@@ -28,6 +31,9 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import shlex
+import socket
+import subprocess
 import sys
 import threading
 import time
@@ -206,13 +212,60 @@ def _reference_callback(msg):
 
 
 def _threaded_impls():
+    """Implementations the concurrency case can run against.
+
+    ``reference`` and ``second_impl`` are in-process threaded servers.
+    ``external`` is added when ``A2A_PEER_CMD`` is set: the peer is started as
+    a fresh process (like ``conftest.py`` does) and must be threaded itself.
+    An ``A2A_PEER_URL``-only external peer is not covered here, because its
+    configuration (replay window) is not ours to choose.
+    """
     raw = os.environ.get("A2A_CONFORMANCE_IMPLS")
-    names = [x.strip() for x in raw.split(",")] if raw else ["reference", "second_impl"]
-    return [n for n in names if n in ("reference", "second_impl")]
+    names = [x.strip() for x in raw.split(",") if x.strip()] if raw else ["reference", "second_impl"]
+    impls = [n for n in names if n in ("reference", "second_impl")]
+    if "external" in names and os.environ.get("A2A_PEER_CMD"):
+        impls.append("external")
+    return impls
+
+
+def _free_port():
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def _wait_for_port(port, proc, timeout=10.0):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if proc.poll() is not None:
+            raise RuntimeError(f"external peer exited with code {proc.returncode}")
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                return
+        except OSError:
+            time.sleep(0.05)
+    raise RuntimeError(f"external peer did not listen on port {port} within {timeout}s")
 
 
 @pytest.fixture(params=_threaded_impls())
 def threaded_receiver(request):
+    if request.param == "external":
+        template = os.environ["A2A_PEER_CMD"]
+        port = _free_port()
+        cmd = shlex.split(template.format(port=port)) + ["--replay-window", str(WINDOW)]
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            _wait_for_port(port, proc)
+            yield f"http://127.0.0.1:{port}"
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=10)
+        return
+
     if request.param == "reference":
         from ai_oriented_a2a.transport import make_server
 
