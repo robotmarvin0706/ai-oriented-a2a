@@ -1,0 +1,1959 @@
+{
+ "amendments": "none",
+ "experiment": "verification budget (PREREG_BUDGET experiment 3)",
+ "half_width_flag": 0.039,
+ "margins": {
+  "c_harm": 0.1,
+  "delta_sr": 0.05,
+  "delta_tok": 0.1
+ },
+ "model": "deterministic-rule-host-v1",
+ "pilot": false,
+ "prereg_file_commit": "ed6e88a9baafcc7f24bfea7b877798ad9925022c",
+ "prereg_merge_commit": "5446e42d99288abb2c0a0dec47df285fdc82bc73",
+ "prereg_path": "docs/PREREG_BUDGET.md",
+ "result": {
+  "arms": {
+   "A": {
+    "arm": "A",
+    "fast_path_rate_mean": 0.0,
+    "full_sequence_SR_mean": 0.339906,
+    "gate_tokens_mean": 0.0,
+    "harmful_absorption_rate": 0.0,
+    "name": "no_sharing",
+    "persistent_harm_count": 0,
+    "plateau_SR_mean": 0.33974,
+    "repro_overhead_tokens_mean": 0.0,
+    "runs": 160,
+    "task_tokens_mean": 49310.25,
+    "tasks_on_harmful_policy_mean": 0.0,
+    "tasks_on_harmful_policy_total": 0,
+    "total_tokens_mean": 49310.25,
+    "verification_tokens_mean": 0.0
+   },
+   "C": {
+    "arm": "C",
+    "fast_path_rate_mean": 0.0,
+    "full_sequence_SR_mean": 0.55149,
+    "gate_tokens_mean": 100616.0625,
+    "harmful_absorption_rate": 0.05,
+    "name": "always_full_gate",
+    "persistent_harm_count": 1,
+    "plateau_SR_mean": 0.628958,
+    "repro_overhead_tokens_mean": 0.0,
+    "runs": 160,
+    "task_tokens_mean": 151873.6875,
+    "tasks_on_harmful_policy_mean": 0.58125,
+    "tasks_on_harmful_policy_total": 93,
+    "total_tokens_mean": 252489.75,
+    "verification_tokens_mean": 100616.0625
+   },
+   "D1": {
+    "arm": "D1",
+    "fast_path_rate_mean": 0.337031,
+    "full_sequence_SR_mean": 0.560521,
+    "gate_tokens_mean": 93348.5125,
+    "harmful_absorption_rate": 0.475,
+    "name": "repro_blind_skip",
+    "persistent_harm_count": 32,
+    "plateau_SR_mean": 0.643229,
+    "repro_overhead_tokens_mean": 2620.5375,
+    "runs": 160,
+    "task_tokens_mean": 247015.175,
+    "tasks_on_harmful_policy_mean": 17.29375,
+    "tasks_on_harmful_policy_total": 2767,
+    "total_tokens_mean": 342984.225,
+    "verification_tokens_mean": 95969.05
+   },
+   "D2": {
+    "arm": "D2",
+    "fast_path_rate_mean": 0.303906,
+    "full_sequence_SR_mean": 0.561219,
+    "gate_tokens_mean": 65967.79375,
+    "harmful_absorption_rate": 0.05625,
+    "name": "repro_guarded_fast_path",
+    "persistent_harm_count": 2,
+    "plateau_SR_mean": 0.644609,
+    "repro_overhead_tokens_mean": 4077.6375,
+    "runs": 160,
+    "task_tokens_mean": 139279.3,
+    "tasks_on_harmful_policy_mean": 0.85,
+    "tasks_on_harmful_policy_total": 136,
+    "total_tokens_mean": 209324.73125,
+    "verification_tokens_mean": 70045.43125
+   },
+   "V1": {
+    "arm": "V1",
+    "fast_path_rate_mean": 0.0,
+    "full_sequence_SR_mean": 0.339906,
+    "gate_tokens_mean": 5180.91875,
+    "harmful_absorption_rate": 0.0,
+    "name": "content_stub",
+    "persistent_harm_count": 0,
+    "plateau_SR_mean": 0.33974,
+    "repro_overhead_tokens_mean": 0.0,
+    "runs": 160,
+    "task_tokens_mean": 49310.25,
+    "tasks_on_harmful_policy_mean": 0.0,
+    "tasks_on_harmful_policy_total": 0,
+    "total_tokens_mean": 54491.16875,
+    "verification_tokens_mean": 5180.91875
+   },
+   "V2": {
+    "arm": "V2",
+    "fast_path_rate_mean": 0.303906,
+    "full_sequence_SR_mean": 0.488667,
+    "gate_tokens_mean": 65016.69375,
+    "harmful_absorption_rate": 0.04375,
+    "name": "random_skip",
+    "persistent_harm_count": 1,
+    "plateau_SR_mean": 0.545495,
+    "repro_overhead_tokens_mean": 4141.225,
+    "runs": 160,
+    "task_tokens_mean": 134132.3875,
+    "tasks_on_harmful_policy_mean": 0.60625,
+    "tasks_on_harmful_policy_total": 97,
+    "total_tokens_mean": 203290.30625,
+    "verification_tokens_mean": 69157.91875
+   }
+  },
+  "bootstrap": {
+   "b": 2000,
+   "fallback": "a contrast whose stratum holds fewer than 2 runs is resampled as one pool (never a crash)",
+   "method": "paired percentile bootstrap over runs, stratified by seed, 95%, the same resampled runs for both arms of a contrast",
+   "percentiles": [
+    2.5,
+    97.5
+   ],
+   "seed": "stable_int('budget-bootstrap', contrast)"
+  },
+  "c_vs_a": {
+   "contrast": "C-A",
+   "delta_SR": {
+    "estimate": 0.289219,
+    "half_width": 0.040273,
+    "half_width_plan": 0.026,
+    "hi": 0.327943,
+    "lo": 0.247396,
+    "margin": 0.05,
+    "non_inferior": true
+   },
+   "headline": null,
+   "label": "reported, no verdict (§8.3)",
+   "left": "C",
+   "note": "C vs A: only total tokens and plateau_SR differences are reported (§8.3); no rule is applied",
+   "per_seed": {
+    "2026": {
+     "delta_SR": 0.333542,
+     "harm_difference": 0.05,
+     "rel_token_reduction": -4.311094,
+     "runs": 40
+    },
+    "31337": {
+     "delta_SR": 0.281875,
+     "harm_difference": 0.05,
+     "rel_token_reduction": -4.014883,
+     "runs": 40
+    },
+    "42": {
+     "delta_SR": 0.306354,
+     "harm_difference": 0.075,
+     "rel_token_reduction": -4.103977,
+     "runs": 40
+    },
+    "7": {
+     "delta_SR": 0.235104,
+     "harm_difference": 0.025,
+     "rel_token_reduction": -4.051323,
+     "runs": 40
+    }
+   },
+   "right": "A",
+   "role": "report_only",
+   "rule": "n/a",
+   "runs": 160,
+   "tokens": {
+    "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+    "half_width_flag": 0.039,
+    "noisier_than_planned": true,
+    "rel_token_reduction": {
+     "estimate": -4.120431,
+     "half_width": 0.207586,
+     "hi": -3.917586,
+     "lo": -4.332759
+    }
+   }
+  },
+  "decision": {
+   "delta_SR_half_width": 0.015221,
+   "delta_SR_half_width_plan": 0.026,
+   "headline": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "noisier_than_planned": false,
+   "reason": "",
+   "reasons": [],
+   "role": "primary",
+   "rule": "R1a",
+   "rule_as_information": "R1a",
+   "saturation": false,
+   "tokens_half_width": 0.030839,
+   "v1": "pass",
+   "v2": "pass",
+   "v2_components": {
+    "harm_ci_lower_above_c_harm": false,
+    "plateau_sr_ci_upper_below_zero": true,
+    "token_ci_upper_below_delta_tok": false
+   }
+  },
+  "delta_SR_half_width": 0.015221,
+  "delta_SR_half_width_exceeds_plan": false,
+  "half_width": 0.030839,
+  "half_width_flag": 0.039,
+  "margins": {
+   "c_harm": 0.1,
+   "delta_sr": 0.05,
+   "delta_tok": 0.1
+  },
+  "n_runs": 160,
+  "noisier_than_planned": false,
+  "observed": {
+   "dishonest_peer_share": 0.53125,
+   "effective_packet_share": 0.475,
+   "k_e_share": 0.475,
+   "k_s_share": 0.53125,
+   "mismatched_per_run": 10,
+   "mismatched_share": 0.25,
+   "planned": {
+    "k_e_share": 0.5,
+    "k_s_share": 0.5,
+    "mismatched_share": 0.25
+   },
+   "runs": 160
+  },
+  "per_seed": {
+   "2026": {
+    "delta_SR": -0.002708,
+    "harm_difference": -0.025,
+    "rel_token_reduction": 0.171821,
+    "runs": 40
+   },
+   "31337": {
+    "delta_SR": -0.005833,
+    "harm_difference": 0.025,
+    "rel_token_reduction": 0.199649,
+    "runs": 40
+   },
+   "42": {
+    "delta_SR": 0.02625,
+    "harm_difference": 0.025,
+    "rel_token_reduction": 0.140465,
+    "runs": 40
+   },
+   "7": {
+    "delta_SR": 0.044896,
+    "harm_difference": 0.0,
+    "rel_token_reduction": 0.172355,
+    "runs": 40
+   }
+  },
+  "primary": {
+   "b": 2000,
+   "bootstrap_note": "",
+   "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-C')",
+   "contrast": "D2-C",
+   "delta_SR": {
+    "estimate": 0.015651,
+    "half_width": 0.015221,
+    "half_width_plan": 0.026,
+    "hi": 0.0325,
+    "lo": 0.002057,
+    "margin": 0.05,
+    "non_inferior": true
+   },
+   "full_sequence_SR": {
+    "estimate": 0.009729,
+    "half_width": 0.010984,
+    "hi": 0.021896,
+    "lo": -7.3e-05
+   },
+   "harm": {
+    "cap": 0.1,
+    "ci_upper": 0.04375,
+    "estimate": 0.00625,
+    "half_width": 0.034375,
+    "hi": 0.04375,
+    "lo": -0.025,
+    "safe": true
+   },
+   "headline": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+   "left": "D2",
+   "parts": {
+    "gate_tokens": {
+     "estimate": 0.344361,
+     "half_width": 0.027011,
+     "hi": 0.371023,
+     "lo": 0.317
+    },
+    "repro_overhead_tokens": null,
+    "task_tokens": {
+     "estimate": 0.082927,
+     "half_width": 0.034776,
+     "hi": 0.116614,
+     "lo": 0.047063
+    },
+    "verification_tokens": {
+     "estimate": 0.303835,
+     "half_width": 0.028299,
+     "hi": 0.331739,
+     "lo": 0.275141
+    }
+   },
+   "parts_left_means": {
+    "gate_tokens": 65967.79375,
+    "repro_overhead_tokens": 4077.6375,
+    "task_tokens": 139279.3,
+    "verification_tokens": 70045.43125
+   },
+   "parts_undefined": [
+    "repro_overhead_tokens"
+   ],
+   "per_seed": {
+    "2026": {
+     "delta_SR": -0.002708,
+     "harm_difference": -0.025,
+     "rel_token_reduction": 0.171821,
+     "runs": 40
+    },
+    "31337": {
+     "delta_SR": -0.005833,
+     "harm_difference": 0.025,
+     "rel_token_reduction": 0.199649,
+     "runs": 40
+    },
+    "42": {
+     "delta_SR": 0.02625,
+     "harm_difference": 0.025,
+     "rel_token_reduction": 0.140465,
+     "runs": 40
+    },
+    "7": {
+     "delta_SR": 0.044896,
+     "harm_difference": 0.0,
+     "rel_token_reduction": 0.172355,
+     "runs": 40
+    }
+   },
+   "reason": "",
+   "reasons": [],
+   "right": "C",
+   "role": "primary",
+   "rule": "R1a",
+   "rule_as_information": "R1a",
+   "runs": 160,
+   "stratified": true,
+   "tokens": {
+    "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+    "half_width_flag": 0.039,
+    "noisier_than_planned": false,
+    "rel_token_reduction": {
+     "estimate": 0.170958,
+     "half_width": 0.030839,
+     "hi": 0.201286,
+     "lo": 0.139608
+    }
+   }
+  },
+  "report_only": {
+   "full_sequence_SR_difference": {
+    "D1-C": {
+     "estimate": 0.009031,
+     "half_width": 0.01363,
+     "hi": 0.023396,
+     "lo": -0.003865
+    },
+    "D2-C": {
+     "estimate": 0.009729,
+     "half_width": 0.010984,
+     "hi": 0.021896,
+     "lo": -7.3e-05
+    },
+    "V2-C": {
+     "estimate": -0.062823,
+     "half_width": 0.023057,
+     "hi": -0.041563,
+     "lo": -0.087677
+    }
+   },
+   "label": "reported, no verdict (§8.3)",
+   "note": "§8.3 endpoints are reported with their estimate, CI and half-width only; no R1a/R1b/R2/R3 label and no verdict wording is applied to them",
+   "parts_left_means": {
+    "D1-C": {
+     "gate_tokens": 93348.5125,
+     "repro_overhead_tokens": 2620.5375,
+     "task_tokens": 247015.175,
+     "verification_tokens": 95969.05
+    },
+    "D2-C": {
+     "gate_tokens": 65967.79375,
+     "repro_overhead_tokens": 4077.6375,
+     "task_tokens": 139279.3,
+     "verification_tokens": 70045.43125
+    },
+    "V2-C": {
+     "gate_tokens": 65016.69375,
+     "repro_overhead_tokens": 4141.225,
+     "task_tokens": 134132.3875,
+     "verification_tokens": 69157.91875
+    }
+   },
+   "per_arm": {
+    "A": {
+     "arm": "A",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 0,
+     "escalations_total": 0,
+     "false_fast_path_rate": 0.0,
+     "false_fast_path_rate_per_run_mean": 0.0,
+     "false_fast_path_total": 0,
+     "fast_accept_total": 0,
+     "fast_path_events_total": 0,
+     "fast_path_rate_mean": 0.0,
+     "fast_reject_total": 0,
+     "harmful_fast_accepted_total": 0,
+     "harmful_gate_absorbed_total": 0,
+     "harmful_installations_total": 0,
+     "harmful_rolled_back_total": 0,
+     "harmful_spot_check_passed_total": 0,
+     "name": "no_sharing",
+     "persistent_harm_runs": 0,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 0,
+     "probation_superseded_total": 0,
+     "resident_context_tokens_T100_mean": 0.0,
+     "rollbacks_gate_total": 0,
+     "rollbacks_probation_total": 0,
+     "rollbacks_total": 0,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "spot_check_pass": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "tasks_on_harmful_policy_mean": 0.0
+    },
+    "C": {
+     "arm": "C",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 33,
+     "escalations_total": 0,
+     "false_fast_path_rate": 0.0,
+     "false_fast_path_rate_per_run_mean": 0.0,
+     "false_fast_path_total": 0,
+     "fast_accept_total": 0,
+     "fast_path_events_total": 0,
+     "fast_path_rate_mean": 0.0,
+     "fast_reject_total": 0,
+     "harmful_fast_accepted_total": 0,
+     "harmful_gate_absorbed_total": 8,
+     "harmful_installations_total": 8,
+     "harmful_rolled_back_total": 0,
+     "harmful_spot_check_passed_total": 0,
+     "name": "always_full_gate",
+     "persistent_harm_runs": 1,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 0,
+     "probation_superseded_total": 0,
+     "resident_context_tokens_T100_mean": 220.025,
+     "rollbacks_gate_total": 6131,
+     "rollbacks_probation_total": 0,
+     "rollbacks_total": 6131,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "spot_check_pass": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "tasks_on_harmful_policy_mean": 0.58125
+    },
+    "D1": {
+     "arm": "D1",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 239,
+     "escalations_total": 0,
+     "false_fast_path_rate": 0.121001,
+     "false_fast_path_rate_per_run_mean": 0.144593,
+     "false_fast_path_total": 261,
+     "fast_accept_total": 330,
+     "fast_path_events_total": 2157,
+     "fast_path_rate_mean": 0.337031,
+     "fast_reject_total": 1827,
+     "harmful_fast_accepted_total": 208,
+     "harmful_gate_absorbed_total": 3,
+     "harmful_installations_total": 211,
+     "harmful_rolled_back_total": 0,
+     "harmful_spot_check_passed_total": 0,
+     "name": "repro_blind_skip",
+     "persistent_harm_runs": 32,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 0,
+     "probation_superseded_total": 0,
+     "resident_context_tokens_T100_mean": 421.0125,
+     "rollbacks_gate_total": 4059,
+     "rollbacks_probation_total": 0,
+     "rollbacks_total": 4059,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "spot_check_pass": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "tasks_on_harmful_policy_mean": 17.29375
+    },
+    "D2": {
+     "arm": "D2",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 34,
+     "escalations_total": 121,
+     "false_fast_path_rate": 0.05964,
+     "false_fast_path_rate_per_run_mean": 0.094211,
+     "false_fast_path_total": 116,
+     "fast_accept_total": 188,
+     "fast_path_events_total": 1945,
+     "fast_path_rate_mean": 0.303906,
+     "fast_reject_total": 1757,
+     "harmful_fast_accepted_total": 77,
+     "harmful_gate_absorbed_total": 5,
+     "harmful_installations_total": 9,
+     "harmful_rolled_back_total": 3,
+     "harmful_spot_check_passed_total": 4,
+     "name": "repro_guarded_fast_path",
+     "persistent_harm_runs": 2,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 5,
+     "probation_superseded_total": 1,
+     "resident_context_tokens_T100_mean": 195.175,
+     "rollbacks_gate_total": 4400,
+     "rollbacks_probation_total": 5,
+     "rollbacks_total": 4405,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 15,
+      "harmful": 73,
+      "mediocre": 33
+     },
+     "spot_check_pass": {
+      "effective": 57,
+      "harmful": 4,
+      "mediocre": 6
+     },
+     "tasks_on_harmful_policy_mean": 0.85
+    },
+    "V1": {
+     "arm": "V1",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 0,
+     "escalations_total": 0,
+     "false_fast_path_rate": 0.0,
+     "false_fast_path_rate_per_run_mean": 0.0,
+     "false_fast_path_total": 0,
+     "fast_accept_total": 0,
+     "fast_path_events_total": 0,
+     "fast_path_rate_mean": 0.0,
+     "fast_reject_total": 0,
+     "harmful_fast_accepted_total": 0,
+     "harmful_gate_absorbed_total": 0,
+     "harmful_installations_total": 0,
+     "harmful_rolled_back_total": 0,
+     "harmful_spot_check_passed_total": 0,
+     "name": "content_stub",
+     "persistent_harm_runs": 0,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 0,
+     "probation_superseded_total": 0,
+     "resident_context_tokens_T100_mean": 0.0,
+     "rollbacks_gate_total": 0,
+     "rollbacks_probation_total": 0,
+     "rollbacks_total": 0,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "spot_check_pass": {
+      "effective": 0,
+      "harmful": 0,
+      "mediocre": 0
+     },
+     "tasks_on_harmful_policy_mean": 0.0
+    },
+    "V2": {
+     "arm": "V2",
+     "attribution_rate_mean": 1.0,
+     "budget_rejections_total": 18,
+     "escalations_total": 178,
+     "false_fast_path_rate": 0.107969,
+     "false_fast_path_rate_per_run_mean": 0.140674,
+     "false_fast_path_total": 210,
+     "fast_accept_total": 188,
+     "fast_path_events_total": 1945,
+     "fast_path_rate_mean": 0.303906,
+     "fast_reject_total": 1757,
+     "harmful_fast_accepted_total": 36,
+     "harmful_gate_absorbed_total": 7,
+     "harmful_installations_total": 7,
+     "harmful_rolled_back_total": 0,
+     "harmful_spot_check_passed_total": 0,
+     "name": "random_skip",
+     "persistent_harm_runs": 1,
+     "probation_rollbacks_false_total": 0,
+     "probation_rollbacks_true_total": 4,
+     "probation_superseded_total": 0,
+     "resident_context_tokens_T100_mean": 186.775,
+     "rollbacks_gate_total": 4410,
+     "rollbacks_probation_total": 4,
+     "rollbacks_total": 4414,
+     "runs": 160,
+     "spot_check_fail": {
+      "effective": 0,
+      "harmful": 36,
+      "mediocre": 142
+     },
+     "spot_check_pass": {
+      "effective": 4,
+      "harmful": 0,
+      "mediocre": 6
+     },
+     "tasks_on_harmful_policy_mean": 0.60625
+    }
+   },
+   "rule": "n/a",
+   "token_parts_relative_reduction": {
+    "D1-C": {
+     "gate_tokens": {
+      "estimate": 0.072231,
+      "half_width": 0.073625,
+      "hi": 0.143176,
+      "lo": -0.004075
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": -0.626451,
+      "half_width": 0.140663,
+      "hi": -0.48855,
+      "lo": -0.769875
+     },
+     "verification_tokens": {
+      "estimate": 0.046186,
+      "half_width": 0.073987,
+      "hi": 0.11738,
+      "lo": -0.030594
+     }
+    },
+    "D2-C": {
+     "gate_tokens": {
+      "estimate": 0.344361,
+      "half_width": 0.027011,
+      "hi": 0.371023,
+      "lo": 0.317
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.082927,
+      "half_width": 0.034776,
+      "hi": 0.116614,
+      "lo": 0.047063
+     },
+     "verification_tokens": {
+      "estimate": 0.303835,
+      "half_width": 0.028299,
+      "hi": 0.331739,
+      "lo": 0.275141
+     }
+    },
+    "V2-C": {
+     "gate_tokens": {
+      "estimate": 0.353814,
+      "half_width": 0.0253,
+      "hi": 0.378219,
+      "lo": 0.327618
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.116816,
+      "half_width": 0.031287,
+      "hi": 0.148462,
+      "lo": 0.085888
+     },
+     "verification_tokens": {
+      "estimate": 0.312655,
+      "half_width": 0.026537,
+      "hi": 0.338142,
+      "lo": 0.285067
+     }
+    }
+   }
+  },
+  "saturation": {
+   "arms": {
+    "C": {
+     "outside_bounds": false,
+     "plateau_SR_mean": 0.628958
+    },
+    "D2": {
+     "outside_bounds": false,
+     "plateau_SR_mean": 0.644609
+    }
+   },
+   "bounds": [
+    0.1,
+    0.9
+   ],
+   "note": "saturation is reported; the decision rules are unchanged",
+   "saturated": false
+  },
+  "saturation_bounds": [
+   0.1,
+   0.9
+  ],
+  "secondary": [
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D1-C')",
+    "contrast": "D1-C",
+    "delta_SR": {
+     "estimate": 0.014271,
+     "half_width": 0.018984,
+     "half_width_plan": 0.026,
+     "hi": 0.034323,
+     "lo": -0.003646,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.009031,
+     "half_width": 0.01363,
+     "hi": 0.023396,
+     "lo": -0.003865
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.50625,
+     "estimate": 0.425,
+     "half_width": 0.08125,
+     "hi": 0.50625,
+     "lo": 0.34375,
+     "safe": false
+    },
+    "headline": null,
+    "label": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "label_as_information": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "left": "D1",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.072231,
+      "half_width": 0.073625,
+      "hi": 0.143176,
+      "lo": -0.004075
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": -0.626451,
+      "half_width": 0.140663,
+      "hi": -0.48855,
+      "lo": -0.769875
+     },
+     "verification_tokens": {
+      "estimate": 0.046186,
+      "half_width": 0.073987,
+      "hi": 0.11738,
+      "lo": -0.030594
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 93348.5125,
+     "repro_overhead_tokens": 2620.5375,
+     "task_tokens": 247015.175,
+     "verification_tokens": 95969.05
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.016875,
+      "harm_difference": 0.425,
+      "rel_token_reduction": -0.346796,
+      "runs": 40
+     },
+     "31337": {
+      "delta_SR": -0.016979,
+      "harm_difference": 0.4,
+      "rel_token_reduction": -0.262415,
+      "runs": 40
+     },
+     "42": {
+      "delta_SR": 0.030104,
+      "harm_difference": 0.45,
+      "rel_token_reduction": -0.477699,
+      "runs": 40
+     },
+     "7": {
+      "delta_SR": 0.060833,
+      "harm_difference": 0.425,
+      "rel_token_reduction": -0.345468,
+      "runs": 40
+     }
+    },
+    "reasons": [
+     "more_tokens",
+     "harm_cap_breached"
+    ],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R3",
+    "rule_as_information": "R3",
+    "runs": 160,
+    "stratified": true,
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": -0.358409,
+      "half_width": 0.113477,
+      "hi": -0.246786,
+      "lo": -0.47374
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-V2')",
+    "contrast": "D2-V2",
+    "delta_SR": {
+     "estimate": 0.099115,
+     "half_width": 0.03293,
+     "half_width_plan": 0.026,
+     "hi": 0.133516,
+     "lo": 0.067656,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.072552,
+     "half_width": 0.024641,
+     "hi": 0.098063,
+     "lo": 0.048781
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.05,
+     "estimate": 0.0125,
+     "half_width": 0.0375,
+     "hi": 0.05,
+     "lo": -0.025,
+     "safe": true
+    },
+    "headline": null,
+    "label": "equivalent within ±0.10 relative total tokens",
+    "label_as_information": "equivalent within ±0.10 relative total tokens",
+    "left": "D2",
+    "parts": {
+     "gate_tokens": {
+      "estimate": -0.014629,
+      "half_width": 0.032966,
+      "hi": 0.018934,
+      "lo": -0.046999
+     },
+     "repro_overhead_tokens": {
+      "estimate": 0.015355,
+      "half_width": 0.030294,
+      "hi": 0.043595,
+      "lo": -0.016994
+     },
+     "task_tokens": {
+      "estimate": -0.038372,
+      "half_width": 0.046657,
+      "hi": 0.006509,
+      "lo": -0.086804
+     },
+     "verification_tokens": {
+      "estimate": -0.012833,
+      "half_width": 0.031656,
+      "hi": 0.019119,
+      "lo": -0.044193
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 65967.79375,
+     "repro_overhead_tokens": 4077.6375,
+     "task_tokens": 139279.3,
+     "verification_tokens": 70045.43125
+    },
+    "parts_undefined": [],
+    "per_seed": {
+     "2026": {
+      "delta_SR": 0.052812,
+      "harm_difference": -0.025,
+      "rel_token_reduction": 0.020878,
+      "runs": 40
+     },
+     "31337": {
+      "delta_SR": 0.063021,
+      "harm_difference": 0.025,
+      "rel_token_reduction": 0.012282,
+      "runs": 40
+     },
+     "42": {
+      "delta_SR": 0.172187,
+      "harm_difference": 0.075,
+      "rel_token_reduction": -0.126745,
+      "runs": 40
+     },
+     "7": {
+      "delta_SR": 0.108438,
+      "harm_difference": -0.025,
+      "rel_token_reduction": -0.034742,
+      "runs": 40
+     }
+    },
+    "reasons": [],
+    "right": "V2",
+    "role": "secondary",
+    "rule": "R2",
+    "rule_as_information": "R2",
+    "runs": 160,
+    "stratified": true,
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": -0.029684,
+      "half_width": 0.03992,
+      "hi": 0.009378,
+      "lo": -0.070463
+     }
+    }
+   }
+  ],
+  "seeds": {
+   "2026": 40,
+   "31337": 40,
+   "42": 40,
+   "7": 40
+  },
+  "sr_half_width_plan": 0.026,
+  "strata": [
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-C:k_s=1')",
+    "contrast": "D2-C:k_s=1",
+    "delta_SR": {
+     "estimate": 0.009216,
+     "half_width": 0.017549,
+     "half_width_plan": 0.026,
+     "hi": 0.02951,
+     "lo": -0.005588,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.00549,
+     "half_width": 0.012657,
+     "hi": 0.020294,
+     "lo": -0.00502
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.094118,
+     "estimate": 0.023529,
+     "half_width": 0.064706,
+     "hi": 0.094118,
+     "lo": -0.035294,
+     "safe": true
+    },
+    "headline": null,
+    "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "left": "D2",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.325041,
+      "half_width": 0.03218,
+      "hi": 0.356819,
+      "lo": 0.29246
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.07697,
+      "half_width": 0.047698,
+      "hi": 0.124541,
+      "lo": 0.029145
+     },
+     "verification_tokens": {
+      "estimate": 0.278483,
+      "half_width": 0.033927,
+      "hi": 0.311787,
+      "lo": 0.243933
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 68522.647059,
+     "repro_overhead_tokens": 4726.647059,
+     "task_tokens": 140590.917647,
+     "verification_tokens": 73249.294118
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.00471,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.196019,
+      "runs": 23
+     },
+     "31337": {
+      "delta_SR": -0.006019,
+      "harm_difference": 0.055556,
+      "rel_token_reduction": 0.144514,
+      "runs": 18
+     },
+     "42": {
+      "delta_SR": 0.018403,
+      "harm_difference": 0.041667,
+      "rel_token_reduction": 0.142518,
+      "runs": 24
+     },
+     "7": {
+      "delta_SR": 0.027917,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.139657,
+      "runs": 20
+     }
+    },
+    "reasons": [],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1a",
+    "rule_as_information": "R1a",
+    "runs": 85,
+    "stratified": true,
+    "stratum": {
+     "k_s": 1
+    },
+    "stratum_label": "dishonest peer present (k_s=1)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": 0.157565,
+      "half_width": 0.040894,
+      "hi": 0.198218,
+      "lo": 0.116429
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-C:k_s=0')",
+    "contrast": "D2-C:k_s=0",
+    "delta_SR": {
+     "estimate": 0.022944,
+     "half_width": 0.027083,
+     "half_width_plan": 0.026,
+     "hi": 0.053667,
+     "lo": -0.0005,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.014533,
+     "half_width": 0.018856,
+     "hi": 0.035689,
+     "lo": -0.002022
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.0,
+     "estimate": -0.013333,
+     "half_width": 0.02,
+     "hi": 0.0,
+     "lo": -0.04,
+     "safe": true
+    },
+    "headline": null,
+    "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "left": "D2",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.366681,
+      "half_width": 0.041642,
+      "hi": 0.408117,
+      "lo": 0.324834
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.08972,
+      "half_width": 0.048586,
+      "hi": 0.140456,
+      "lo": 0.043285
+     },
+     "verification_tokens": {
+      "estimate": 0.333123,
+      "half_width": 0.043619,
+      "hi": 0.376514,
+      "lo": 0.289276
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 63072.293333,
+     "repro_overhead_tokens": 3342.093333,
+     "task_tokens": 137792.8,
+     "verification_tokens": 66414.386667
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": 0.0,
+      "harm_difference": -0.058824,
+      "rel_token_reduction": 0.137495,
+      "runs": 17
+     },
+     "31337": {
+      "delta_SR": -0.005682,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.246921,
+      "runs": 22
+     },
+     "42": {
+      "delta_SR": 0.038021,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.137397,
+      "runs": 16
+     },
+     "7": {
+      "delta_SR": 0.061875,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.203171,
+      "runs": 20
+     }
+    },
+    "reasons": [],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1a",
+    "rule_as_information": "R1a",
+    "runs": 75,
+    "stratified": true,
+    "stratum": {
+     "k_s": 0
+    },
+    "stratum_label": "dishonest peer absent (k_s=0)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": 0.18631,
+      "half_width": 0.044394,
+      "hi": 0.232128,
+      "lo": 0.14334
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-C:k_e=1')",
+    "contrast": "D2-C:k_e=1",
+    "delta_SR": {
+     "estimate": 0.038048,
+     "half_width": 0.031113,
+     "half_width_plan": 0.026,
+     "hi": 0.070669,
+     "lo": 0.008443,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.025482,
+     "half_width": 0.021919,
+     "hi": 0.049298,
+     "lo": 0.005461
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.039474,
+     "estimate": 0.0,
+     "half_width": 0.039474,
+     "hi": 0.039474,
+     "lo": -0.039474,
+     "safe": true
+    },
+    "headline": null,
+    "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "left": "D2",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.361342,
+      "half_width": 0.036526,
+      "hi": 0.397092,
+      "lo": 0.324039
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.059399,
+      "half_width": 0.042081,
+      "hi": 0.100744,
+      "lo": 0.016582
+     },
+     "verification_tokens": {
+      "estimate": 0.318346,
+      "half_width": 0.038531,
+      "hi": 0.355823,
+      "lo": 0.278761
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 68135.960526,
+     "repro_overhead_tokens": 4587.0,
+     "task_tokens": 156180.657895,
+     "verification_tokens": 72722.960526
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": 0.0,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.174853,
+      "runs": 20
+     },
+     "31337": {
+      "delta_SR": 0.0,
+      "harm_difference": 0.0625,
+      "rel_token_reduction": 0.155885,
+      "runs": 16
+     },
+     "42": {
+      "delta_SR": 0.05377,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.174012,
+      "runs": 21
+     },
+     "7": {
+      "delta_SR": 0.092763,
+      "harm_difference": -0.052632,
+      "rel_token_reduction": 0.134334,
+      "runs": 19
+     }
+    },
+    "reasons": [],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1a",
+    "rule_as_information": "R1a",
+    "runs": 76,
+    "stratified": true,
+    "stratum": {
+     "k_e": 1
+    },
+    "stratum_label": "effective packet present (k_e=1)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": false,
+     "rel_token_reduction": {
+      "estimate": 0.160694,
+      "half_width": 0.037513,
+      "hi": 0.198072,
+      "lo": 0.123047
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D2-C:k_e=0')",
+    "contrast": "D2-C:k_e=0",
+    "delta_SR": {
+     "estimate": -0.004613,
+     "half_width": 0.004291,
+     "half_width_plan": 0.026,
+     "hi": -0.000546,
+     "lo": -0.009127,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": -0.004524,
+     "half_width": 0.003204,
+     "hi": -0.001429,
+     "lo": -0.007837
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.071429,
+     "estimate": 0.011905,
+     "half_width": 0.059524,
+     "hi": 0.071429,
+     "lo": -0.047619,
+     "safe": true
+    },
+    "headline": null,
+    "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "left": "D2",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.327131,
+      "half_width": 0.037208,
+      "hi": 0.363366,
+      "lo": 0.288949
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.108345,
+      "half_width": 0.05572,
+      "hi": 0.164753,
+      "lo": 0.053313
+     },
+     "verification_tokens": {
+      "estimate": 0.289109,
+      "half_width": 0.039154,
+      "hi": 0.326809,
+      "lo": 0.248502
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 64006.119048,
+     "repro_overhead_tokens": 3616.785714,
+     "task_tokens": 123987.595238,
+     "verification_tokens": 67622.904762
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.005417,
+      "harm_difference": -0.05,
+      "rel_token_reduction": 0.168198,
+      "runs": 20
+     },
+     "31337": {
+      "delta_SR": -0.009722,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.234076,
+      "runs": 24
+     },
+     "42": {
+      "delta_SR": -0.004167,
+      "harm_difference": 0.052632,
+      "rel_token_reduction": 0.098886,
+      "runs": 19
+     },
+     "7": {
+      "delta_SR": 0.001587,
+      "harm_difference": 0.047619,
+      "rel_token_reduction": 0.21217,
+      "runs": 21
+     }
+    },
+    "reasons": [],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1a",
+    "rule_as_information": "R1a",
+    "runs": 84,
+    "stratified": true,
+    "stratum": {
+     "k_e": 0
+    },
+    "stratum_label": "effective packet absent (k_e=0)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": 0.181772,
+      "half_width": 0.045204,
+      "hi": 0.227235,
+      "lo": 0.136828
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D1-C:k_s=1')",
+    "contrast": "D1-C:k_s=1",
+    "delta_SR": {
+     "estimate": 0.007696,
+     "half_width": 0.028873,
+     "half_width_plan": 0.026,
+     "hi": 0.039069,
+     "lo": -0.018676,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.004588,
+     "half_width": 0.020167,
+     "hi": 0.026451,
+     "lo": -0.013882
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.894118,
+     "estimate": 0.811765,
+     "half_width": 0.088235,
+     "hi": 0.894118,
+     "lo": 0.717647,
+     "safe": false
+    },
+    "headline": null,
+    "label": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "label_as_information": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "left": "D1",
+    "parts": {
+     "gate_tokens": {
+      "estimate": -0.184108,
+      "half_width": 0.107237,
+      "hi": -0.080491,
+      "lo": -0.294966
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": -1.199487,
+      "half_width": 0.200507,
+      "hi": -1.00007,
+      "lo": -1.401084
+     },
+     "verification_tokens": {
+      "estimate": -0.211479,
+      "half_width": 0.108036,
+      "hi": -0.107161,
+      "lo": -0.323233
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 120212.152941,
+     "repro_overhead_tokens": 2778.752941,
+     "task_tokens": 335013.858824,
+     "verification_tokens": 122990.905882
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.026449,
+      "harm_difference": 0.782609,
+      "rel_token_reduction": -0.632167,
+      "runs": 23
+     },
+     "31337": {
+      "delta_SR": -0.02963,
+      "harm_difference": 0.888889,
+      "rel_token_reduction": -0.792206,
+      "runs": 18
+     },
+     "42": {
+      "delta_SR": 0.024826,
+      "harm_difference": 0.75,
+      "rel_token_reduction": -0.900553,
+      "runs": 24
+     },
+     "7": {
+      "delta_SR": 0.06,
+      "harm_difference": 0.85,
+      "rel_token_reduction": -0.915254,
+      "runs": 20
+     }
+    },
+    "reasons": [
+     "more_tokens",
+     "harm_cap_breached"
+    ],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R3",
+    "rule_as_information": "R3",
+    "runs": 85,
+    "stratified": true,
+    "stratum": {
+     "k_s": 1
+    },
+    "stratum_label": "dishonest peer present (k_s=1)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": -0.804335,
+      "half_width": 0.157269,
+      "hi": -0.649085,
+      "lo": -0.963624
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D1-C:k_s=0')",
+    "contrast": "D1-C:k_s=0",
+    "delta_SR": {
+     "estimate": 0.021722,
+     "half_width": 0.026806,
+     "half_width_plan": 0.026,
+     "hi": 0.052056,
+     "lo": -0.001556,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.014067,
+     "half_width": 0.018656,
+     "hi": 0.034822,
+     "lo": -0.002489
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.0,
+     "estimate": -0.013333,
+     "half_width": 0.02,
+     "hi": 0.0,
+     "lo": -0.04,
+     "safe": true
+    },
+    "headline": null,
+    "label": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "label_as_information": "supported: the repro fast path reduces total run tokens by at least the margin, with non-inferior plateau SR and harm within the cap",
+    "left": "D1",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.368381,
+      "half_width": 0.047283,
+      "hi": 0.413802,
+      "lo": 0.319235
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": 0.027024,
+      "half_width": 0.074023,
+      "hi": 0.099326,
+      "lo": -0.048719
+     },
+     "verification_tokens": {
+      "estimate": 0.343868,
+      "half_width": 0.048013,
+      "hi": 0.389839,
+      "lo": 0.293812
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 62903.053333,
+     "repro_overhead_tokens": 2441.226667,
+     "task_tokens": 147283.333333,
+     "verification_tokens": 65344.28
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.003922,
+      "harm_difference": -0.058824,
+      "rel_token_reduction": 0.058025,
+      "runs": 17
+     },
+     "31337": {
+      "delta_SR": -0.006629,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.19183,
+      "runs": 22
+     },
+     "42": {
+      "delta_SR": 0.038021,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.15384,
+      "runs": 16
+     },
+     "7": {
+      "delta_SR": 0.061667,
+      "harm_difference": 0.0,
+      "rel_token_reduction": 0.191537,
+      "runs": 20
+     }
+    },
+    "reasons": [],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R1a",
+    "rule_as_information": "R1a",
+    "runs": 75,
+    "stratified": true,
+    "stratum": {
+     "k_s": 0
+    },
+    "stratum_label": "dishonest peer absent (k_s=0)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": 0.152757,
+      "half_width": 0.061176,
+      "hi": 0.212965,
+      "lo": 0.090614
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D1-C:k_e=1')",
+    "contrast": "D1-C:k_e=1",
+    "delta_SR": {
+     "estimate": 0.05943,
+     "half_width": 0.037664,
+     "half_width_plan": 0.026,
+     "hi": 0.099123,
+     "lo": 0.023794,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": 0.039737,
+     "half_width": 0.026754,
+     "hi": 0.068048,
+     "lo": 0.014539
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.526316,
+     "estimate": 0.407895,
+     "half_width": 0.118421,
+     "hi": 0.526316,
+     "lo": 0.289474,
+     "safe": false
+    },
+    "headline": null,
+    "label": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "label_as_information": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "left": "D1",
+    "parts": {
+     "gate_tokens": {
+      "estimate": 0.188616,
+      "half_width": 0.087015,
+      "hi": 0.270575,
+      "lo": 0.096544
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": -0.365322,
+      "half_width": 0.13945,
+      "hi": -0.23173,
+      "lo": -0.510631
+     },
+     "verification_tokens": {
+      "estimate": 0.16385,
+      "half_width": 0.087753,
+      "hi": 0.246592,
+      "lo": 0.071086
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 86563.315789,
+     "repro_overhead_tokens": 2642.276316,
+     "task_tokens": 226702.921053,
+     "verification_tokens": 89205.592105
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": 0.0,
+      "harm_difference": 0.45,
+      "rel_token_reduction": -0.186937,
+      "runs": 20
+     },
+     "31337": {
+      "delta_SR": 0.0,
+      "harm_difference": 0.4375,
+      "rel_token_reduction": -0.118734,
+      "runs": 16
+     },
+     "42": {
+      "delta_SR": 0.079167,
+      "harm_difference": 0.380952,
+      "rel_token_reduction": -0.135059,
+      "runs": 21
+     },
+     "7": {
+      "delta_SR": 0.150219,
+      "harm_difference": 0.368421,
+      "rel_token_reduction": -0.185542,
+      "runs": 19
+     }
+    },
+    "reasons": [
+     "more_tokens",
+     "harm_cap_breached"
+    ],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R3",
+    "rule_as_information": "R3",
+    "runs": 76,
+    "stratified": true,
+    "stratum": {
+     "k_e": 1
+    },
+    "stratum_label": "effective packet present (k_e=1)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": -0.158321,
+      "half_width": 0.118129,
+      "hi": -0.045742,
+      "lo": -0.282
+     }
+    }
+   },
+   {
+    "b": 2000,
+    "bootstrap_note": "",
+    "bootstrap_seed": "stable_int('budget-bootstrap', 'D1-C:k_e=0')",
+    "contrast": "D1-C:k_e=0",
+    "delta_SR": {
+     "estimate": -0.026587,
+     "half_width": 0.00687,
+     "half_width_plan": 0.026,
+     "hi": -0.019792,
+     "lo": -0.033532,
+     "margin": 0.05,
+     "non_inferior": true
+    },
+    "full_sequence_SR": {
+     "estimate": -0.01875,
+     "half_width": 0.004772,
+     "hi": -0.013889,
+     "lo": -0.023433
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.559524,
+     "estimate": 0.440476,
+     "half_width": 0.113095,
+     "hi": 0.559524,
+     "lo": 0.333333,
+     "safe": false
+    },
+    "headline": null,
+    "label": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "label_as_information": "not supported: the fast path fails the joint criterion (more_tokens, harm_cap_breached)",
+    "left": "D1",
+    "parts": {
+     "gate_tokens": {
+      "estimate": -0.04587,
+      "half_width": 0.114458,
+      "hi": 0.066,
+      "lo": -0.162916
+     },
+     "repro_overhead_tokens": null,
+     "task_tokens": {
+      "estimate": -0.908569,
+      "half_width": 0.244991,
+      "hi": -0.665217,
+      "lo": -1.1552
+     },
+     "verification_tokens": {
+      "estimate": -0.073212,
+      "half_width": 0.115298,
+      "hi": 0.03961,
+      "lo": -0.190985
+     }
+    },
+    "parts_left_means": {
+     "gate_tokens": 99487.5,
+     "repro_overhead_tokens": 2600.869048,
+     "task_tokens": 265392.928571,
+     "verification_tokens": 102088.369048
+    },
+    "parts_undefined": [
+     "repro_overhead_tokens"
+    ],
+    "per_seed": {
+     "2026": {
+      "delta_SR": -0.03375,
+      "harm_difference": 0.4,
+      "rel_token_reduction": -0.537844,
+      "runs": 20
+     },
+     "31337": {
+      "delta_SR": -0.028299,
+      "harm_difference": 0.375,
+      "rel_token_reduction": -0.375444,
+      "runs": 24
+     },
+     "42": {
+      "delta_SR": -0.024123,
+      "harm_difference": 0.526316,
+      "rel_token_reduction": -0.902375,
+      "runs": 19
+     },
+     "7": {
+      "delta_SR": -0.02004,
+      "harm_difference": 0.47619,
+      "rel_token_reduction": -0.512944,
+      "runs": 21
+     }
+    },
+    "reasons": [
+     "more_tokens",
+     "harm_cap_breached"
+    ],
+    "right": "C",
+    "role": "secondary",
+    "rule": "R3",
+    "rule_as_information": "R3",
+    "runs": 84,
+    "stratified": true,
+    "stratum": {
+     "k_e": 0
+    },
+    "stratum_label": "effective packet absent (k_e=0)",
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": true,
+     "rel_token_reduction": {
+      "estimate": -0.569242,
+      "half_width": 0.191803,
+      "hi": -0.378046,
+      "lo": -0.761652
+     }
+    }
+   }
+  ],
+  "v1": {
+   "bootstrap_note": "",
+   "bootstrap_seed": "stable_int('budget-bootstrap', 'C-V1:plateau_SR')",
+   "check": "V1",
+   "contrast": "C-V1",
+   "left": "C",
+   "metric": "plateau_SR",
+   "outcome": "pass",
+   "plateau_sr_gap": {
+    "estimate": 0.289219,
+    "half_width": 0.04056,
+    "hi": 0.331823,
+    "lo": 0.250703
+   },
+   "reason": "",
+   "right": "V1",
+   "runs": 160,
+   "stratified": true
+  },
+  "v2": {
+   "check": "V2",
+   "components": {
+    "harm_ci_lower_above_c_harm": false,
+    "plateau_sr_ci_upper_below_zero": true,
+    "token_ci_upper_below_delta_tok": false
+   },
+   "components_hold": [
+    "plateau_sr_ci_upper_below_zero"
+   ],
+   "contrast": "V2-C",
+   "criterion": {
+    "delta_SR": {
+     "estimate": -0.083464,
+     "half_width": 0.031484,
+     "half_width_plan": 0.026,
+     "hi": -0.054219,
+     "lo": -0.117188,
+     "margin": 0.05,
+     "non_inferior": false
+    },
+    "harm": {
+     "cap": 0.1,
+     "ci_upper": 0.0125,
+     "estimate": -0.00625,
+     "half_width": 0.01875,
+     "hi": 0.0125,
+     "lo": -0.025,
+     "safe": true
+    },
+    "non_inferior": false,
+    "rule_as_information": "R3",
+    "safe": true,
+    "tokens": {
+     "formula": "1 - sum(total_tokens(X)) / sum(total_tokens(C)) over the paired runs",
+     "half_width_flag": 0.039,
+     "noisier_than_planned": false,
+     "rel_token_reduction": {
+      "estimate": 0.194857,
+      "half_width": 0.026223,
+      "hi": 0.221004,
+      "lo": 0.168558
+     }
+    }
+   },
+   "left": "V2",
+   "outcome": "pass",
+   "reason": "",
+   "right": "C",
+   "runs": 160
+  }
+ },
+ "runner_base_commit": "5446e42d99288abb2c0a0dec47df285fdc82bc73",
+ "runs": [
+  0,
+  39
+ ],
+ "seeds": [
+  42,
+  7,
+  2026,
+  31337
+ ],
+ "sr_half_width_plan": 0.026,
+ "tasks": 100
+}
